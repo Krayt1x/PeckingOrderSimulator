@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import GameBoard from './components/GameBoard.jsx';
+import GameBoard, { BOARD_SIZE } from './components/GameBoard.jsx';
 import Hand from './components/Hand.jsx';
 
 function getInitialTheme() {
@@ -13,10 +13,29 @@ const STARTING_HAND = [
   { id: 'c4', name: 'Card 4', emoji: '🐣', color: '#65a30d' },
 ];
 
+// Food is the objective cards the game is anchored around — a few fixed
+// spots near the center of the board for now, until real placement rules
+// are defined.
+const FOOD_POSITIONS = [44, 45, 54, 55];
+
+function createInitialBoard() {
+  const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+  FOOD_POSITIONS.forEach((index, i) => {
+    cells[index] = {
+      id: `food-${i}`,
+      type: 'food',
+      name: 'Food',
+      emoji: '🌾',
+      color: '#16a34a',
+    };
+  });
+  return cells;
+}
+
 export default function App() {
   const [theme, setTheme] = useState(getInitialTheme);
   const [hand, setHand] = useState(STARTING_HAND);
-  const [board, setBoard] = useState(Array(9).fill(null));
+  const [board, setBoard] = useState(createInitialBoard);
   const [selectedCardId, setSelectedCardId] = useState(null);
 
   function toggleTheme() {
@@ -63,7 +82,8 @@ export default function App() {
         <h1>Pecking Order</h1>
         <p>
           Pick a card from your hand, then click an empty square on the board to
-          play it.
+          play it. The board is 10x10 — drag it to look around. The 🌾 Food
+          cards near the center are the objectives the game is anchored around.
         </p>
         <GameBoard
           cells={board}

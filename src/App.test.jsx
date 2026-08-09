@@ -12,16 +12,23 @@ describe('App', () => {
     ).toBeDefined();
   });
 
+  it('renders a 10x10 board with Food objective cards near the center', () => {
+    render(<App />);
+
+    const cells = screen.getAllByRole('gridcell');
+    expect(cells).toHaveLength(100);
+    expect(screen.getAllByText('Food')).toHaveLength(4);
+  });
+
   it('plays a selected card from hand onto an empty board cell', () => {
     render(<App />);
 
     const cells = screen.getAllByRole('gridcell');
-    expect(cells).toHaveLength(9);
 
     fireEvent.click(screen.getByRole('button', { name: /Card 1/ }));
-    fireEvent.click(cells[4]);
+    fireEvent.click(cells[0]);
 
-    expect(cells[4].textContent).toContain('Card 1');
+    expect(cells[0].textContent).toContain('Card 1');
     expect(screen.queryByRole('button', { name: /Card 1/ })).toBeNull();
   });
 
@@ -35,5 +42,17 @@ describe('App', () => {
     fireEvent.click(cells[0]);
 
     expect(cells[0].textContent).toContain('Card 1');
+  });
+
+  it('does not let you play a card onto a Food objective cell', () => {
+    render(<App />);
+    const cells = screen.getAllByRole('gridcell');
+
+    // Food sits at indices 44, 45, 54, 55 on the 10x10 board.
+    fireEvent.click(screen.getByRole('button', { name: /Card 1/ }));
+    fireEvent.click(cells[44]);
+
+    expect(cells[44].textContent).toContain('Food');
+    expect(screen.queryByRole('button', { name: /Card 1/ })).not.toBeNull();
   });
 });
