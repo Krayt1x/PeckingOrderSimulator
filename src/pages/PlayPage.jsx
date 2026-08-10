@@ -145,6 +145,9 @@ export default function PlayPage({
   const foodRemaining = board.some((cell) => cell?.type === 'food');
   const gameOver = !foodRemaining;
   const canAct = !activePlayer.isCPU && actionsRemaining > 0 && !gameOver;
+  // Using a Food-derived card is always free and grants a bonus action,
+  // so it stays available even with zero actions remaining.
+  const canUseFood = !activePlayer.isCPU && !gameOver;
 
   function clearSelections() {
     setSelectedCardId(null);
@@ -205,7 +208,7 @@ export default function PlayPage({
   // (the point already scored when it was eaten is untouched, since that
   // was banked at eat-time, not tied to this card).
   function handleUseFood(cardId) {
-    if (!canAct) return;
+    if (!canUseFood) return;
     const card = activeState.hand.find((c) => c.id === cardId && c.fromFood);
     if (!card) return;
 
@@ -749,6 +752,7 @@ export default function PlayPage({
           allowRotation={ruleset.allowCardRotation}
           playerColor={activePlayer.color}
           disabled={!canAct}
+          useFoodDisabled={!canUseFood}
         />
         <button
           type="button"

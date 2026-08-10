@@ -1124,6 +1124,104 @@ describe('PlayPage', () => {
     ).toBeDefined();
   });
 
+  it('lets you use a Food-derived card even with zero actions remaining', () => {
+    function tinyDecks() {
+      return [
+        {
+          id: 'deck-p1',
+          name: 'P1Deck',
+          cardTypes: [
+            {
+              id: 'p1card',
+              name: 'P1Card',
+              emoji: 'P1',
+              color: '#57534e',
+              quantity: 1,
+              sides: { top: 1, right: 1, bottom: 1, left: 1 },
+            },
+          ],
+        },
+        {
+          id: 'deck-p2',
+          name: 'P2Deck',
+          cardTypes: [
+            {
+              id: 'p2card',
+              name: 'P2Card',
+              emoji: 'P2',
+              color: '#57534e',
+              quantity: 1,
+              sides: { top: 1, right: 1, bottom: 1, left: 1 },
+            },
+          ],
+        },
+      ];
+    }
+
+    render(
+      <PlayPage
+        players={[
+          { id: 'p1', name: 'Player 1', isCPU: false, deckId: 'deck-p1' },
+          { id: 'p2', name: 'Player 2', isCPU: false, deckId: 'deck-p2' },
+        ]}
+        decks={tinyDecks()}
+        food={TWO_FOOD}
+        foodShapeIds={['crumb-a', 'crumb-b']}
+      />,
+    );
+
+    let cells = screen.getAllByRole('gridcell');
+    const [foodA] = cells
+      .map((c, i) => (c.querySelector('.card-food') ? i : -1))
+      .filter((i) => i >= 0);
+    const birdSpot = neighbors(foodA).find((i) => !isFilled(cells[i]));
+
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    // Eat Food A — sacrificing the bird there discards P1Card and banks a
+    // Food-derived card, both of which come back into hand on the next
+    // refill (same cascade as the Use Food badge test above): hand ends
+    // up with exactly the Food-derived card plus the reshuffled P1Card.
+    fireEvent.click(screen.getAllByRole('gridcell')[foodA]);
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    // Spend the fresh turn's action playing the ordinary P1Card next to
+    // Food B, leaving 0 actions remaining while the Food-derived card is
+    // still sitting in hand.
+    cells = screen.getAllByRole('gridcell');
+    // Food A was already eaten, so only Food B's index remains.
+    const [foodB] = cells
+      .map((c, i) => (c.querySelector('.card-food') ? i : -1))
+      .filter((i) => i >= 0);
+    const otherSpot = neighbors(foodB).find((i) => !isFilled(cells[i]));
+    const hand = screen.getByRole('list', { name: 'Your hand' });
+    const nonFoodCard = within(hand)
+      .getAllByRole('button')
+      .filter((b) => b.classList.contains('card'))
+      .find((b) => !within(b).queryByText('Use Food'));
+    fireEvent.click(nonFoodCard);
+    fireEvent.click(screen.getAllByRole('gridcell')[otherSpot]);
+
+    expect(screen.getByText('Actions: 0/1')).toBeDefined();
+
+    const useFoodBadge = within(
+      screen.getByRole('list', { name: 'Your hand' }),
+    ).getByRole('button', { name: 'Use Food' });
+    fireEvent.click(useFoodBadge);
+
+    // Using it granted a bonus action despite starting at 0.
+    expect(screen.getByText('Actions: 1/1')).toBeDefined();
+  });
+
   it('cancels the eat-selection if you tap somewhere else instead of a bird', () => {
     render(
       <PlayPage
