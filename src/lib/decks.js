@@ -5,6 +5,7 @@ export const DEFAULT_DECKS = [
     id: 'deck-chickens',
     name: 'City',
     size: 9,
+    color: '#e2e2df',
     cardTypes: [
       {
         id: 'hen',
@@ -40,6 +41,7 @@ export const DEFAULT_DECKS = [
     id: 'deck-ducks',
     name: 'Beach',
     size: 9,
+    color: '#f6e7c1',
     cardTypes: [
       {
         id: 'duck',
@@ -75,6 +77,7 @@ export const DEFAULT_DECKS = [
     id: 'deck-birds-of-prey',
     name: 'Park',
     size: 9,
+    color: '#dbead9',
     cardTypes: [
       {
         id: 'eagle',
@@ -131,7 +134,10 @@ function shuffle(list) {
 }
 
 // Builds a shuffled deck of `deck.size` card instances, cycling through
-// `deck.cardTypes` to fill it out.
+// `deck.cardTypes` to fill it out. Each card carries the deck's own color
+// (deckColor) so it renders with a consistent background regardless of
+// which card type it is — card-type color is no longer used for display,
+// since telling players apart by card border color takes priority.
 export function buildDrawPile(deck) {
   const types = deck?.cardTypes ?? [];
   if (types.length === 0) return [];
@@ -139,7 +145,12 @@ export function buildDrawPile(deck) {
   const cards = [];
   for (let i = 0; i < deck.size; i++) {
     const type = types[i % types.length];
-    cards.push({ ...type, typeId: type.id, id: `${type.id}-${i}` });
+    cards.push({
+      ...type,
+      typeId: type.id,
+      id: `${type.id}-${i}`,
+      deckColor: deck.color,
+    });
   }
   return shuffle(cards);
 }

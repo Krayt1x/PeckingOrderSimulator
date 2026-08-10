@@ -4,6 +4,7 @@ export default function Hand({
   cards,
   selectedCardId,
   onSelectCard,
+  playerColor,
   disabled = false,
 }) {
   return (
@@ -18,7 +19,7 @@ export default function Hand({
           type="button"
           disabled={disabled}
           className={`card${selectedCardId === card.id ? ' card-selected' : ''}`}
-          style={{ '--card-color': card.color }}
+          style={{ '--card-border': playerColor, '--card-bg': card.deckColor }}
           onClick={() => onSelectCard(card.id)}
         >
           {card.sides ? (

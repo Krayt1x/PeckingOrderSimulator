@@ -1,16 +1,27 @@
 import { getPlayableIndices } from './board.js';
+import { canPlaceCard } from './combat.js';
 
-// Picks a random card from the CPU's hand and a random legal (playable)
-// cell on the board. Returns null if the CPU has no legal move (empty
-// hand, or no cells adjacent to Food/an existing card).
-export function pickCpuMove(hand, board, boardSize) {
+// Picks a random card/cell pair from the CPU's hand and the legal
+// (playable and not a losing matchup) cells on the board. Returns null if
+// the CPU has no legal move (empty hand, no cells adjacent to Food/an
+// existing card, or every adjacent cell would lose to a stronger
+// opponent card).
+export function pickCpuMove(hand, board, boardSize, ownerId) {
   if (hand.length === 0) return null;
 
   const playableIndexes = getPlayableIndices(board, boardSize);
   if (playableIndexes.length === 0) return null;
 
-  const card = hand[Math.floor(Math.random() * hand.length)];
-  const cellIndex =
-    playableIndexes[Math.floor(Math.random() * playableIndexes.length)];
-  return { cardId: card.id, cellIndex };
+  const options = [];
+  hand.forEach((card) => {
+    const placedCard = { ...card, ownerId };
+    playableIndexes.forEach((cellIndex) => {
+      if (canPlaceCard(board, cellIndex, placedCard, boardSize)) {
+        options.push({ cardId: card.id, cellIndex });
+      }
+    });
+  });
+  if (options.length === 0) return null;
+
+  return options[Math.floor(Math.random() * options.length)];
 }

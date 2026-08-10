@@ -12,7 +12,7 @@ import {
   getPlayableIndices,
   getAdjacentEmptyIndices,
 } from '../lib/board.js';
-import { resolveCaptures } from '../lib/combat.js';
+import { resolveCaptures, canPlaceCard } from '../lib/combat.js';
 import { pickCpuMove } from '../lib/cpu.js';
 
 const ACTIONS_PER_TURN = 2;
@@ -183,6 +183,10 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
 
     if (mode === 'play') {
       if (!selectedCardId || !isPlayableCell(board, index, BOARD_SIZE)) return;
+      const card = activeState.hand.find((c) => c.id === selectedCardId);
+      if (!card) return;
+      const placedCard = { ...card, ownerId: activePlayer.id };
+      if (!canPlaceCard(board, index, placedCard, BOARD_SIZE)) return;
       handlePlayCard(index);
       return;
     }
@@ -204,7 +208,9 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
         moveSource,
         BOARD_SIZE,
       );
-      if (destinations.includes(index)) handleMoveCard(index);
+      if (!destinations.includes(index)) return;
+      if (!canPlaceCard(board, index, board[moveSource], BOARD_SIZE)) return;
+      handleMoveCard(index);
       return;
     }
 
@@ -248,7 +254,12 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
     let remaining = actionsRemaining;
 
     while (remaining > 0) {
-      const move = pickCpuMove(workingHand, workingBoard, BOARD_SIZE);
+      const move = pickCpuMove(
+        workingHand,
+        workingBoard,
+        BOARD_SIZE,
+        activePlayer.id,
+      );
       if (!move) break;
       const card = workingHand.find((c) => c.id === move.cardId);
       const placedCard = { ...card, ownerId: activePlayer.id };
@@ -290,10 +301,13 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
 
     if (mode === 'play') {
       if (!selectedCardId) return none;
-      return {
-        highlighted: new Set(getPlayableIndices(board, BOARD_SIZE)),
-        selected: null,
-      };
+      const card = activeState.hand.find((c) => c.id === selectedCardId);
+      if (!card) return none;
+      const placedCard = { ...card, ownerId: activePlayer.id };
+      const indices = getPlayableIndices(board, BOARD_SIZE).filter((i) =>
+        canPlaceCard(board, i, placedCard, BOARD_SIZE),
+      );
+      return { highlighted: new Set(indices), selected: null };
     }
 
     if (mode === 'move') {
@@ -310,10 +324,13 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
         });
         return { highlighted: new Set(ownIndices), selected: null };
       }
+      const indices = getAdjacentEmptyIndices(
+        board,
+        moveSource,
+        BOARD_SIZE,
+      ).filter((i) => canPlaceCard(board, i, board[moveSource], BOARD_SIZE));
       return {
-        highlighted: new Set(
-          getAdjacentEmptyIndices(board, moveSource, BOARD_SIZE),
-        ),
+        highlighted: new Set(indices),
         selected: moveSource,
       };
     }
@@ -339,6 +356,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
   }
 
   const { highlighted, selected } = computeBoardHighlights();
+  const playerColors = Object.fromEntries(players.map((p) => [p.id, p.color]));
 
   return (
     <main className="page">
@@ -354,6 +372,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
         highlightedIndices={highlighted}
         selectedIndex={selected}
         onCellClick={handleCellClick}
+        playerColors={playerColors}
       />
 
       <div className="hand-header">
@@ -419,6 +438,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
         cards={activeState.hand}
         selectedCardId={mode === 'play' ? selectedCardId : null}
         onSelectCard={handleSelectCard}
+        playerColor={activePlayer.color}
         disabled={!canAct || mode !== 'play'}
       />
     </main>

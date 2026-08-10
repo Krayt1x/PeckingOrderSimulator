@@ -247,6 +247,93 @@ describe('PlayPage', () => {
     expect(screen.getByText('Discard: 1')).toBeDefined();
   });
 
+  it("borders a played card with the owner's color and fills it with the deck's color", () => {
+    render(
+      <PlayPage
+        players={[
+          {
+            id: 'p1',
+            name: 'Player 1',
+            isCPU: false,
+            deckId: DEFAULT_DECKS[0].id,
+            color: '#dc2626',
+          },
+          {
+            id: 'p2',
+            name: 'Player 2',
+            isCPU: false,
+            deckId: DEFAULT_DECKS[1].id,
+            color: '#2563eb',
+          },
+        ]}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const spot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[spot]);
+
+    cells = screen.getAllByRole('gridcell');
+    const face = cells[spot].querySelector('.card-on-board');
+    expect(face.style.getPropertyValue('--card-border')).toBe('#dc2626');
+    expect(face.style.getPropertyValue('--card-bg')).toBe(
+      DEFAULT_DECKS[0].color,
+    );
+  });
+
+  it('blocks placing a card next to a stronger opponent card', () => {
+    render(
+      <PlayPage
+        players={[
+          { id: 'p1', name: 'Player 1', isCPU: false, deckId: 'deck-strong' },
+          { id: 'p2', name: 'Player 2', isCPU: false, deckId: 'deck-weak' },
+        ]}
+        decks={strongVsWeakDecks()}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+
+    // Player 1 (Strong) plays next to Food.
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const strongSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[strongSpot]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    // Player 2 (Weak) tries to play next to Player 1's Strong card — every
+    // side of Weak (1) is lower than every side of Strong (9), so this
+    // placement must be rejected entirely rather than merely losing.
+    cells = screen.getAllByRole('gridcell');
+    const blockedSpot = neighbors(strongSpot).find(
+      (i) => i !== foodIndex && !isFilled(cells[i]),
+    );
+    const hand = screen.getByRole('list', { name: 'Your hand' });
+    const handSizeBefore = within(hand).getAllByRole('button').length;
+    fireEvent.click(within(hand).getAllByRole('button')[0]);
+    fireEvent.click(screen.getAllByRole('gridcell')[blockedSpot]);
+
+    cells = screen.getAllByRole('gridcell');
+    expect(isFilled(cells[blockedSpot])).toBe(false);
+    expect(within(hand).getAllByRole('button')).toHaveLength(handSizeBefore);
+    expect(screen.getByText('Actions: 2/2')).toBeDefined();
+  });
+
   it('lets you move your own card to an adjacent empty cell', () => {
     render(
       <PlayPage

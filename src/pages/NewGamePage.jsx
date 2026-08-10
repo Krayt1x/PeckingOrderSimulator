@@ -11,12 +11,44 @@ const WIZARD_STEPS = [
   { key: 'review', label: 'Review' },
 ];
 
+// A player's color borders their cards on the board, independent of which
+// deck (and therefore card background color) they're playing. Laid out as
+// 5 shades each of 5 hues so the picker modal reads as a 5x5 color chart.
+export const PLAYER_COLOR_PALETTE = [
+  '#fca5a5',
+  '#f87171',
+  '#ef4444',
+  '#dc2626',
+  '#991b1b',
+  '#fdba74',
+  '#fb923c',
+  '#f97316',
+  '#ea580c',
+  '#9a3412',
+  '#86efac',
+  '#4ade80',
+  '#22c55e',
+  '#16a34a',
+  '#166534',
+  '#93c5fd',
+  '#60a5fa',
+  '#3b82f6',
+  '#2563eb',
+  '#1e3a8a',
+  '#d8b4fe',
+  '#c084fc',
+  '#a855f7',
+  '#7c3aed',
+  '#581c87',
+];
+
 function defaultPlayer(index, decks) {
   return {
     id: `player-${index}`,
     name: `Player ${index + 1}`,
     isCPU: false,
     deckId: decks[index % decks.length]?.id,
+    color: PLAYER_COLOR_PALETTE[index % PLAYER_COLOR_PALETTE.length],
   };
 }
 
@@ -28,6 +60,7 @@ export default function NewGamePage({ decks, food, onStart }) {
     food.shapes.map((s) => s.id),
   );
   const [wizardStep, setWizardStep] = useState('players');
+  const [colorPickerPlayerIndex, setColorPickerPlayerIndex] = useState(null);
 
   // Mirrors the tile-pick-then-advance pattern from DropshipSimulator's own
   // New Game wizard — a brief pause lets the "selected" highlight register
@@ -52,6 +85,12 @@ export default function NewGamePage({ decks, food, onStart }) {
     setPlayers((current) =>
       current.map((p, i) => (i === index ? { ...p, ...patch } : p)),
     );
+  }
+
+  function pickPlayerColor(color) {
+    if (colorPickerPlayerIndex === null) return;
+    updatePlayer(colorPickerPlayerIndex, { color });
+    setColorPickerPlayerIndex(null);
   }
 
   function toggleFoodShape(id) {
@@ -122,6 +161,7 @@ export default function NewGamePage({ decks, food, onStart }) {
               <th>Player</th>
               <th>CPU</th>
               <th>Deck</th>
+              <th>Color</th>
             </tr>
           </thead>
           <tbody>
@@ -160,6 +200,15 @@ export default function NewGamePage({ decks, food, onStart }) {
                       </option>
                     ))}
                   </select>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="color-cube"
+                    style={{ '--swatch-color': player.color }}
+                    aria-label={`${player.name} color`}
+                    onClick={() => setColorPickerPlayerIndex(i)}
+                  />
                 </td>
               </tr>
             ))}
@@ -273,6 +322,45 @@ export default function NewGamePage({ decks, food, onStart }) {
           </div>
         </div>
       </div>
+      {colorPickerPlayerIndex !== null ? (
+        <div
+          className="color-modal-backdrop"
+          onClick={() => setColorPickerPlayerIndex(null)}
+        >
+          <div
+            className="color-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${players[colorPickerPlayerIndex].name} color`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="color-modal-grid">
+              {PLAYER_COLOR_PALETTE.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  className={`color-modal-swatch${
+                    players[colorPickerPlayerIndex].color === color
+                      ? ' selected'
+                      : ''
+                  }`}
+                  style={{ '--swatch-color': color }}
+                  aria-label={color}
+                  aria-pressed={players[colorPickerPlayerIndex].color === color}
+                  onClick={() => pickPlayerColor(color)}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              className="board-recenter"
+              onClick={() => setColorPickerPlayerIndex(null)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

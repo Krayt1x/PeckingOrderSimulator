@@ -42,6 +42,7 @@ export default function GameBoard({
   highlightedIndices,
   selectedIndex,
   onCellClick,
+  playerColors = {},
 }) {
   const [cellSize, setCellSize] = useState(DEFAULT_CELL_SIZE);
   const [offset, setOffset] = useState(() => ({
@@ -178,7 +179,14 @@ export default function GameBoard({
                 {card ? (
                   <span
                     className={`card card-on-board${card.type === 'food' ? ' card-food' : ''}`}
-                    style={{ '--card-color': card.color }}
+                    style={
+                      card.type === 'food'
+                        ? { '--card-color': card.color }
+                        : {
+                            '--card-border': playerColors[card.ownerId],
+                            '--card-bg': card.deckColor,
+                          }
+                    }
                     title={card.name}
                   >
                     {cardHasSides ? (

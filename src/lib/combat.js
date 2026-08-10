@@ -33,3 +33,21 @@ export function resolveCaptures(board, index, card, boardSize) {
 
   return { board: next, captured };
 }
+
+// A card may not be placed or moved onto a cell where its facing side is
+// strictly lower than an adjacent opponent card's facing side on that same
+// edge — you can only play into a matchup you'd win or tie, never one
+// you'd lose. Food and the owner's own cards never block a placement.
+export function canPlaceCard(board, index, card, boardSize) {
+  const neighbors = getNeighbors(index, boardSize);
+  return Object.entries(neighbors).every(([direction, neighborIndex]) => {
+    if (neighborIndex === null) return true;
+    const target = board[neighborIndex];
+    if (!target || target.type === 'food') return true;
+    if (target.ownerId === card.ownerId) return true;
+
+    const attackValue = card.sides[direction];
+    const defendValue = target.sides[OPPOSITE_SIDE[direction]];
+    return attackValue >= defendValue;
+  });
+}

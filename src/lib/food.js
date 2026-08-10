@@ -9,7 +9,7 @@ export const DEFAULT_FOOD = {
     {
       id: 'chip',
       name: 'Chip',
-      emoji: 'CP',
+      emoji: 'CH',
       color: '#eab308',
       cells: [{ row: 0, col: 0 }],
       outsideValue: 1,

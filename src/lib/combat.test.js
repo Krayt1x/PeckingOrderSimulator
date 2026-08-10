@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveCaptures } from './combat.js';
+import { resolveCaptures, canPlaceCard } from './combat.js';
 
 const BOARD_SIZE = 10;
 
@@ -75,5 +75,47 @@ describe('resolveCaptures', () => {
 
     const indices = captured.map((c) => c.index).sort((a, b) => a - b);
     expect(indices).toEqual([45, 56]);
+  });
+});
+
+describe('canPlaceCard', () => {
+  it('blocks placement when the facing side is lower than the opponent’s', () => {
+    const board = Array(100).fill(null);
+    board[56] = makeCard('p2', { top: 1, right: 1, bottom: 1, left: 5 });
+
+    const card = makeCard('p1', { top: 1, right: 3, bottom: 1, left: 1 });
+    expect(canPlaceCard(board, 55, card, BOARD_SIZE)).toBe(false);
+  });
+
+  it('allows placement when the facing side is equal or higher', () => {
+    const board = Array(100).fill(null);
+    board[56] = makeCard('p2', { top: 1, right: 1, bottom: 1, left: 5 });
+
+    const tie = makeCard('p1', { top: 1, right: 5, bottom: 1, left: 1 });
+    expect(canPlaceCard(board, 55, tie, BOARD_SIZE)).toBe(true);
+
+    const winner = makeCard('p1', { top: 1, right: 9, bottom: 1, left: 1 });
+    expect(canPlaceCard(board, 55, winner, BOARD_SIZE)).toBe(true);
+  });
+
+  it('ignores the owner’s own cards and Food when checking legality', () => {
+    const board = Array(100).fill(null);
+    board[56] = makeCard('p1', { top: 1, right: 1, bottom: 1, left: 9 });
+    board[45] = {
+      type: 'food',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+
+    const card = makeCard('p1', { top: 1, right: 1, bottom: 1, left: 1 });
+    expect(canPlaceCard(board, 55, card, BOARD_SIZE)).toBe(true);
+  });
+
+  it('blocks placement if any single edge would lose, even if others win', () => {
+    const board = Array(100).fill(null);
+    board[56] = makeCard('p2', { top: 1, right: 1, bottom: 1, left: 2 }); // right, weak
+    board[45] = makeCard('p2', { top: 1, right: 1, bottom: 9, left: 1 }); // top, strong
+
+    const card = makeCard('p1', { top: 5, right: 5, bottom: 1, left: 1 });
+    expect(canPlaceCard(board, 55, card, BOARD_SIZE)).toBe(false);
   });
 });

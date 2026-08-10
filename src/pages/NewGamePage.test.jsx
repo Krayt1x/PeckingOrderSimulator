@@ -5,8 +5,9 @@ import {
   cleanup,
   fireEvent,
   waitFor,
+  within,
 } from '@testing-library/react';
-import NewGamePage from './NewGamePage.jsx';
+import NewGamePage, { PLAYER_COLOR_PALETTE } from './NewGamePage.jsx';
 import { DEFAULT_DECKS } from '../lib/decks.js';
 import { DEFAULT_FOOD } from '../lib/food.js';
 
@@ -67,6 +68,65 @@ describe('NewGamePage', () => {
     expect(screen.getByLabelText('Player 2 deck').value).toBe(
       DEFAULT_DECKS[2].id,
     );
+  });
+
+  it('gives each default player a distinct border color shown as a cube', () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    goToStep('Rosters');
+
+    const player1Cube = screen.getByRole('button', { name: 'Player 1 color' });
+    const player2Cube = screen.getByRole('button', { name: 'Player 2 color' });
+
+    expect(player1Cube.style.getPropertyValue('--swatch-color')).toBe(
+      PLAYER_COLOR_PALETTE[0],
+    );
+    expect(player2Cube.style.getPropertyValue('--swatch-color')).toBe(
+      PLAYER_COLOR_PALETTE[1],
+    );
+  });
+
+  it('opens a 5x5 color chart modal from the cube and lets you pick a color', () => {
+    const onStart = vi.fn();
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={onStart}
+      />,
+    );
+    goToStep('Rosters');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Player 1 color' }));
+    const modal = screen.getByRole('dialog', { name: 'Player 1 color' });
+    const swatches = within(modal)
+      .getAllByRole('button')
+      .filter((btn) => btn.className.includes('color-modal-swatch'));
+    expect(swatches).toHaveLength(25);
+
+    fireEvent.click(
+      within(modal).getByRole('button', { name: PLAYER_COLOR_PALETTE[12] }),
+    );
+
+    // Picking a color closes the modal...
+    expect(screen.queryByRole('dialog')).toBeNull();
+    // ...and updates the cube.
+    expect(
+      screen
+        .getByRole('button', { name: 'Player 1 color' })
+        .style.getPropertyValue('--swatch-color'),
+    ).toBe(PLAYER_COLOR_PALETTE[12]);
+
+    goToStep('Review');
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
+    const setup = onStart.mock.calls[0][0];
+    expect(setup.players[0].color).toBe(PLAYER_COLOR_PALETTE[12]);
+    expect(setup.players[1].color).toBe(PLAYER_COLOR_PALETTE[1]);
   });
 
   it('shows every food shape as its own tile, all selected by default', () => {
