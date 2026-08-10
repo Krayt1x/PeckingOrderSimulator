@@ -424,6 +424,28 @@ body {
   overflow-wrap: break-word;
 }
 
+/* A food-derived card in hand can be discarded directly via this badge,
+   instead of being played onto the board. */
+.use-food-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #eab308;
+  color: #1c1917;
+  font-size: clamp(0.4rem, 1.5vw, 0.55rem);
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.use-food-badge:hover {
+  background: #facc15;
+}
+
 .card-food .card-name {
   color: var(--text-secondary);
 }

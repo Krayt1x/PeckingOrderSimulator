@@ -4,6 +4,7 @@ export default function Hand({
   cards,
   selectedCardId,
   onSelectCard,
+  onUseFood,
   playerColor,
   disabled = false,
 }) {
@@ -35,6 +36,25 @@ export default function Hand({
             </>
           ) : null}
           <span className="card-emoji">{card.emoji}</span>
+          {card.fromFood ? (
+            <span
+              role="button"
+              tabIndex={0}
+              className="use-food-badge"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (!disabled) onUseFood(card.id);
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                event.stopPropagation();
+                if (!disabled) onUseFood(card.id);
+              }}
+            >
+              Use Food
+            </span>
+          ) : null}
         </button>
       ))}
       {cards.length === 0 ? <p className="hand-empty">Hand is empty</p> : null}

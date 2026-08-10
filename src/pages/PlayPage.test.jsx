@@ -764,7 +764,11 @@ describe('PlayPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End Turn' })); // Player 2 passes -> Player 1 turn 3
 
     const hand = screen.getByRole('list', { name: 'Your hand' });
-    const handButtons = within(hand).getAllByRole('button');
+    // A food-derived card's "Use Food" badge is its own button, so filter
+    // to just the card-selection buttons here.
+    const handButtons = within(hand)
+      .getAllByRole('button')
+      .filter((b) => b.classList.contains('card'));
     expect(handButtons).toHaveLength(2);
     const foodCardButton = handButtons.find((b) =>
       b.textContent.includes('Crumb A'),
@@ -786,6 +790,97 @@ describe('PlayPage', () => {
     expect(screen.getByText('Actions: 2/1')).toBeDefined();
     cells = screen.getAllByRole('gridcell');
     expect(cardNameOf(cells[destination])).toBe('Crumb A');
+  });
+
+  it('discards a food-derived card via its Use Food badge, for free, without touching the banked score', () => {
+    function tinyDecks() {
+      return [
+        {
+          id: 'deck-p1',
+          name: 'P1Deck',
+          cardTypes: [
+            {
+              id: 'p1card',
+              name: 'P1Card',
+              emoji: 'P1',
+              color: '#57534e',
+              quantity: 1,
+              sides: { top: 1, right: 1, bottom: 1, left: 1 },
+            },
+          ],
+        },
+        {
+          id: 'deck-p2',
+          name: 'P2Deck',
+          cardTypes: [
+            {
+              id: 'p2card',
+              name: 'P2Card',
+              emoji: 'P2',
+              color: '#57534e',
+              quantity: 1,
+              sides: { top: 1, right: 1, bottom: 1, left: 1 },
+            },
+          ],
+        },
+      ];
+    }
+
+    render(
+      <PlayPage
+        players={[
+          { id: 'p1', name: 'Player 1', isCPU: false, deckId: 'deck-p1' },
+          { id: 'p2', name: 'Player 2', isCPU: false, deckId: 'deck-p2' },
+        ]}
+        decks={tinyDecks()}
+        food={TWO_FOOD}
+        foodShapeIds={['crumb-a', 'crumb-b']}
+      />,
+    );
+
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndices = cells
+      .map((c, i) => (c.querySelector('.card-food') ? i : -1))
+      .filter((i) => i >= 0);
+    const [foodA] = foodIndices;
+    const birdSpot = neighbors(foodA).find((i) => !isFilled(cells[i]));
+
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    // Eating Food A banks the score immediately, independent of whatever
+    // later happens to the card it produces.
+    fireEvent.click(screen.getAllByRole('gridcell')[foodA]);
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+    expect(screen.getByText('Player 1: 1')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    const hand = screen.getByRole('list', { name: 'Your hand' });
+    const useFoodBadge = within(hand).getByRole('button', {
+      name: 'Use Food',
+    });
+
+    fireEvent.click(useFoodBadge);
+
+    // The food card is gone from hand, no action was spent, and the
+    // score from eating is unaffected either way.
+    expect(
+      within(screen.getByRole('list', { name: 'Your hand' }))
+        .getAllByRole('button')
+        .filter((b) => b.classList.contains('card')),
+    ).toHaveLength(1);
+    expect(screen.getByText('Actions: 1/1')).toBeDefined();
+    expect(screen.getByText('Player 1: 1')).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: 'Discard pile: 1 cards' }),
+    ).toBeDefined();
   });
 
   it('cancels the eat-selection if you tap somewhere else instead of a bird', () => {

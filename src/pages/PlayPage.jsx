@@ -167,6 +167,28 @@ export default function PlayPage({
     setSelectedCardId((current) => (current === cardId ? null : cardId));
   }
 
+  // Discards a food-derived hand card directly, without playing it onto
+  // the board — free, and the point already scored when it was eaten is
+  // untouched (that was banked at eat-time, not tied to this card).
+  function handleUseFood(cardId) {
+    if (!canAct) return;
+    const card = activeState.hand.find((c) => c.id === cardId && c.fromFood);
+    if (!card) return;
+
+    setPlayerStates(
+      playerStates.map((state, i) =>
+        i === activeIndex
+          ? {
+              ...state,
+              hand: state.hand.filter((c) => c.id !== cardId),
+              discardPile: [...state.discardPile, card],
+            }
+          : state,
+      ),
+    );
+    clearSelections();
+  }
+
   function handlePlayCard(cellIndex) {
     const card = activeState.hand.find((c) => c.id === selectedCardId);
     if (!card) return;
@@ -574,6 +596,7 @@ export default function PlayPage({
           cards={activeState.hand}
           selectedCardId={selectedCardId}
           onSelectCard={handleSelectCard}
+          onUseFood={handleUseFood}
           playerColor={activePlayer.color}
           disabled={!canAct}
         />
