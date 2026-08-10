@@ -597,6 +597,65 @@ body {
   border-radius: 999px;
 }
 
+/* Alpha Pixel Art skin (#50) — SNES-era pixel art border treatment.
+   Player border color and deck background color stay exactly as chosen
+   (--card-border / --card-bg already carry those); this skin only swaps
+   the rounded card chrome for a blocky NES-style bevel and restricts its
+   own accent colors (gold text, forest-green board) to a small
+   Zelda-inspired palette. */
+[data-skin='alpha-pixel-art'] .board-viewport {
+  background: #026012;
+}
+
+[data-skin='alpha-pixel-art'] .card {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 800;
+  border-radius: 0;
+  border-width: 4px;
+  box-shadow:
+    inset 2px 2px 0 color-mix(in srgb, var(--card-border) 55%, white),
+    inset -2px -2px 0 color-mix(in srgb, var(--card-border) 55%, black);
+}
+
+[data-skin='alpha-pixel-art'] .card:not(.card-food) {
+  color: #f0c419;
+}
+
+[data-skin='alpha-pixel-art'] .card::before {
+  content: none;
+}
+
+[data-skin='alpha-pixel-art'] .card-food {
+  border-radius: 0;
+}
+
+[data-skin='alpha-pixel-art'] .card-index,
+[data-skin='alpha-pixel-art'] .card-side {
+  border-radius: 0;
+  border-width: 2px;
+  background: color-mix(in srgb, var(--card-border) 55%, black);
+  color: #f0c419;
+}
+
+[data-skin='alpha-pixel-art'] .card-side-top,
+[data-skin='alpha-pixel-art'] .card-side-bottom,
+[data-skin='alpha-pixel-art'] .card-side-left,
+[data-skin='alpha-pixel-art'] .card-side-right {
+  border-radius: 0;
+}
+
+[data-skin='alpha-pixel-art'] .card-name {
+  color: #f0c419;
+}
+
+[data-skin='alpha-pixel-art'] .card-back-deck {
+  border-radius: 0;
+}
+
+[data-skin='alpha-pixel-art'] .rotate-arrow {
+  border-radius: 0;
+}
+
 .manage-header {
   display: flex;
   flex-wrap: wrap;

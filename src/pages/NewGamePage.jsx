@@ -36,7 +36,10 @@ const RULESET_OPTIONS = [
 ];
 
 // Every available visual skin — add new ones here as they're built.
-export const SKIN_OPTIONS = [{ id: 'alpha', name: 'Alpha Skin' }];
+export const SKIN_OPTIONS = [
+  { id: 'alpha', name: 'Alpha Skin' },
+  { id: 'alpha-pixel-art', name: 'Alpha Pixel Art' },
+];
 
 export const DEFAULT_RULESET = {
   allowMoving: true,
