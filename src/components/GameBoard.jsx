@@ -4,11 +4,11 @@ const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 
 export const BOARD_SIZE = 16;
 const VIEWPORT_SIZE = 5;
-const DEFAULT_CELL_SIZE = 72;
+const DEFAULT_CELL_SIZE = 88;
 const MIN_CELL_SIZE = 32;
-const MAX_CELL_SIZE = 128;
+const MAX_CELL_SIZE = 144;
 const ZOOM_STEP = 16;
-const CELL_GAP = 8;
+const CELL_GAP = 4;
 
 // The viewport box itself never resizes — zooming changes how many cells
 // fit inside this fixed pixel box, not the box's own size.
