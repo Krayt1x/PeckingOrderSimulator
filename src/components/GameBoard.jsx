@@ -202,14 +202,17 @@ export default function GameBoard({
     });
   }
 
+  // Panning and zooming never snap back to a grid position — only clamped
+  // so the viewport can't scroll past the board's edge. Players are free
+  // to leave the camera misaligned with the grid if they want to.
   function endDrag(event) {
     pointers.current.delete(event.pointerId);
 
     if (pointers.current.size < 2 && pinchState.current) {
       pinchState.current = null;
       setOffset((current) => ({
-        x: snapOffset(cellSize, current.x),
-        y: snapOffset(cellSize, current.y),
+        x: clampOffset(cellSize, current.x),
+        y: clampOffset(cellSize, current.y),
       }));
     }
 
@@ -217,8 +220,8 @@ export default function GameBoard({
       dragState.current = null;
       setIsDragging(false);
       setOffset((current) => ({
-        x: snapOffset(cellSize, current.x),
-        y: snapOffset(cellSize, current.y),
+        x: clampOffset(cellSize, current.x),
+        y: clampOffset(cellSize, current.y),
       }));
     }
   }
@@ -241,8 +244,8 @@ export default function GameBoard({
       const centerCellX = (current.x + VIEWPORT_PX / 2) / oldPitch;
       const centerCellY = (current.y + VIEWPORT_PX / 2) / oldPitch;
       return {
-        x: snapOffset(clamped, centerCellX * newPitch - VIEWPORT_PX / 2),
-        y: snapOffset(clamped, centerCellY * newPitch - VIEWPORT_PX / 2),
+        x: clampOffset(clamped, centerCellX * newPitch - VIEWPORT_PX / 2),
+        y: clampOffset(clamped, centerCellY * newPitch - VIEWPORT_PX / 2),
       };
     });
     setCellSize(clamped);
