@@ -1119,8 +1119,12 @@ describe('PlayPage', () => {
     ).toHaveLength(1);
     expect(screen.getByText('Actions: 2/1')).toBeDefined();
     expect(scoreEntryText('Player 1')).toBe('Player 1: 1');
+    // Used via the badge, so it's removed from play — not discarded.
     expect(
-      screen.getByRole('button', { name: 'Discard pile: 1 cards' }),
+      screen.getByRole('button', { name: 'Removed from Play: 1 cards' }),
+    ).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: 'Discard pile: 0 cards' }),
     ).toBeDefined();
   });
 
@@ -1417,6 +1421,85 @@ describe('PlayPage', () => {
     const modal = screen.getByRole('dialog', { name: 'Discard pile' });
     expect(within(modal).getAllByRole('listitem')).toHaveLength(1);
     expect(within(modal).getByText('Weak')).toBeDefined();
+  });
+
+  it('opens a modal listing the Removed from Play pile cards when tapped', () => {
+    function tinyDecks() {
+      return [
+        {
+          id: 'deck-p1',
+          name: 'P1Deck',
+          cardTypes: [
+            {
+              id: 'p1card',
+              name: 'P1Card',
+              emoji: 'P1',
+              color: '#57534e',
+              quantity: 1,
+              sides: { top: 1, right: 1, bottom: 1, left: 1 },
+            },
+          ],
+        },
+        {
+          id: 'deck-p2',
+          name: 'P2Deck',
+          cardTypes: [
+            {
+              id: 'p2card',
+              name: 'P2Card',
+              emoji: 'P2',
+              color: '#57534e',
+              quantity: 1,
+              sides: { top: 1, right: 1, bottom: 1, left: 1 },
+            },
+          ],
+        },
+      ];
+    }
+
+    render(
+      <PlayPage
+        players={[
+          { id: 'p1', name: 'Player 1', isCPU: false, deckId: 'deck-p1' },
+          { id: 'p2', name: 'Player 2', isCPU: false, deckId: 'deck-p2' },
+        ]}
+        decks={tinyDecks()}
+        food={TWO_FOOD}
+        foodShapeIds={['crumb-a', 'crumb-b']}
+      />,
+    );
+
+    const cells = screen.getAllByRole('gridcell');
+    const [foodA] = cells
+      .map((c, i) => (c.querySelector('.card-food') ? i : -1))
+      .filter((i) => i >= 0);
+    const birdSpot = neighbors(foodA).find((i) => !isFilled(cells[i]));
+
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    fireEvent.click(screen.getAllByRole('gridcell')[foodA]);
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    const useFoodBadge = within(
+      screen.getByRole('list', { name: 'Your hand' }),
+    ).getByRole('button', { name: 'Use Food' });
+    fireEvent.click(useFoodBadge);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Removed from Play: 1 cards' }),
+    );
+
+    const modal = screen.getByRole('dialog', { name: 'Removed from Play' });
+    expect(within(modal).getAllByRole('listitem')).toHaveLength(1);
+    expect(within(modal).getByText('Crumb A')).toBeDefined();
   });
 
   it('reshuffles the discard pile into the draw pile when it runs out during a refill', () => {

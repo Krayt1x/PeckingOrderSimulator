@@ -371,6 +371,30 @@ body {
   height: 93px;
 }
 
+/* The Removed from Play pile sits directly above the discard pile,
+   stacked in the same column instead of taking its own row slot. */
+.discard-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.discard-stack .card-back {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+.hand-row .card-back.removed-pile {
+  height: 28px;
+  padding: 0 0.3rem;
+}
+
+.removed-pile .card-back-label {
+  font-size: clamp(0.4rem, 1.6vw, 0.55rem);
+}
+
 .hand {
   display: flex;
   flex-wrap: wrap;

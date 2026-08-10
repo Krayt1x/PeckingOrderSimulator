@@ -16,6 +16,12 @@ import { resolveCaptures, canPlaceCard } from '../lib/combat.js';
 import { pickCpuMove, pickCpuEat } from '../lib/cpu.js';
 
 const ACTIONS_PER_TURN = 1;
+
+const PILE_LABELS = {
+  draw: 'Draw pile',
+  discard: 'Discard pile',
+  removed: 'Removed from Play',
+};
 const CAPTURE_REMOVAL_DELAY_MS = 250;
 
 // Matches NewGamePage's DEFAULT_RULESET — used when PlayPage is rendered
@@ -78,6 +84,7 @@ function dealFrom(deck) {
     hand: pile.slice(0, HAND_SIZE),
     drawPile: pile.slice(HAND_SIZE),
     discardPile: [],
+    removedFromPlay: [],
     score: 0,
   };
 }
@@ -203,10 +210,12 @@ export default function PlayPage({
     setSelectedCardId((current) => (current === cardId ? null : cardId));
   }
 
-  // Discards a food-derived hand card directly, without playing it onto
-  // the board — free and grants a bonus action, same as playing it would
-  // (the point already scored when it was eaten is untouched, since that
-  // was banked at eat-time, not tied to this card).
+  // Removes a food-derived hand card from play directly, without playing
+  // it onto the board — free and grants a bonus action, same as playing
+  // it would (the point already scored when it was eaten is untouched,
+  // since that was banked at eat-time, not tied to this card). It goes to
+  // a separate removed-from-play pile, not the discard pile — it's gone
+  // for good, never reshuffled back into the draw pile.
   function handleUseFood(cardId) {
     if (!canUseFood) return;
     const card = activeState.hand.find((c) => c.id === cardId && c.fromFood);
@@ -218,7 +227,7 @@ export default function PlayPage({
           ? {
               ...state,
               hand: state.hand.filter((c) => c.id !== cardId),
-              discardPile: [...state.discardPile, card],
+              removedFromPlay: [...state.removedFromPlay, card],
             }
           : state,
       ),
@@ -536,7 +545,7 @@ export default function PlayPage({
         ? {
             ...state,
             hand: workingHand,
-            discardPile: [...state.discardPile, ...usedFoodCards],
+            removedFromPlay: [...state.removedFromPlay, ...usedFoodCards],
           }
         : state,
     );
@@ -574,7 +583,11 @@ export default function PlayPage({
 
   function openPileModal(type) {
     const pile =
-      type === 'draw' ? activeState.drawPile : activeState.discardPile;
+      type === 'draw'
+        ? activeState.drawPile
+        : type === 'removed'
+          ? activeState.removedFromPlay
+          : activeState.discardPile;
     setPileModal({ type, cards: shuffle(pile) });
   }
 
@@ -754,26 +767,40 @@ export default function PlayPage({
           disabled={!canAct}
           useFoodDisabled={!canUseFood}
         />
-        <button
-          type="button"
-          className="card card-back"
-          style={{
-            '--card-border': activePlayer.color,
-            '--card-bg': activeDeck?.color,
-          }}
-          aria-label={`Discard pile: ${activeState.discardPile.length} cards`}
-          onClick={() => openPileModal('discard')}
-          onDragOver={(event) => {
-            if (ruleset.allowReturnToHand) event.preventDefault();
-          }}
-          onDrop={(event) => {
-            event.preventDefault();
-            handleReturnToDiscard();
-          }}
-        >
-          <span className="card-back-label">Discard Pile</span>
-          <span className="card-back-deck">{activeDeck?.name}</span>
-        </button>
+        <div className="discard-stack">
+          <button
+            type="button"
+            className="card card-back removed-pile"
+            style={{
+              '--card-border': activePlayer.color,
+              '--card-bg': activeDeck?.color,
+            }}
+            aria-label={`Removed from Play: ${activeState.removedFromPlay.length} cards`}
+            onClick={() => openPileModal('removed')}
+          >
+            <span className="card-back-label">Removed</span>
+          </button>
+          <button
+            type="button"
+            className="card card-back"
+            style={{
+              '--card-border': activePlayer.color,
+              '--card-bg': activeDeck?.color,
+            }}
+            aria-label={`Discard pile: ${activeState.discardPile.length} cards`}
+            onClick={() => openPileModal('discard')}
+            onDragOver={(event) => {
+              if (ruleset.allowReturnToHand) event.preventDefault();
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              handleReturnToDiscard();
+            }}
+          >
+            <span className="card-back-label">Discard Pile</span>
+            <span className="card-back-deck">{activeDeck?.name}</span>
+          </button>
+        </div>
       </div>
       {pileModal ? (
         <div
@@ -784,14 +811,11 @@ export default function PlayPage({
             className="pile-modal"
             role="dialog"
             aria-modal="true"
-            aria-label={
-              pileModal.type === 'draw' ? 'Draw pile' : 'Discard pile'
-            }
+            aria-label={PILE_LABELS[pileModal.type]}
             onClick={(event) => event.stopPropagation()}
           >
             <h3>
-              {pileModal.type === 'draw' ? 'Draw pile' : 'Discard pile'} (
-              {pileModal.cards.length})
+              {PILE_LABELS[pileModal.type]} ({pileModal.cards.length})
             </h3>
             {pileModal.cards.length === 0 ? (
               <p className="hand-empty">Empty</p>
