@@ -24,7 +24,7 @@ export default function Hand({
         >
           {card.sides ? (
             <>
-              <span className="card-index">{card.emoji}</span>
+              <span className="card-index">{card.name}</span>
               <span className="card-sides">
                 {SIDE_KEYS.map((side) => (
                   <span key={side} className={`card-side card-side-${side}`}>
@@ -35,7 +35,6 @@ export default function Hand({
             </>
           ) : null}
           <span className="card-emoji">{card.emoji}</span>
-          <span className="card-name">{card.name}</span>
         </button>
       ))}
       {cards.length === 0 ? <p className="hand-empty">Hand is empty</p> : null}

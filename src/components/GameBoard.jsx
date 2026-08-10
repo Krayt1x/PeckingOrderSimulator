@@ -295,12 +295,12 @@ export default function GameBoard({
           }}
         >
           {cells.map((card, index) => {
-            // Cards with side values show emoji + corner numbers on the
-            // board (like a Triple Triad-style card) — the name only fits
-            // once zoomed in enough that it won't collide with the numbers.
-            // Cards without sides (Food) use the plain name threshold.
+            // Cards with side values show the emoji, corner name, and edge
+            // stats (like a Triple Triad-style card) once zoomed in enough
+            // not to collide. Cards without sides (Food) show their name
+            // below the emoji instead, at a lower zoom threshold.
             const cardHasSides = Boolean(card?.sides) && showSides;
-            const cardShowsName = card?.sides ? cellSize >= 100 : showCardNames;
+            const cardShowsName = !card?.sides && showCardNames;
 
             const isDraggable = Boolean(draggableIndices?.has(index));
 
@@ -344,7 +344,7 @@ export default function GameBoard({
                           className="card-index"
                           style={{ fontSize: sideSize }}
                         >
-                          {card.emoji}
+                          {card.name}
                         </span>
                         <span className="card-sides">
                           {SIDE_KEYS.map((side) => (

@@ -428,20 +428,29 @@ body {
   pointer-events: none;
 }
 
-/* Small letter-code index in the top-left corner, like a playing card's
-   rank/suit corner marker. */
+/* Card name in the top-left corner, like a playing card's rank/suit
+   marker — a black badge outlined in the owner's color, matching the
+   edge-flag stat boxes below. */
 .card-index {
   position: absolute;
-  top: 6px;
-  left: 8px;
-  font-size: clamp(0.5rem, 1.8vw, 0.75rem);
+  top: 5px;
+  left: 5px;
+  max-width: 34px;
+  padding: 1px 3px;
+  font-size: clamp(0.4rem, 1.4vw, 0.55rem);
   font-weight: 800;
-  line-height: 1;
-  color: var(--card-border);
+  line-height: 1.1;
+  color: #fff;
+  background: #000;
+  border: 1.5px solid var(--card-border);
+  border-radius: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Each side value sits on a rounded flag tab poking out past that edge of
-   the card. */
+   the card — a black box outlined in the owner's color. */
 .card-side {
   position: absolute;
   display: flex;
@@ -451,7 +460,9 @@ body {
   font-weight: 700;
   line-height: 1;
   color: #fff;
-  background: var(--card-border);
+  background: #000;
+  border: 1.5px solid var(--card-border);
+  box-sizing: border-box;
 }
 
 .card-side-top,
