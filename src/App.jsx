@@ -87,6 +87,7 @@ export default function App() {
           decks={decks}
           food={food}
           foodShapeIds={gameSetup.foodShapeIds}
+          ruleset={gameSetup.ruleset}
         />
       );
     }

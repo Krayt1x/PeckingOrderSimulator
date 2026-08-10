@@ -8,8 +8,31 @@ const WIZARD_STEPS = [
   { key: 'players', label: 'Players' },
   { key: 'rosters', label: 'Rosters' },
   { key: 'food', label: 'Food' },
+  { key: 'ruleset', label: 'Ruleset' },
   { key: 'review', label: 'Review' },
 ];
+
+// Each entry becomes a checkbox on the Ruleset step — add new rules here
+// rather than hand-rolling more JSX.
+const RULESET_OPTIONS = [
+  {
+    key: 'allowMoving',
+    label: 'Allow Moving',
+    description:
+      'A player may move a bird of theirs to another space during their turn. Costs 1 action.',
+  },
+  {
+    key: 'allowReturnToHand',
+    label: 'Allow Return to Hand',
+    description:
+      'A player may move a bird of theirs to their discard pile during their turn. Costs 0 actions.',
+  },
+];
+
+export const DEFAULT_RULESET = {
+  allowMoving: true,
+  allowReturnToHand: false,
+};
 
 // A player's color borders their cards on the board, independent of which
 // deck (and therefore card background color) they're playing. Laid out as
@@ -105,6 +128,11 @@ export default function NewGamePage({ decks, food, onStart }) {
   );
   const [wizardStep, setWizardStep] = useState('players');
   const [colorPickerPlayerIndex, setColorPickerPlayerIndex] = useState(null);
+  const [ruleset, setRuleset] = useState(DEFAULT_RULESET);
+
+  function toggleRuleset(key) {
+    setRuleset((current) => ({ ...current, [key]: !current[key] }));
+  }
 
   // Mirrors the tile-pick-then-advance pattern from DropshipSimulator's own
   // New Game wizard — a brief pause lets the "selected" highlight register
@@ -153,7 +181,12 @@ export default function NewGamePage({ decks, food, onStart }) {
   }
 
   function handleStart() {
-    onStart({ players, foodId: food.id, foodShapeIds: selectedFoodShapeIds });
+    onStart({
+      players,
+      foodId: food.id,
+      foodShapeIds: selectedFoodShapeIds,
+      ruleset,
+    });
   }
 
   function stepSummary(key) {
@@ -172,6 +205,12 @@ export default function NewGamePage({ decks, food, onStart }) {
       return chosen.length === 0
         ? 'None'
         : chosen.map((s) => s.name).join(', ');
+    }
+    if (key === 'ruleset') {
+      const enabled = RULESET_OPTIONS.filter((o) => ruleset[o.key]).map(
+        (o) => o.label,
+      );
+      return enabled.length === 0 ? 'None' : enabled.join(', ');
     }
     return '';
   }
@@ -301,6 +340,30 @@ export default function NewGamePage({ decks, food, onStart }) {
     );
   }
 
+  function renderRulesetStep() {
+    return (
+      <>
+        <p className="stage-label">Ruleset</p>
+        <div className="ruleset-options">
+          {RULESET_OPTIONS.map((option) => (
+            <label key={option.key} className="ruleset-option">
+              <input
+                type="checkbox"
+                checked={Boolean(ruleset[option.key])}
+                aria-label={option.label}
+                onChange={() => toggleRuleset(option.key)}
+              />
+              <span>
+                <span className="ruleset-option-label">{option.label}</span>
+                <span className="wizard-body-hint">{option.description}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </>
+    );
+  }
+
   return (
     <main className="page">
       <div className="wizard-card">
@@ -336,6 +399,7 @@ export default function NewGamePage({ decks, food, onStart }) {
             {wizardStep === 'players' && renderPlayersStep()}
             {wizardStep === 'rosters' && renderRostersStep()}
             {wizardStep === 'food' && renderFoodStep()}
+            {wizardStep === 'ruleset' && renderRulesetStep()}
             {wizardStep === 'review' && (
               <>
                 <p className="stage-label">Review &amp; start</p>

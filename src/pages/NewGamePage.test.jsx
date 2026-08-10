@@ -277,4 +277,67 @@ describe('NewGamePage', () => {
     const info = screen.getByLabelText('Default food by player count info');
     expect(info.getAttribute('title')).toMatch(/2 players.*Potato Cake.*Chip/);
   });
+
+  it('defaults Allow Moving on and Allow Return to Hand off on the Ruleset step', () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    goToStep('Ruleset');
+
+    expect(screen.getByRole('checkbox', { name: 'Allow Moving' }).checked).toBe(
+      true,
+    );
+    expect(
+      screen.getByRole('checkbox', { name: 'Allow Return to Hand' }).checked,
+    ).toBe(false);
+  });
+
+  it('lets you toggle ruleset options and includes them in the final setup', () => {
+    const onStart = vi.fn();
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={onStart}
+      />,
+    );
+    goToStep('Ruleset');
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Allow Moving' }));
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: 'Allow Return to Hand' }),
+    );
+
+    goToStep('Review');
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
+
+    const setup = onStart.mock.calls[0][0];
+    expect(setup.ruleset).toEqual({
+      allowMoving: false,
+      allowReturnToHand: true,
+    });
+  });
+
+  it('includes the default ruleset in the final setup when left untouched', () => {
+    const onStart = vi.fn();
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={onStart}
+      />,
+    );
+    goToStep('Review');
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
+
+    const setup = onStart.mock.calls[0][0];
+    expect(setup.ruleset).toEqual({
+      allowMoving: true,
+      allowReturnToHand: false,
+    });
+  });
 });

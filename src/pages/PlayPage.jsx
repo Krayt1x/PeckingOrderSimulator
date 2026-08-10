@@ -18,6 +18,10 @@ import { pickCpuMove, pickCpuEat } from '../lib/cpu.js';
 const ACTIONS_PER_TURN = 1;
 const CAPTURE_REMOVAL_DELAY_MS = 250;
 
+// Matches NewGamePage's DEFAULT_RULESET — used when PlayPage is rendered
+// without an explicit ruleset (e.g. directly in tests).
+const DEFAULT_RULESET = { allowMoving: true, allowReturnToHand: false };
+
 let nextFoodCardId = 1;
 
 // Food is the objective the game is anchored around, placed as close to
@@ -82,7 +86,13 @@ function foodToCard(foodCell) {
   };
 }
 
-export default function PlayPage({ players, decks, food, foodShapeIds }) {
+export default function PlayPage({
+  players,
+  decks,
+  food,
+  foodShapeIds,
+  ruleset = DEFAULT_RULESET,
+}) {
   const shapeIds = foodShapeIds ?? food.shapes.map((s) => s.id);
 
   const [board, setBoard] = useState(() => createInitialBoard(food, shapeIds));
@@ -288,7 +298,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
   function handleCardDrop(destinationIndex) {
     const source = dragSourceIndex;
     setDragSourceIndex(null);
-    if (source === null || !canAct) return;
+    if (source === null || !canAct || !ruleset.allowMoving) return;
 
     const destinations = getAdjacentEmptyIndices(board, source, BOARD_SIZE);
     if (!destinations.includes(destinationIndex)) return;
@@ -296,6 +306,33 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
     if (!card) return;
     if (!canPlaceCard(board, destinationIndex, card, BOARD_SIZE)) return;
     handleMoveCard(source, destinationIndex);
+  }
+
+  // Dropping a dragged card onto your own discard pile tile sends it
+  // straight to your discard pile instead of moving it on the board —
+  // free (no action cost), unlike a board move.
+  function handleReturnToDiscard() {
+    const source = dragSourceIndex;
+    setDragSourceIndex(null);
+    if (source === null || !canAct || !ruleset.allowReturnToHand) return;
+
+    const card = board[source];
+    if (!card || card.type === 'food' || card.ownerId !== activePlayer.id) {
+      return;
+    }
+
+    const nextBoard = [...board];
+    nextBoard[source] = null;
+
+    setBoard(nextBoard);
+    setPlayerStates(
+      playerStates.map((state, i) =>
+        i === activeIndex
+          ? { ...state, discardPile: [...state.discardPile, card] }
+          : state,
+      ),
+    );
+    clearSelections();
   }
 
   function handleEndTurn() {
@@ -452,7 +489,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
   const playerColors = Object.fromEntries(players.map((p) => [p.id, p.color]));
 
   const draggableIndices = new Set();
-  if (canAct) {
+  if (canAct && (ruleset.allowMoving || ruleset.allowReturnToHand)) {
     board.forEach((cell, i) => {
       if (cell && cell.type !== 'food' && cell.ownerId === activePlayer.id) {
         draggableIndices.add(i);
@@ -549,6 +586,13 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
           }}
           aria-label={`Discard pile: ${activeState.discardPile.length} cards`}
           onClick={() => openPileModal('discard')}
+          onDragOver={(event) => {
+            if (ruleset.allowReturnToHand) event.preventDefault();
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            handleReturnToDiscard();
+          }}
         >
           <span className="card-back-label">Discard Pile</span>
           <span className="card-back-deck">{activeDeck?.name}</span>

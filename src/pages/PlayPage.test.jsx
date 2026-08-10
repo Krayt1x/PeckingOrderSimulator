@@ -482,6 +482,99 @@ describe('PlayPage', () => {
     expect(screen.getByText('Actions: 0/1')).toBeDefined();
   });
 
+  it('does not let you drag a card when the Allow Moving ruleset is disabled', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+        ruleset={{ allowMoving: false, allowReturnToHand: false }}
+      />,
+    );
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const firstSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    playThenCycleBackToPlayer1(firstSpot);
+
+    cells = screen.getAllByRole('gridcell');
+    const destination = neighbors(firstSpot).find(
+      (i) => i !== foodIndex && !isFilled(cells[i]),
+    );
+
+    fireEvent.dragStart(screen.getAllByRole('gridcell')[firstSpot]);
+    fireEvent.drop(screen.getAllByRole('gridcell')[destination]);
+
+    cells = screen.getAllByRole('gridcell');
+    expect(isFilled(cells[firstSpot])).toBe(true);
+    expect(isFilled(cells[destination])).toBe(false);
+    expect(screen.getByText('Actions: 1/1')).toBeDefined();
+  });
+
+  it('lets you return your own card to the discard pile for free when Allow Return to Hand is enabled', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+        ruleset={{ allowMoving: true, allowReturnToHand: true }}
+      />,
+    );
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const firstSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    playThenCycleBackToPlayer1(firstSpot);
+    expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
+
+    const discardTile = screen.getByRole('button', {
+      name: /Discard pile: \d+ cards/,
+    });
+
+    fireEvent.dragStart(screen.getAllByRole('gridcell')[firstSpot]);
+    fireEvent.drop(discardTile);
+
+    cells = screen.getAllByRole('gridcell');
+    expect(isFilled(cells[firstSpot])).toBe(false);
+    // Free — the action wasn't spent.
+    expect(screen.getByText('Actions: 1/1')).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: 'Discard pile: 1 cards' }),
+    ).toBeDefined();
+  });
+
+  it('does not return a card to the discard pile when Allow Return to Hand is disabled', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+        ruleset={{ allowMoving: true, allowReturnToHand: false }}
+      />,
+    );
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const firstSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    playThenCycleBackToPlayer1(firstSpot);
+
+    const discardTile = screen.getByRole('button', {
+      name: /Discard pile: \d+ cards/,
+    });
+
+    fireEvent.dragStart(screen.getAllByRole('gridcell')[firstSpot]);
+    fireEvent.drop(discardTile);
+
+    cells = screen.getAllByRole('gridcell');
+    expect(isFilled(cells[firstSpot])).toBe(true);
+    expect(
+      screen.getByRole('button', { name: 'Discard pile: 0 cards' }),
+    ).toBeDefined();
+  });
+
   it('does not move a card dropped on a non-adjacent or occupied cell', () => {
     render(
       <PlayPage
