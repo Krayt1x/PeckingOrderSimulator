@@ -858,7 +858,7 @@ describe('PlayPage', () => {
     expect(cardNameOf(cells[destination])).toBe('Crumb A');
   });
 
-  it('discards a food-derived card via its Use Food badge, for free, without touching the banked score', () => {
+  it('discards a food-derived card via its Use Food badge, for free plus a bonus action, without touching the banked score', () => {
     function tinyDecks() {
       return [
         {
@@ -935,14 +935,15 @@ describe('PlayPage', () => {
 
     fireEvent.click(useFoodBadge);
 
-    // The food card is gone from hand, no action was spent, and the
-    // score from eating is unaffected either way.
+    // The food card is gone from hand, no action was spent (a bonus one
+    // was granted instead), and the score from eating is unaffected
+    // either way.
     expect(
       within(screen.getByRole('list', { name: 'Your hand' }))
         .getAllByRole('button')
         .filter((b) => b.classList.contains('card')),
     ).toHaveLength(1);
-    expect(screen.getByText('Actions: 1/1')).toBeDefined();
+    expect(screen.getByText('Actions: 2/1')).toBeDefined();
     expect(screen.getByText('Player 1: 1')).toBeDefined();
     expect(
       screen.getByRole('button', { name: 'Discard pile: 1 cards' }),

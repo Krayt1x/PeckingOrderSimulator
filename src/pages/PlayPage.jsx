@@ -193,8 +193,9 @@ export default function PlayPage({
   }
 
   // Discards a food-derived hand card directly, without playing it onto
-  // the board — free, and the point already scored when it was eaten is
-  // untouched (that was banked at eat-time, not tied to this card).
+  // the board — free and grants a bonus action, same as playing it would
+  // (the point already scored when it was eaten is untouched, since that
+  // was banked at eat-time, not tied to this card).
   function handleUseFood(cardId) {
     if (!canAct) return;
     const card = activeState.hand.find((c) => c.id === cardId && c.fromFood);
@@ -211,7 +212,7 @@ export default function PlayPage({
           : state,
       ),
     );
-    clearSelections();
+    spendAction(true);
   }
 
   // Spins a selected hand card's side values 90° clockwise or
