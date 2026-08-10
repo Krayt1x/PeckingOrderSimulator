@@ -95,6 +95,41 @@ describe('pickCpuMove', () => {
     expect([45, 54, 65]).not.toContain(move.cellIndex);
   });
 
+  it('prefers a capture near Food over a capture far from it, when aggressive', () => {
+    const strongCard = {
+      id: 'c1',
+      sides: { top: 9, right: 9, bottom: 9, left: 9 },
+    };
+    const board = Array(100).fill(null);
+    // Food's neighbors: 45, 54, 56, 65. A weak opponent bird at 57 makes
+    // 56 both a capture AND Food-adjacent.
+    board[55] = { type: 'food', sides: SIDES };
+    board[57] = {
+      type: 'bird',
+      ownerId: 'p2',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+    // A second weak opponent bird far from Food opens up a capturing
+    // option (19) that doesn't progress toward Food at all.
+    board[20] = {
+      type: 'bird',
+      ownerId: 'p2',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+
+    const move = pickCpuMove(
+      [strongCard],
+      board,
+      BOARD_SIZE,
+      'p1',
+      'aggressive',
+    );
+
+    // Both 56 and 19 (among others) capture something, but only 56 is
+    // also Food-adjacent — aggressive should prefer it.
+    expect(move.cellIndex).toBe(56);
+  });
+
   it('falls back to any legal option when aggressive has nothing to capture', () => {
     const hand = [{ id: 'c1', sides: SIDES }];
     const board = Array(100).fill(null);

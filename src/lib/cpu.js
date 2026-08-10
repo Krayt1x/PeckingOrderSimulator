@@ -12,14 +12,23 @@ function isAdjacentToFood(board, index, boardSize) {
 
 // Narrows the legal options down to whichever subset best fits the CPU's
 // strategy, falling back to the full set if that subset is empty:
-//  - aggressive: prefers a placement that captures an opponent's card.
+//  - aggressive: prefers a capturing placement, and among those prefers
+//    ones that also progress toward Food (winning still comes from
+//    eating Food, so a capture that goes nowhere isn't good enough on
+//    its own) — falls back to any Food-adjacent placement, then anything,
+//    if no capture is available at all.
 //  - defensive: prefers a placement next to Food, claiming ground that
 //    denies opponents majority control of it.
 //  - anything else (or unset): no preference, purely random.
 function narrowByStrategy(options, strategy) {
   if (strategy === 'aggressive') {
     const capturing = options.filter((o) => o.captures);
-    if (capturing.length > 0) return capturing;
+    if (capturing.length > 0) {
+      const capturingNearFood = capturing.filter((o) => o.adjacentToFood);
+      return capturingNearFood.length > 0 ? capturingNearFood : capturing;
+    }
+    const foodAdjacent = options.filter((o) => o.adjacentToFood);
+    if (foodAdjacent.length > 0) return foodAdjacent;
   }
   if (strategy === 'defensive') {
     const foodAdjacent = options.filter((o) => o.adjacentToFood);
