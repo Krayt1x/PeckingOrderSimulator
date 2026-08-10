@@ -145,6 +145,8 @@ export default function NewGamePage({ decks, food, onStart }) {
   const [wizardStep, setWizardStep] = useState('players');
   const [colorPickerPlayerIndex, setColorPickerPlayerIndex] = useState(null);
   const [ruleset, setRuleset] = useState(DEFAULT_RULESET);
+  const [firstPlayerId, setFirstPlayerId] = useState(null);
+  const [randomFirstPlayer, setRandomFirstPlayer] = useState(false);
 
   function toggleRuleset(key) {
     setRuleset((current) => ({ ...current, [key]: !current[key] }));
@@ -170,6 +172,7 @@ export default function NewGamePage({ decks, food, onStart }) {
           ),
         );
       }
+      setFirstPlayerId((id) => (next.some((p) => p.id === id) ? id : null));
       return next;
     });
     setSelectedFoodShapeIds(defaultFoodShapeIds(clamped, food));
@@ -196,9 +199,24 @@ export default function NewGamePage({ decks, food, onStart }) {
     );
   }
 
+  // Turn order always follows the `players` array, so setting a first
+  // player just means moving them to the front of it.
+  function orderedPlayers() {
+    const leadId = randomFirstPlayer
+      ? players[Math.floor(Math.random() * players.length)].id
+      : firstPlayerId;
+    const leadIndex = players.findIndex((p) => p.id === leadId);
+    if (leadIndex <= 0) return players;
+    return [
+      players[leadIndex],
+      ...players.slice(0, leadIndex),
+      ...players.slice(leadIndex + 1),
+    ];
+  }
+
   function handleStart() {
     onStart({
-      players,
+      players: orderedPlayers(),
       foodId: food.id,
       foodShapeIds: selectedFoodShapeIds,
       ruleset,
@@ -210,9 +228,12 @@ export default function NewGamePage({ decks, food, onStart }) {
       return `${players.length} player${players.length === 1 ? '' : 's'}`;
     }
     if (key === 'rosters') {
-      return players
+      const names = players
         .map((p) => `${p.name}${p.isCPU ? ' (CPU)' : ''}`)
         .join(', ');
+      if (randomFirstPlayer) return `${names} — first player: random`;
+      const first = players.find((p) => p.id === firstPlayerId);
+      return first ? `${names} — ${first.name} goes first` : names;
     }
     if (key === 'food') {
       const chosen = food.shapes.filter((s) =>
@@ -266,6 +287,18 @@ export default function NewGamePage({ decks, food, onStart }) {
     return (
       <>
         <p className="stage-label">Who&rsquo;s playing, and with which deck?</p>
+        <label className="ruleset-option random-first-player">
+          <input
+            type="checkbox"
+            checked={randomFirstPlayer}
+            aria-label="Random First Player"
+            onChange={(event) => {
+              setRandomFirstPlayer(event.target.checked);
+              if (event.target.checked) setFirstPlayerId(null);
+            }}
+          />
+          <span className="ruleset-option-label">Random First Player</span>
+        </label>
         <div className="manage-cards-list new-game-players">
           {players.map((player, i) => (
             <div key={player.id} className="manage-card-row">
@@ -278,6 +311,18 @@ export default function NewGamePage({ decks, food, onStart }) {
                   updatePlayer(i, { name: event.target.value })
                 }
               />
+              <label className="manage-side-field">
+                First
+                <input
+                  type="checkbox"
+                  checked={!randomFirstPlayer && firstPlayerId === player.id}
+                  disabled={randomFirstPlayer}
+                  aria-label={`${player.name} first`}
+                  onChange={(event) =>
+                    setFirstPlayerId(event.target.checked ? player.id : null)
+                  }
+                />
+              </label>
               <label className="manage-side-field">
                 CPU
                 <input

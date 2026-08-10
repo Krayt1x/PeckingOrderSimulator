@@ -997,6 +997,10 @@ body {
   margin-top: 0.5rem;
 }
 
+.random-first-player {
+  margin-bottom: 0.75rem;
+}
+
 .color-cube {
   width: 28px;
   height: 28px;

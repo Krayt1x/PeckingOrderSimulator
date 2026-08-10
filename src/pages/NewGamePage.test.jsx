@@ -100,6 +100,59 @@ describe('NewGamePage', () => {
     expect(setup.players[1].cpuStrategy).toBe('defensive');
   });
 
+  it('lets you mark a player as First and starts them first', () => {
+    const onStart = vi.fn();
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={onStart}
+      />,
+    );
+    goToStep('Rosters');
+
+    expect(screen.getByLabelText('Player 1 first').checked).toBe(false);
+    fireEvent.click(screen.getByLabelText('Player 2 first'));
+    expect(screen.getByLabelText('Player 2 first').checked).toBe(true);
+    // Only one player can be first at a time.
+    fireEvent.click(screen.getByLabelText('Player 1 first'));
+    expect(screen.getByLabelText('Player 2 first').checked).toBe(false);
+    expect(screen.getByLabelText('Player 1 first').checked).toBe(true);
+
+    goToStep('Review');
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
+
+    const setup = onStart.mock.calls[0][0];
+    expect(setup.players[0].name).toBe('Player 1');
+    expect(setup.players).toHaveLength(2);
+  });
+
+  it('picks a random first player when Random First Player is checked', () => {
+    const onStart = vi.fn();
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={onStart}
+      />,
+    );
+    goToStep('Rosters');
+
+    fireEvent.click(screen.getByLabelText('Random First Player'));
+    // Checking Random First Player clears any explicit per-player pick,
+    // and disables the individual checkboxes.
+    expect(screen.getByLabelText('Player 1 first').disabled).toBe(true);
+
+    goToStep('Review');
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
+
+    const setup = onStart.mock.calls[0][0];
+    // Math.random mocked to 0.99 -> last player in a 2-player list.
+    expect(setup.players[0].name).toBe('Player 2');
+    randomSpy.mockRestore();
+  });
+
   it('gives each default player a distinct border color shown as a cube', () => {
     render(
       <NewGamePage
