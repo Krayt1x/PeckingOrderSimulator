@@ -58,7 +58,9 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Review' }));
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
 
-    expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
+    // Random First Player is on by default, so either player may go
+    // first — this just confirms the game actually started.
+    expect(screen.getByText(/Player [12].*turn/)).toBeDefined();
     expect(
       within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
         'button',

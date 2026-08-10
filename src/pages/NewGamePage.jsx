@@ -42,7 +42,7 @@ export const SKIN_OPTIONS = [
 ];
 
 export const DEFAULT_RULESET = {
-  allowMoving: true,
+  allowMoving: false,
   allowReturnToHand: false,
   allowCardRotation: false,
   allowCustomSkins: false,
@@ -146,7 +146,7 @@ export default function NewGamePage({ decks, food, onStart }) {
   const [colorPickerPlayerIndex, setColorPickerPlayerIndex] = useState(null);
   const [ruleset, setRuleset] = useState(DEFAULT_RULESET);
   const [firstPlayerId, setFirstPlayerId] = useState(null);
-  const [randomFirstPlayer, setRandomFirstPlayer] = useState(false);
+  const [randomFirstPlayer, setRandomFirstPlayer] = useState(true);
 
   function toggleRuleset(key) {
     setRuleset((current) => ({ ...current, [key]: !current[key] }));
@@ -187,6 +187,10 @@ export default function NewGamePage({ decks, food, onStart }) {
 
   function pickPlayerColor(color) {
     if (colorPickerPlayerIndex === null) return;
+    const takenByOther = players.some(
+      (p, i) => i !== colorPickerPlayerIndex && p.color === color,
+    );
+    if (takenByOther) return;
     updatePlayer(colorPickerPlayerIndex, { color });
     setColorPickerPlayerIndex(null);
   }
@@ -555,21 +559,26 @@ export default function NewGamePage({ decks, food, onStart }) {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="color-modal-grid">
-              {PLAYER_COLOR_PALETTE.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  className={`color-modal-swatch${
-                    players[colorPickerPlayerIndex].color === color
-                      ? ' selected'
-                      : ''
-                  }`}
-                  style={{ '--swatch-color': color }}
-                  aria-label={color}
-                  aria-pressed={players[colorPickerPlayerIndex].color === color}
-                  onClick={() => pickPlayerColor(color)}
-                />
-              ))}
+              {PLAYER_COLOR_PALETTE.map((color) => {
+                const isOwn = players[colorPickerPlayerIndex].color === color;
+                const takenByOther = players.some(
+                  (p, i) => i !== colorPickerPlayerIndex && p.color === color,
+                );
+                return (
+                  <button
+                    key={color}
+                    type="button"
+                    className={`color-modal-swatch${isOwn ? ' selected' : ''}${
+                      takenByOther ? ' taken' : ''
+                    }`}
+                    style={{ '--swatch-color': color }}
+                    aria-label={color}
+                    aria-pressed={isOwn}
+                    disabled={takenByOther}
+                    onClick={() => pickPlayerColor(color)}
+                  />
+                );
+              })}
             </div>
             <button
               type="button"

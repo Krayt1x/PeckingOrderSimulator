@@ -468,6 +468,7 @@ describe('PlayPage', () => {
         decks={DEFAULT_DECKS}
         food={SINGLE_FOOD}
         foodShapeIds={['crumb']}
+        ruleset={{ allowMoving: true, allowReturnToHand: false }}
       />,
     );
     let cells = screen.getAllByRole('gridcell');

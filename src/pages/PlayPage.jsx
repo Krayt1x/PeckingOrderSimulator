@@ -21,7 +21,7 @@ const CAPTURE_REMOVAL_DELAY_MS = 250;
 // Matches NewGamePage's DEFAULT_RULESET — used when PlayPage is rendered
 // without an explicit ruleset (e.g. directly in tests).
 const DEFAULT_RULESET = {
-  allowMoving: true,
+  allowMoving: false,
   allowReturnToHand: false,
   allowCardRotation: false,
   allowCustomSkins: false,

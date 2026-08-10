@@ -80,6 +80,8 @@ describe('NewGamePage', () => {
       />,
     );
     goToStep('Rosters');
+    // Keep turn order deterministic for the players[1] index check below.
+    fireEvent.click(screen.getByLabelText('Random First Player'));
 
     expect(screen.queryByLabelText('Player 2 CPU strategy')).toBeNull();
 
@@ -111,6 +113,8 @@ describe('NewGamePage', () => {
     );
     goToStep('Rosters');
 
+    // Random First Player is on by default — turn it off to pick manually.
+    fireEvent.click(screen.getByLabelText('Random First Player'));
     expect(screen.getByLabelText('Player 1 first').checked).toBe(false);
     fireEvent.click(screen.getByLabelText('Player 2 first'));
     expect(screen.getByLabelText('Player 2 first').checked).toBe(true);
@@ -127,7 +131,7 @@ describe('NewGamePage', () => {
     expect(setup.players).toHaveLength(2);
   });
 
-  it('picks a random first player when Random First Player is checked', () => {
+  it('picks a random first player by default (Random First Player starts checked)', () => {
     const onStart = vi.fn();
     const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
     render(
@@ -139,9 +143,9 @@ describe('NewGamePage', () => {
     );
     goToStep('Rosters');
 
-    fireEvent.click(screen.getByLabelText('Random First Player'));
-    // Checking Random First Player clears any explicit per-player pick,
-    // and disables the individual checkboxes.
+    // Random First Player is on by default, disabling the individual
+    // per-player checkboxes.
+    expect(screen.getByLabelText('Random First Player').checked).toBe(true);
     expect(screen.getByLabelText('Player 1 first').disabled).toBe(true);
 
     goToStep('Review');
@@ -184,10 +188,17 @@ describe('NewGamePage', () => {
       />,
     );
     goToStep('Rosters');
+    // Keep turn order deterministic for the players[0]/[1] index checks.
+    fireEvent.click(screen.getByLabelText('Random First Player'));
 
     const player2ColorBefore = screen
       .getByRole('button', { name: 'Player 2 color' })
       .style.getPropertyValue('--swatch-color');
+    // A color distinct from Player 2's, so the duplicate-color guard
+    // (#76) never blocks the pick.
+    const targetColor = PLAYER_COLOR_PALETTE.find(
+      (c) => c !== player2ColorBefore,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Player 1 color' }));
     const modal = screen.getByRole('dialog', { name: 'Player 1 color' });
@@ -196,9 +207,7 @@ describe('NewGamePage', () => {
       .filter((btn) => btn.className.includes('color-modal-swatch'));
     expect(swatches).toHaveLength(25);
 
-    fireEvent.click(
-      within(modal).getByRole('button', { name: PLAYER_COLOR_PALETTE[12] }),
-    );
+    fireEvent.click(within(modal).getByRole('button', { name: targetColor }));
 
     // Picking a color closes the modal...
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -207,13 +216,50 @@ describe('NewGamePage', () => {
       screen
         .getByRole('button', { name: 'Player 1 color' })
         .style.getPropertyValue('--swatch-color'),
-    ).toBe(PLAYER_COLOR_PALETTE[12]);
+    ).toBe(targetColor);
 
     goToStep('Review');
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
     const setup = onStart.mock.calls[0][0];
-    expect(setup.players[0].color).toBe(PLAYER_COLOR_PALETTE[12]);
+    expect(setup.players[0].color).toBe(targetColor);
     expect(setup.players[1].color).toBe(player2ColorBefore);
+  });
+
+  it("won't let a player pick a color another player already has", () => {
+    const onStart = vi.fn();
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={onStart}
+      />,
+    );
+    goToStep('Rosters');
+
+    const player2Color = screen
+      .getByRole('button', { name: 'Player 2 color' })
+      .style.getPropertyValue('--swatch-color');
+    const player1ColorBefore = screen
+      .getByRole('button', { name: 'Player 1 color' })
+      .style.getPropertyValue('--swatch-color');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Player 1 color' }));
+    const modal = screen.getByRole('dialog', { name: 'Player 1 color' });
+    const takenSwatch = within(modal).getByRole('button', {
+      name: player2Color,
+    });
+    expect(takenSwatch.disabled).toBe(true);
+
+    fireEvent.click(takenSwatch);
+
+    // The modal stays open and Player 1's color is unchanged — a disabled
+    // button click is a no-op.
+    expect(screen.getByRole('dialog')).toBeDefined();
+    expect(
+      screen
+        .getByRole('button', { name: 'Player 1 color' })
+        .style.getPropertyValue('--swatch-color'),
+    ).toBe(player1ColorBefore);
   });
 
   it('defaults the food selection for 2 players to Potato Cake and Chip only', () => {
@@ -361,7 +407,7 @@ describe('NewGamePage', () => {
     expect(info.getAttribute('title')).toMatch(/2 players.*Potato Cake.*Chip/);
   });
 
-  it('defaults Allow Moving on and Allow Return to Hand off on the Ruleset step', () => {
+  it('defaults every ruleset option off on the Ruleset step', () => {
     render(
       <NewGamePage
         decks={DEFAULT_DECKS}
@@ -372,7 +418,7 @@ describe('NewGamePage', () => {
     goToStep('Ruleset');
 
     expect(screen.getByRole('checkbox', { name: 'Allow Moving' }).checked).toBe(
-      true,
+      false,
     );
     expect(
       screen.getByRole('checkbox', { name: 'Allow Return to Hand' }).checked,
@@ -400,7 +446,7 @@ describe('NewGamePage', () => {
 
     const setup = onStart.mock.calls[0][0];
     expect(setup.ruleset).toEqual({
-      allowMoving: false,
+      allowMoving: true,
       allowReturnToHand: true,
       allowCardRotation: false,
       allowCustomSkins: false,
@@ -422,7 +468,7 @@ describe('NewGamePage', () => {
 
     const setup = onStart.mock.calls[0][0];
     expect(setup.ruleset).toEqual({
-      allowMoving: true,
+      allowMoving: false,
       allowReturnToHand: false,
       allowCardRotation: false,
       allowCustomSkins: false,

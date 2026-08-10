@@ -1069,6 +1069,25 @@ body {
     0 0 0 4px var(--swatch-color);
 }
 
+/* Already claimed by another player — shown but not pickable. */
+.color-modal-swatch.taken {
+  cursor: not-allowed;
+  opacity: 0.35;
+  position: relative;
+}
+
+.color-modal-swatch.taken::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.5) 0 2px,
+    transparent 2px 6px
+  );
+  border-radius: inherit;
+}
+
 .pile-modal {
   background: var(--bg-card);
   border: 1px solid var(--border);
