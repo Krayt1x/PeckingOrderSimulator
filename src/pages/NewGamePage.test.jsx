@@ -349,6 +349,7 @@ describe('NewGamePage', () => {
     expect(setup.ruleset).toEqual({
       allowMoving: false,
       allowReturnToHand: true,
+      allowCardRotation: false,
     });
   });
 
@@ -368,6 +369,7 @@ describe('NewGamePage', () => {
     expect(setup.ruleset).toEqual({
       allowMoving: true,
       allowReturnToHand: false,
+      allowCardRotation: false,
     });
   });
 });

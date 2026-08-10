@@ -575,6 +575,67 @@ describe('PlayPage', () => {
     ).toBeDefined();
   });
 
+  it('does not show rotate arrows when Allow Card Rotation is disabled', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
+    const hand = screen.getByRole('list', { name: 'Your hand' });
+    fireEvent.click(within(hand).getAllByRole('button')[0]);
+
+    expect(
+      screen.queryByRole('button', { name: 'Rotate clockwise' }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Rotate anti-clockwise' }),
+    ).toBeNull();
+  });
+
+  it('rotates a selected card’s side values via the rotate arrows when enabled', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        ruleset={{
+          allowMoving: true,
+          allowReturnToHand: false,
+          allowCardRotation: true,
+        }}
+      />,
+    );
+    const hand = screen.getByRole('list', { name: 'Your hand' });
+    fireEvent.click(within(hand).getAllByRole('button')[0]);
+
+    const selectedCard = document.querySelector('.hand .card-selected');
+    expect(selectedCard).not.toBeNull();
+    const readSides = () => ({
+      top: selectedCard.querySelector('.card-side-top').textContent,
+      right: selectedCard.querySelector('.card-side-right').textContent,
+      bottom: selectedCard.querySelector('.card-side-bottom').textContent,
+      left: selectedCard.querySelector('.card-side-left').textContent,
+    });
+    const before = readSides();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rotate clockwise' }));
+    const afterCw = readSides();
+    expect(afterCw).toEqual({
+      top: before.left,
+      right: before.top,
+      bottom: before.right,
+      left: before.bottom,
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Rotate anti-clockwise' }),
+    );
+    const afterCcw = readSides();
+    expect(afterCcw).toEqual(before);
+  });
+
   it('does not move a card dropped on a non-adjacent or occupied cell', () => {
     render(
       <PlayPage

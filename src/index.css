@@ -398,6 +398,13 @@ body {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
 }
 
+/* The selected card's rotate arrows poke out past its edges — only the
+   selected card (never more than one at a time) needs to escape the
+   row's overflow:hidden safety net for that. */
+.hand-row .card-selected {
+  overflow: visible;
+}
+
 .card-on-board {
   cursor: default;
   width: 100%;
@@ -444,6 +451,38 @@ body {
 
 .use-food-badge:hover {
   background: #facc15;
+}
+
+/* Rotate arrows appear at a selected card's top corners when the Allow
+   Card Rotation ruleset is on — round badges outlined in the owner's
+   color, poking above the card like the compass-marker flags used to. */
+.rotate-arrow {
+  position: absolute;
+  top: -12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #000;
+  border: 1.5px solid var(--card-border);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.rotate-arrow-left {
+  left: -12px;
+}
+
+.rotate-arrow-right {
+  right: -12px;
+}
+
+.rotate-arrow:hover {
+  background: #1c1917;
 }
 
 .card-food .card-name {

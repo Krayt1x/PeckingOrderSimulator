@@ -20,7 +20,30 @@ const CAPTURE_REMOVAL_DELAY_MS = 250;
 
 // Matches NewGamePage's DEFAULT_RULESET — used when PlayPage is rendered
 // without an explicit ruleset (e.g. directly in tests).
-const DEFAULT_RULESET = { allowMoving: true, allowReturnToHand: false };
+const DEFAULT_RULESET = {
+  allowMoving: true,
+  allowReturnToHand: false,
+  allowCardRotation: false,
+};
+
+// Rotating a card 90° spins which edge each side value faces — physically
+// equivalent to turning the card itself.
+function rotateSides(sides, direction) {
+  if (direction === 'cw') {
+    return {
+      top: sides.left,
+      right: sides.top,
+      bottom: sides.right,
+      left: sides.bottom,
+    };
+  }
+  return {
+    top: sides.right,
+    right: sides.bottom,
+    bottom: sides.left,
+    left: sides.top,
+  };
+}
 
 let nextFoodCardId = 1;
 
@@ -187,6 +210,30 @@ export default function PlayPage({
       ),
     );
     clearSelections();
+  }
+
+  // Spins a selected hand card's side values 90° clockwise or
+  // anti-clockwise — free, doesn't spend the turn's action, and keeps the
+  // card selected so it can be rotated again or played right after.
+  function handleRotateCard(cardId, direction) {
+    if (!canAct || !ruleset.allowCardRotation) return;
+    const card = activeState.hand.find((c) => c.id === cardId);
+    if (!card) return;
+
+    setPlayerStates(
+      playerStates.map((state, i) =>
+        i === activeIndex
+          ? {
+              ...state,
+              hand: state.hand.map((c) =>
+                c.id === cardId
+                  ? { ...c, sides: rotateSides(c.sides, direction) }
+                  : c,
+              ),
+            }
+          : state,
+      ),
+    );
   }
 
   function handlePlayCard(cellIndex) {
@@ -598,6 +645,8 @@ export default function PlayPage({
           selectedCardId={selectedCardId}
           onSelectCard={handleSelectCard}
           onUseFood={handleUseFood}
+          onRotateCard={handleRotateCard}
+          allowRotation={ruleset.allowCardRotation}
           playerColor={activePlayer.color}
           disabled={!canAct}
         />

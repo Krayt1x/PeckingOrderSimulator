@@ -5,6 +5,8 @@ export default function Hand({
   selectedCardId,
   onSelectCard,
   onUseFood,
+  onRotateCard,
+  allowRotation = false,
   playerColor,
   disabled = false,
 }) {
@@ -54,6 +56,46 @@ export default function Hand({
             >
               Use Food
             </span>
+          ) : null}
+          {allowRotation && selectedCardId === card.id ? (
+            <>
+              <span
+                role="button"
+                tabIndex={0}
+                className="rotate-arrow rotate-arrow-left"
+                aria-label="Rotate clockwise"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!disabled) onRotateCard(card.id, 'cw');
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter' && event.key !== ' ') return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (!disabled) onRotateCard(card.id, 'cw');
+                }}
+              >
+                &#8635;
+              </span>
+              <span
+                role="button"
+                tabIndex={0}
+                className="rotate-arrow rotate-arrow-right"
+                aria-label="Rotate anti-clockwise"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!disabled) onRotateCard(card.id, 'ccw');
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter' && event.key !== ' ') return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (!disabled) onRotateCard(card.id, 'ccw');
+                }}
+              >
+                &#8634;
+              </span>
+            </>
           ) : null}
         </button>
       ))}

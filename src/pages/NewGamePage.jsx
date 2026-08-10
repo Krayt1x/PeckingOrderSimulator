@@ -27,11 +27,18 @@ const RULESET_OPTIONS = [
     description:
       'A player may move a bird of theirs to their discard pile during their turn. Costs 0 actions.',
   },
+  {
+    key: 'allowCardRotation',
+    label: 'Allow Card Rotation',
+    description:
+      'Selecting a card in hand shows rotate arrows — spin its sides clockwise or anti-clockwise before playing it.',
+  },
 ];
 
 export const DEFAULT_RULESET = {
   allowMoving: true,
   allowReturnToHand: false,
+  allowCardRotation: false,
 };
 
 // A player's color borders their cards on the board, independent of which
