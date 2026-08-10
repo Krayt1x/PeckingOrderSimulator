@@ -610,6 +610,32 @@ body {
   background: #026012;
 }
 
+/* Empty board cells go transparent (showing the green board-viewport
+   through) with a small pixel dot at each corner instead of a plain white
+   tile — since cells sit flush, four neighboring dots meet at each
+   interior intersection like a VTT grid overlay. */
+[data-skin='alpha-pixel-art'] .board-cell {
+  border-radius: 0;
+  border-color: transparent;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23fef6d8' stroke='%230d3b1a' stroke-width='1.2'%3E%3Crect x='-4' y='-4' width='8' height='8'/%3E%3Crect x='96' y='-4' width='8' height='8'/%3E%3Crect x='-4' y='96' width='8' height='8'/%3E%3Crect x='96' y='96' width='8' height='8'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+[data-skin='alpha-pixel-art'] .board-cell-droppable {
+  border-color: var(--accent);
+}
+
+[data-skin='alpha-pixel-art'] .board-cell-selected {
+  border-color: var(--accent);
+}
+
+[data-skin='alpha-pixel-art'] .board-cell-droppable:hover {
+  background-color: transparent;
+  filter: brightness(1.3);
+}
+
 [data-skin='alpha-pixel-art'] .card {
   font-family: 'Courier New', Courier, monospace;
   font-weight: 800;
