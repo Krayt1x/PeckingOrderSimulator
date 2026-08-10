@@ -50,12 +50,12 @@ describe('ManagePage', () => {
   it('switches deck tabs and shows that deck name', () => {
     render(<Harness />);
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Ducks' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Beach' }));
 
     expect(
-      screen.getByRole('tab', { name: 'Ducks' }).getAttribute('aria-selected'),
+      screen.getByRole('tab', { name: 'Beach' }).getAttribute('aria-selected'),
     ).toBe('true');
-    expect(screen.getByDisplayValue('Ducks')).toBeDefined();
+    expect(screen.getByDisplayValue('Beach')).toBeDefined();
   });
 
   it('lets you edit the Food config from its own tab, with no deck size field', () => {

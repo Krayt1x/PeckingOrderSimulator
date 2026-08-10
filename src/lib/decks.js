@@ -3,7 +3,7 @@ export const HAND_SIZE = 4;
 export const DEFAULT_DECKS = [
   {
     id: 'deck-chickens',
-    name: 'Chickens',
+    name: 'City',
     size: 9,
     cardTypes: [
       {
@@ -38,7 +38,7 @@ export const DEFAULT_DECKS = [
   },
   {
     id: 'deck-ducks',
-    name: 'Ducks',
+    name: 'Beach',
     size: 9,
     cardTypes: [
       {
@@ -73,7 +73,7 @@ export const DEFAULT_DECKS = [
   },
   {
     id: 'deck-birds-of-prey',
-    name: 'Birds of Prey',
+    name: 'Park',
     size: 9,
     cardTypes: [
       {
