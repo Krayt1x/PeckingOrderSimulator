@@ -497,23 +497,26 @@ body {
 
 /* Card name in the top-left corner, like a playing card's rank/suit
    marker — a black badge outlined in the owner's color, matching the
-   edge-flag stat boxes below. */
+   edge-flag stat boxes below. The full name always shows: it wraps onto
+   further lines at word boundaries rather than truncating, but a single
+   word is never itself split across lines. */
 .card-index {
   position: absolute;
   top: 5px;
   left: 5px;
-  max-width: 34px;
+  max-width: 46%;
   padding: 1px 3px;
-  font-size: clamp(0.4rem, 1.4vw, 0.55rem);
+  font-size: clamp(0.34rem, 1.3vw, 0.55rem);
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.15;
   color: #fff;
   background: #000;
   border: 1.5px solid var(--card-border);
   border-radius: 0.25rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 /* Each side value sits on a rounded flag tab poking out past that edge of
