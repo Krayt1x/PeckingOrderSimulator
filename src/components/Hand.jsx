@@ -23,13 +23,16 @@ export default function Hand({
           onClick={() => onSelectCard(card.id)}
         >
           {card.sides ? (
-            <span className="card-sides">
-              {SIDE_KEYS.map((side) => (
-                <span key={side} className={`card-side card-side-${side}`}>
-                  {card.sides[side]}
-                </span>
-              ))}
-            </span>
+            <>
+              <span className="card-index">{card.emoji}</span>
+              <span className="card-sides">
+                {SIDE_KEYS.map((side) => (
+                  <span key={side} className={`card-side card-side-${side}`}>
+                    {card.sides[side]}
+                  </span>
+                ))}
+              </span>
+            </>
           ) : null}
           <span className="card-emoji">{card.emoji}</span>
           <span className="card-name">{card.name}</span>

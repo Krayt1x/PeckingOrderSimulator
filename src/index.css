@@ -352,9 +352,9 @@ body {
 .card::before {
   content: '';
   position: absolute;
-  inset: 5px;
-  border: 1px solid color-mix(in srgb, var(--card-border) 55%, transparent);
-  border-radius: 0.3rem;
+  inset: 4px;
+  border: 1px solid var(--card-border);
+  border-radius: 0.25rem;
   pointer-events: none;
 }
 
@@ -399,8 +399,20 @@ body {
   pointer-events: none;
 }
 
-/* Each side value sits inside a small triangle pointing at the edge of the
-   card it applies to (top/right/bottom/left), like a compass marker. */
+/* Small letter-code index in the top-left corner, like a playing card's
+   rank/suit corner marker. */
+.card-index {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--card-border);
+}
+
+/* Each side value sits on a rounded flag tab poking out past that edge of
+   the card. */
 .card-side {
   position: absolute;
   display: flex;
@@ -410,48 +422,43 @@ body {
   font-weight: 700;
   line-height: 1;
   color: #fff;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
   background: var(--card-border);
 }
 
 .card-side-top,
 .card-side-bottom {
-  width: 1.7em;
-  height: 1.1em;
+  width: 2em;
+  height: 1.3em;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .card-side-left,
 .card-side-right {
-  width: 1.1em;
-  height: 1.7em;
+  width: 1.3em;
+  height: 2em;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .card-side-top {
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-}
-
-.card-side-right {
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  clip-path: polygon(100% 50%, 0% 0%, 0% 100%);
+  top: -2px;
+  border-radius: 0 0 0.3em 0.3em;
 }
 
 .card-side-bottom {
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
+  bottom: -2px;
+  border-radius: 0.3em 0.3em 0 0;
 }
 
 .card-side-left {
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  clip-path: polygon(0% 50%, 100% 0%, 100% 100%);
+  left: -2px;
+  border-radius: 0 0.3em 0.3em 0;
+}
+
+.card-side-right {
+  right: -2px;
+  border-radius: 0.3em 0 0 0.3em;
 }
 
 .card-back {
@@ -459,6 +466,11 @@ body {
   flex-shrink: 0;
   text-align: center;
   padding: 0.5rem;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.05) 0 6px,
+    transparent 6px 12px
+  );
 }
 
 .card-back-label {
@@ -466,15 +478,16 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  color: var(--text-secondary);
 }
 
 .card-back-deck {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  background: var(--card-border);
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
 }
 
 .manage-header {

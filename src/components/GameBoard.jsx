@@ -339,17 +339,25 @@ export default function GameBoard({
                     title={card.name}
                   >
                     {cardHasSides ? (
-                      <span className="card-sides">
-                        {SIDE_KEYS.map((side) => (
-                          <span
-                            key={side}
-                            className={`card-side card-side-${side}`}
-                            style={{ fontSize: sideSize }}
-                          >
-                            {card.sides[side]}
-                          </span>
-                        ))}
-                      </span>
+                      <>
+                        <span
+                          className="card-index"
+                          style={{ fontSize: sideSize }}
+                        >
+                          {card.emoji}
+                        </span>
+                        <span className="card-sides">
+                          {SIDE_KEYS.map((side) => (
+                            <span
+                              key={side}
+                              className={`card-side card-side-${side}`}
+                              style={{ fontSize: sideSize }}
+                            >
+                              {card.sides[side]}
+                            </span>
+                          ))}
+                        </span>
+                      </>
                     ) : null}
                     <span
                       className="card-emoji"
