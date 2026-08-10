@@ -26,7 +26,8 @@ describe('App', () => {
   it('shows the Manage page at #manage', () => {
     window.location.hash = '#manage';
     render(<App />);
-    expect(screen.getByRole('heading', { name: 'Manage decks' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Decks' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Food' })).toBeDefined();
     expect(screen.getByRole('link', { name: 'Manage' }).className).toContain(
       'active',
     );

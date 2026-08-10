@@ -11,14 +11,15 @@ function clampSideValue(value) {
 }
 
 export default function ManagePage({ decks, setDecks, food, setFood }) {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeSection, setActiveSection] = useState('decks');
+  const [activeDeckIndex, setActiveDeckIndex] = useState(0);
+  const [exportOpen, setExportOpen] = useState(false);
 
-  const isFoodTab = activeIndex >= decks.length;
-  const deck = isFoodTab ? null : decks[activeIndex];
+  const deck = decks[activeDeckIndex];
 
   function updateDeck(updater) {
     setDecks((current) =>
-      current.map((d, i) => (i === activeIndex ? updater(d) : d)),
+      current.map((d, i) => (i === activeDeckIndex ? updater(d) : d)),
     );
   }
 
@@ -57,10 +58,10 @@ export default function ManagePage({ decks, setDecks, food, setFood }) {
   }
 
   function resetDeck() {
-    const defaults = DEFAULT_DECKS[activeIndex];
+    const defaults = DEFAULT_DECKS[activeDeckIndex];
     if (!defaults) return;
     setDecks((current) =>
-      current.map((d, i) => (i === activeIndex ? defaults : d)),
+      current.map((d, i) => (i === activeDeckIndex ? defaults : d)),
     );
   }
 
@@ -106,41 +107,54 @@ export default function ManagePage({ decks, setDecks, food, setFood }) {
     setFood(DEFAULT_FOOD);
   }
 
+  const exportPayload = JSON.stringify({ decks, food }, null, 2);
+
+  async function copyExport() {
+    try {
+      await navigator.clipboard.writeText(exportPayload);
+    } catch {
+      // Clipboard API unavailable — the textarea's own text is still
+      // there for the player to select and copy by hand.
+    }
+  }
+
   return (
     <main className="page manage">
-      <h1>Manage decks</h1>
-      <p>
-        Edit each deck&rsquo;s cards, or the Food objective shapes. Deck cards
-        have four side values (top, right, bottom, left); Food shapes are drawn
-        on a grid, with one value for outside edges and another for edges shared
-        between the shape&rsquo;s own cells.
-      </p>
-
-      <div className="manage-tabs" role="tablist" aria-label="Decks and Food">
-        {decks.map((d, i) => (
+      <div className="manage-header">
+        <div
+          className="manage-tabs"
+          role="tablist"
+          aria-label="Manage sections"
+        >
           <button
-            key={d.id}
             type="button"
             role="tab"
-            aria-selected={i === activeIndex}
-            className={`manage-tab${i === activeIndex ? ' manage-tab-active' : ''}`}
-            onClick={() => setActiveIndex(i)}
+            aria-selected={activeSection === 'decks'}
+            className={`manage-tab${activeSection === 'decks' ? ' manage-tab-active' : ''}`}
+            onClick={() => setActiveSection('decks')}
           >
-            {d.name}
+            Decks
           </button>
-        ))}
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeSection === 'food'}
+            className={`manage-tab${activeSection === 'food' ? ' manage-tab-active' : ''}`}
+            onClick={() => setActiveSection('food')}
+          >
+            Food
+          </button>
+        </div>
         <button
           type="button"
-          role="tab"
-          aria-selected={isFoodTab}
-          className={`manage-tab${isFoodTab ? ' manage-tab-active' : ''}`}
-          onClick={() => setActiveIndex(decks.length)}
+          className="board-recenter"
+          onClick={() => setExportOpen(true)}
         >
-          Food
+          Export
         </button>
       </div>
 
-      {isFoodTab ? (
+      {activeSection === 'food' ? (
         <div className="manage-deck">
           <div className="manage-deck-header">
             <label className="manage-field">
@@ -259,116 +273,181 @@ export default function ManagePage({ decks, setDecks, food, setFood }) {
           </button>
         </div>
       ) : (
-        <div className="manage-deck">
-          <div className="manage-deck-header">
-            <label className="manage-field">
-              Deck name
-              <input
-                type="text"
-                value={deck.name}
-                onChange={(event) =>
-                  updateDeck((d) => ({ ...d, name: event.target.value }))
-                }
-              />
-            </label>
-            <label className="manage-field">
-              Deck size
-              <input
-                type="number"
-                min="1"
-                value={deck.size}
-                onChange={(event) =>
-                  updateDeck((d) => ({
-                    ...d,
-                    size: Math.max(1, Number(event.target.value) || 1),
-                  }))
-                }
-              />
-            </label>
+        <>
+          <div
+            className="manage-tabs manage-subtabs"
+            role="tablist"
+            aria-label="Choose deck"
+          >
+            {decks.map((d, i) => (
+              <button
+                key={d.id}
+                type="button"
+                role="tab"
+                aria-selected={i === activeDeckIndex}
+                className={`manage-tab${i === activeDeckIndex ? ' manage-tab-active' : ''}`}
+                onClick={() => setActiveDeckIndex(i)}
+              >
+                {d.name}
+              </button>
+            ))}
+          </div>
+          <div className="manage-deck">
+            <div className="manage-deck-header">
+              <label className="manage-field">
+                Deck name
+                <input
+                  type="text"
+                  value={deck.name}
+                  onChange={(event) =>
+                    updateDeck((d) => ({ ...d, name: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="manage-field">
+                Deck size
+                <input
+                  type="number"
+                  min="1"
+                  value={deck.size}
+                  onChange={(event) =>
+                    updateDeck((d) => ({
+                      ...d,
+                      size: Math.max(1, Number(event.target.value) || 1),
+                    }))
+                  }
+                />
+              </label>
+              <button
+                type="button"
+                className="board-recenter"
+                onClick={resetDeck}
+              >
+                Reset to default
+              </button>
+            </div>
+
+            <div className="manage-table-scroll">
+              <table className="manage-cards">
+                <thead>
+                  <tr>
+                    <th>Icon</th>
+                    <th>Name</th>
+                    <th>Top</th>
+                    <th>Right</th>
+                    <th>Bottom</th>
+                    <th>Left</th>
+                    <th aria-hidden="true"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deck.cardTypes.map((card, i) => (
+                    <tr key={card.id}>
+                      <td>
+                        <input
+                          className="manage-emoji-input"
+                          type="text"
+                          aria-label={`Icon for ${card.name || 'card'}`}
+                          value={card.emoji}
+                          onChange={(event) =>
+                            updateCardType(i, { emoji: event.target.value })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          aria-label="Card name"
+                          value={card.name}
+                          onChange={(event) =>
+                            updateCardType(i, { name: event.target.value })
+                          }
+                        />
+                      </td>
+                      {SIDE_KEYS.map((side) => (
+                        <td key={side}>
+                          <input
+                            className="manage-side-input"
+                            type="number"
+                            min="1"
+                            max="9"
+                            aria-label={`${side} value for ${card.name || 'card'}`}
+                            value={card.sides[side]}
+                            onChange={(event) =>
+                              updateSide(i, side, event.target.value)
+                            }
+                          />
+                        </td>
+                      ))}
+                      <td>
+                        <button
+                          type="button"
+                          className="manage-remove"
+                          onClick={() => removeCardType(i)}
+                          disabled={deck.cardTypes.length <= 1}
+                          aria-label={`Remove ${card.name || 'card'}`}
+                        >
+                          X
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             <button
               type="button"
               className="board-recenter"
-              onClick={resetDeck}
+              onClick={addCardType}
             >
-              Reset to default
+              Add card
             </button>
           </div>
-
-          <table className="manage-cards">
-            <thead>
-              <tr>
-                <th>Icon</th>
-                <th>Name</th>
-                <th>Top</th>
-                <th>Right</th>
-                <th>Bottom</th>
-                <th>Left</th>
-                <th aria-hidden="true"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {deck.cardTypes.map((card, i) => (
-                <tr key={card.id}>
-                  <td>
-                    <input
-                      className="manage-emoji-input"
-                      type="text"
-                      aria-label={`Icon for ${card.name || 'card'}`}
-                      value={card.emoji}
-                      onChange={(event) =>
-                        updateCardType(i, { emoji: event.target.value })
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      aria-label="Card name"
-                      value={card.name}
-                      onChange={(event) =>
-                        updateCardType(i, { name: event.target.value })
-                      }
-                    />
-                  </td>
-                  {SIDE_KEYS.map((side) => (
-                    <td key={side}>
-                      <input
-                        className="manage-side-input"
-                        type="number"
-                        min="1"
-                        max="9"
-                        aria-label={`${side} value for ${card.name || 'card'}`}
-                        value={card.sides[side]}
-                        onChange={(event) =>
-                          updateSide(i, side, event.target.value)
-                        }
-                      />
-                    </td>
-                  ))}
-                  <td>
-                    <button
-                      type="button"
-                      className="manage-remove"
-                      onClick={() => removeCardType(i)}
-                      disabled={deck.cardTypes.length <= 1}
-                      aria-label={`Remove ${card.name || 'card'}`}
-                    >
-                      X
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <button
-            type="button"
-            className="board-recenter"
-            onClick={addCardType}
-          >
-            Add card
-          </button>
-        </div>
+        </>
       )}
+
+      {exportOpen ? (
+        <div
+          className="color-modal-backdrop"
+          onClick={() => setExportOpen(false)}
+        >
+          <div
+            className="pile-modal export-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Export decks and Food"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3>Export decks &amp; Food</h3>
+            <p className="wizard-body-hint">
+              Copy this and paste it into a GitHub issue to request it be
+              imported.
+            </p>
+            <textarea
+              className="export-textarea"
+              readOnly
+              value={exportPayload}
+              onFocus={(event) => event.target.select()}
+            />
+            <div className="wizard-step-actions">
+              <button
+                type="button"
+                className="end-turn-btn"
+                onClick={copyExport}
+              >
+                Copy to clipboard
+              </button>
+              <button
+                type="button"
+                className="board-recenter"
+                onClick={() => setExportOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

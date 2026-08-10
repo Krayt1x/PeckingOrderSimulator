@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import {
+  render,
+  screen,
+  cleanup,
+  fireEvent,
+  within,
+} from '@testing-library/react';
 import ManagePage from './ManagePage.jsx';
 import { DEFAULT_DECKS } from '../lib/decks.js';
 import { DEFAULT_FOOD } from '../lib/food.js';
@@ -21,6 +27,31 @@ function Harness() {
 }
 
 describe('ManagePage', () => {
+  it('has no page heading or subtext, and no page-level horizontal overflow', () => {
+    const { container } = render(<Harness />);
+
+    expect(screen.queryByRole('heading', { name: /Manage decks/ })).toBeNull();
+    expect(screen.queryByText(/Edit each deck’s cards/)).toBeNull();
+    // The wide cards table scrolls in its own box instead of the page.
+    expect(container.querySelector('.manage-table-scroll')).not.toBeNull();
+  });
+
+  it('separates Decks and Food into top-level tabs, with per-deck sub-tabs', () => {
+    render(<Harness />);
+
+    const sections = screen.getByRole('tablist', { name: 'Manage sections' });
+    expect(within(sections).getByRole('tab', { name: 'Decks' })).toBeDefined();
+    expect(within(sections).getByRole('tab', { name: 'Food' })).toBeDefined();
+
+    const deckTabs = screen.getByRole('tablist', { name: 'Choose deck' });
+    DEFAULT_DECKS.forEach((d) => {
+      expect(within(deckTabs).getByRole('tab', { name: d.name })).toBeDefined();
+    });
+
+    fireEvent.click(within(sections).getByRole('tab', { name: 'Food' }));
+    expect(screen.queryByRole('tablist', { name: 'Choose deck' })).toBeNull();
+  });
+
   it('lets you edit a card side value', () => {
     const { container } = render(<Harness />);
     const topInputs = container.querySelectorAll('.manage-side-input');
@@ -112,5 +143,20 @@ describe('ManagePage', () => {
     const removeButtons = screen.getAllByRole('button', { name: /Remove/ });
     fireEvent.click(removeButtons[removeButtons.length - 1]);
     expect(container.querySelectorAll('.food-shape-card')).toHaveLength(before);
+  });
+
+  it('opens an Export modal with the current decks and Food as JSON', () => {
+    render(<Harness />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export' }));
+
+    const modal = screen.getByRole('dialog', { name: /Export/ });
+    const textarea = within(modal).getByDisplayValue(/"decks"/);
+    const payload = JSON.parse(textarea.value);
+    expect(payload.decks).toEqual(DEFAULT_DECKS);
+    expect(payload.food).toEqual(DEFAULT_FOOD);
+
+    fireEvent.click(within(modal).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
