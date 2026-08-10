@@ -85,6 +85,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
 
   const activePlayer = players[activeIndex];
   const activeState = playerStates[activeIndex];
+  const activeDeck = decks.find((d) => d.id === activePlayer.deckId);
   const foodRemaining = board.some((cell) => cell?.type === 'food');
   const gameOver = !foodRemaining;
   const canAct = !activePlayer.isCPU && actionsRemaining > 0 && !gameOver;
@@ -463,20 +464,6 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
             Actions: {actionsRemaining}/{ACTIONS_PER_TURN}
           </span>
         ) : null}
-        <button
-          type="button"
-          className="draw-pile-count pile-btn"
-          onClick={() => openPileModal('draw')}
-        >
-          Draw pile: {activeState.drawPile.length}
-        </button>
-        <button
-          type="button"
-          className="draw-pile-count pile-btn"
-          onClick={() => openPileModal('discard')}
-        >
-          Discard: {activeState.discardPile.length}
-        </button>
         {gameOver ? null : activePlayer.isCPU ? (
           <button
             type="button"
@@ -495,13 +482,41 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
           </button>
         )}
       </div>
-      <Hand
-        cards={activeState.hand}
-        selectedCardId={selectedCardId}
-        onSelectCard={handleSelectCard}
-        playerColor={activePlayer.color}
-        disabled={!canAct}
-      />
+      <div className="hand-row">
+        <button
+          type="button"
+          className="card card-back"
+          style={{
+            '--card-border': activePlayer.color,
+            '--card-bg': activeDeck?.color,
+          }}
+          aria-label={`Draw pile: ${activeState.drawPile.length} cards`}
+          onClick={() => openPileModal('draw')}
+        >
+          <span className="card-back-label">Draw Pile</span>
+          <span className="card-back-deck">{activeDeck?.name}</span>
+        </button>
+        <Hand
+          cards={activeState.hand}
+          selectedCardId={selectedCardId}
+          onSelectCard={handleSelectCard}
+          playerColor={activePlayer.color}
+          disabled={!canAct}
+        />
+        <button
+          type="button"
+          className="card card-back"
+          style={{
+            '--card-border': activePlayer.color,
+            '--card-bg': activeDeck?.color,
+          }}
+          aria-label={`Discard pile: ${activeState.discardPile.length} cards`}
+          onClick={() => openPileModal('discard')}
+        >
+          <span className="card-back-label">Discard Pile</span>
+          <span className="card-back-deck">{activeDeck?.name}</span>
+        </button>
+      </div>
       {pileModal ? (
         <div
           className="color-modal-backdrop"

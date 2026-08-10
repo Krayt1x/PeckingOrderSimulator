@@ -280,19 +280,6 @@ body {
   color: var(--text-muted);
 }
 
-.pile-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  cursor: pointer;
-}
-
-.pile-btn:hover {
-  text-decoration: underline;
-  color: var(--text-secondary);
-}
-
 .end-turn-btn {
   background: var(--accent);
   color: #fff;
@@ -308,11 +295,23 @@ body {
   background: var(--accent-hover);
 }
 
+.hand-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+
+.hand-row .hand {
+  margin: 0;
+  flex: 1 1 auto;
+}
+
 .hand {
   display: flex;
   flex-wrap: wrap;
   gap: 0;
-  margin: 1rem 0;
 }
 
 .hand-empty {
@@ -346,6 +345,22 @@ body {
   gap: 0.35rem;
   cursor: pointer;
   color: var(--text-primary);
+}
+
+/* Simple decorative inner border so the card front reads as illustrated
+   artwork rather than a flat rectangle. */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid color-mix(in srgb, var(--card-border) 55%, transparent);
+  border-radius: 0.3rem;
+  pointer-events: none;
+}
+
+.card-food::before,
+.card-back::before {
+  content: none;
 }
 
 .card-selected {
@@ -384,39 +399,82 @@ body {
   pointer-events: none;
 }
 
+/* Each side value sits inside a small triangle pointing at the edge of the
+   card it applies to (top/right/bottom/left), like a compass marker. */
 .card-side {
   position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.65rem;
   font-weight: 700;
   line-height: 1;
-  color: var(--text-primary);
-  background: color-mix(in srgb, var(--bg-card) 65%, transparent);
-  border-radius: 2px;
-  padding: 1px 3px;
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
+  background: var(--card-border);
+}
+
+.card-side-top,
+.card-side-bottom {
+  width: 1.7em;
+  height: 1.1em;
+}
+
+.card-side-left,
+.card-side-right {
+  width: 1.1em;
+  height: 1.7em;
 }
 
 .card-side-top {
-  top: 3px;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
 }
 
 .card-side-right {
-  right: 3px;
+  right: 0;
   top: 50%;
   transform: translateY(-50%);
+  clip-path: polygon(100% 50%, 0% 0%, 0% 100%);
 }
 
 .card-side-bottom {
-  bottom: 3px;
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
+  clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
 }
 
 .card-side-left {
-  left: 3px;
+  left: 0;
   top: 50%;
   transform: translateY(-50%);
+  clip-path: polygon(0% 50%, 100% 0%, 100% 100%);
+}
+
+.card-back {
+  cursor: pointer;
+  flex-shrink: 0;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.card-back-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.card-back-deck {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .manage-header {

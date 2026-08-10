@@ -57,6 +57,19 @@ function findFoodIndex(cells) {
   return cells.findIndex((cell) => cell.querySelector('.card-food'));
 }
 
+// The pile tiles show their card count only via aria-label (the visible
+// face just says "Draw Pile"/"Discard Pile" plus the deck name).
+function pileCount(type) {
+  const label =
+    type === 'draw' ? /Draw pile: \d+ cards/ : /Discard pile: \d+ cards/;
+  return Number(
+    screen
+      .getByRole('button', { name: label })
+      .getAttribute('aria-label')
+      .match(/\d+/)[0],
+  );
+}
+
 // A single, isolated 1x1 food piece — used by tests that need a
 // deterministic, easy-to-reason-about board.
 const SINGLE_FOOD = {
@@ -301,7 +314,9 @@ describe('PlayPage', () => {
     // ...and sitting in Player 1's discard pile.
     fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
     expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
-    expect(screen.getByText('Discard: 1')).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: 'Discard pile: 1 cards' }),
+    ).toBeDefined();
   });
 
   it("borders a played card with the owner's color and fills it with the deck's color", () => {
@@ -462,9 +477,7 @@ describe('PlayPage', () => {
     let cells = screen.getAllByRole('gridcell');
     const foodIndex = findFoodIndex(cells);
     const birdSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
-    const drawPileBefore = Number(
-      screen.getByText(/Draw pile: \d+/).textContent.match(/\d+/)[0],
-    );
+    const drawPileBefore = pileCount('draw');
 
     playThenCycleBackToPlayer1(birdSpot);
     expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
@@ -475,15 +488,15 @@ describe('PlayPage', () => {
     cells = screen.getAllByRole('gridcell');
     expect(isFilled(cells[foodIndex])).toBe(false);
     expect(isFilled(cells[birdSpot])).toBe(false);
-    expect(screen.getByText('Discard: 1')).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: 'Discard pile: 1 cards' }),
+    ).toBeDefined();
     expect(screen.getByText('Actions: 0/1')).toBeDefined();
     expect(screen.getByText('Player 1: 1')).toBeDefined();
 
     // Draw pile lost 1 card refilling the hand after the earlier play, and
     // gained 1 back as the eaten Food's card — net unchanged.
-    const drawPileAfter = Number(
-      screen.getByText(/Draw pile: \d+/).textContent.match(/\d+/)[0],
-    );
+    const drawPileAfter = pileCount('draw');
     expect(drawPileAfter).toBe(drawPileBefore);
   });
 
@@ -706,11 +719,11 @@ describe('PlayPage', () => {
         food={DEFAULT_FOOD}
       />,
     );
-    const drawCount = Number(
-      screen.getByText(/Draw pile: \d+/).textContent.match(/\d+/)[0],
-    );
+    const drawCount = pileCount('draw');
 
-    fireEvent.click(screen.getByText(/Draw pile: \d+/));
+    fireEvent.click(
+      screen.getByRole('button', { name: /Draw pile: \d+ cards/ }),
+    );
 
     const modal = screen.getByRole('dialog', { name: 'Draw pile' });
     expect(within(modal).getAllByRole('listitem')).toHaveLength(drawCount);
@@ -754,8 +767,12 @@ describe('PlayPage', () => {
     fireEvent.click(screen.getAllByRole('gridcell')[strongSpot]);
     fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
 
-    expect(screen.getByText('Discard: 1')).toBeDefined();
-    fireEvent.click(screen.getByText('Discard: 1'));
+    expect(
+      screen.getByRole('button', { name: 'Discard pile: 1 cards' }),
+    ).toBeDefined();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Discard pile: 1 cards' }),
+    );
 
     const modal = screen.getByRole('dialog', { name: 'Discard pile' });
     expect(within(modal).getAllByRole('listitem')).toHaveLength(1);
