@@ -8,7 +8,7 @@ const DEFAULT_CELL_SIZE = 88;
 const MIN_CELL_SIZE = 32;
 const MAX_CELL_SIZE = 144;
 const ZOOM_STEP = 16;
-const CELL_GAP = 4;
+const CELL_GAP = 0;
 
 // The viewport box itself never resizes — zooming changes how many cells
 // fit inside this fixed pixel box, not the box's own size.

@@ -120,7 +120,7 @@ body {
 
 .board {
   display: grid;
-  gap: 8px;
+  gap: 0;
   transition: transform 0.15s ease-out;
 }
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { computeFitView, BOARD_SIZE } from './GameBoard.jsx';
 import { placeFoodShapes, DEFAULT_FOOD } from '../lib/food.js';
 
-const CELL_GAP = 4;
+const CELL_GAP = 0;
 const DEFAULT_CELL_SIZE = 88;
 const VIEWPORT_PX = 5 * (DEFAULT_CELL_SIZE + CELL_GAP) - CELL_GAP;
 
