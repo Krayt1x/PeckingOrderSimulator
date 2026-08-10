@@ -327,73 +327,56 @@ export default function ManagePage({ decks, setDecks, food, setFood }) {
               </button>
             </div>
 
-            <div className="manage-table-scroll">
-              <table className="manage-cards">
-                <thead>
-                  <tr>
-                    <th>Icon</th>
-                    <th>Name</th>
-                    <th>Top</th>
-                    <th>Right</th>
-                    <th>Bottom</th>
-                    <th>Left</th>
-                    <th aria-hidden="true"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {deck.cardTypes.map((card, i) => (
-                    <tr key={card.id}>
-                      <td>
+            <div className="manage-cards-list">
+              {deck.cardTypes.map((card, i) => (
+                <div key={card.id} className="manage-card-row">
+                  <input
+                    className="manage-emoji-input"
+                    type="text"
+                    aria-label={`Icon for ${card.name || 'card'}`}
+                    value={card.emoji}
+                    onChange={(event) =>
+                      updateCardType(i, { emoji: event.target.value })
+                    }
+                  />
+                  <input
+                    className="manage-card-name-input"
+                    type="text"
+                    aria-label="Card name"
+                    value={card.name}
+                    onChange={(event) =>
+                      updateCardType(i, { name: event.target.value })
+                    }
+                  />
+                  <div className="manage-card-sides">
+                    {SIDE_KEYS.map((side) => (
+                      <label key={side} className="manage-side-field">
+                        {side.charAt(0).toUpperCase() + side.slice(1)}
                         <input
-                          className="manage-emoji-input"
-                          type="text"
-                          aria-label={`Icon for ${card.name || 'card'}`}
-                          value={card.emoji}
+                          className="manage-side-input"
+                          type="number"
+                          min="1"
+                          max="9"
+                          aria-label={`${side} value for ${card.name || 'card'}`}
+                          value={card.sides[side]}
                           onChange={(event) =>
-                            updateCardType(i, { emoji: event.target.value })
+                            updateSide(i, side, event.target.value)
                           }
                         />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          aria-label="Card name"
-                          value={card.name}
-                          onChange={(event) =>
-                            updateCardType(i, { name: event.target.value })
-                          }
-                        />
-                      </td>
-                      {SIDE_KEYS.map((side) => (
-                        <td key={side}>
-                          <input
-                            className="manage-side-input"
-                            type="number"
-                            min="1"
-                            max="9"
-                            aria-label={`${side} value for ${card.name || 'card'}`}
-                            value={card.sides[side]}
-                            onChange={(event) =>
-                              updateSide(i, side, event.target.value)
-                            }
-                          />
-                        </td>
-                      ))}
-                      <td>
-                        <button
-                          type="button"
-                          className="manage-remove"
-                          onClick={() => removeCardType(i)}
-                          disabled={deck.cardTypes.length <= 1}
-                          aria-label={`Remove ${card.name || 'card'}`}
-                        >
-                          X
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </label>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="manage-remove"
+                    onClick={() => removeCardType(i)}
+                    disabled={deck.cardTypes.length <= 1}
+                    aria-label={`Remove ${card.name || 'card'}`}
+                  >
+                    X
+                  </button>
+                </div>
+              ))}
             </div>
             <button
               type="button"

@@ -27,13 +27,15 @@ function Harness() {
 }
 
 describe('ManagePage', () => {
-  it('has no page heading or subtext, and no page-level horizontal overflow', () => {
+  it('has no page heading or subtext, and no table to overflow the page width', () => {
     const { container } = render(<Harness />);
 
     expect(screen.queryByRole('heading', { name: /Manage decks/ })).toBeNull();
     expect(screen.queryByText(/Edit each deck’s cards/)).toBeNull();
-    // The wide cards table scrolls in its own box instead of the page.
-    expect(container.querySelector('.manage-table-scroll')).not.toBeNull();
+    // Cards are wrapping flex rows, not a table with a fixed min-width —
+    // nothing here can force horizontal scroll on the page.
+    expect(container.querySelector('table')).toBeNull();
+    expect(container.querySelector('.manage-card-row')).not.toBeNull();
   });
 
   it('separates Decks and Food into top-level tabs, with per-deck sub-tabs', () => {
@@ -62,18 +64,16 @@ describe('ManagePage', () => {
 
   it('adds and removes cards from the active deck', () => {
     const { container } = render(<Harness />);
-    const rowsBefore = container.querySelectorAll(
-      '.manage-cards tbody tr',
-    ).length;
+    const rowsBefore = container.querySelectorAll('.manage-card-row').length;
 
     fireEvent.click(screen.getByRole('button', { name: 'Add card' }));
-    expect(container.querySelectorAll('.manage-cards tbody tr')).toHaveLength(
+    expect(container.querySelectorAll('.manage-card-row')).toHaveLength(
       rowsBefore + 1,
     );
 
     const removeButtons = screen.getAllByRole('button', { name: /Remove/ });
     fireEvent.click(removeButtons[removeButtons.length - 1]);
-    expect(container.querySelectorAll('.manage-cards tbody tr')).toHaveLength(
+    expect(container.querySelectorAll('.manage-card-row')).toHaveLength(
       rowsBefore,
     );
   });
