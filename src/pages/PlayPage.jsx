@@ -2,18 +2,16 @@ import { useState } from 'react';
 import GameBoard, { BOARD_SIZE } from '../components/GameBoard.jsx';
 import Hand from '../components/Hand.jsx';
 import { HAND_SIZE, buildDrawPile } from '../lib/decks.js';
-import { buildFoodCards } from '../lib/food.js';
+import { placeFoodShapes } from '../lib/food.js';
 import { pickCpuMove } from '../lib/cpu.js';
 
-// Food is the objective cards the game is anchored around — a few fixed
-// spots near the center of the board.
-const FOOD_POSITIONS = [44, 45, 54, 55];
-
+// Food is the objective cards the game is anchored around, placed as close
+// to the board's center as its shapes allow.
 function createInitialBoard(food) {
   const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
-  const foodCards = buildFoodCards(food, FOOD_POSITIONS.length);
-  FOOD_POSITIONS.forEach((index, i) => {
-    cells[index] = foodCards[i];
+  const foodCells = placeFoodShapes(food, BOARD_SIZE);
+  Object.entries(foodCells).forEach(([index, card]) => {
+    cells[Number(index)] = card;
   });
   return cells;
 }

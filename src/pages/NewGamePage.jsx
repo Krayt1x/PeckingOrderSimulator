@@ -165,8 +165,8 @@ export default function NewGamePage({ decks, food, onStart }) {
             </span>
             <span className="home-tile-title">{food.name}</span>
             <span className="home-tile-description">
-              {food.cardTypes.length} card type
-              {food.cardTypes.length === 1 ? '' : 's'} — edit in{' '}
+              {food.shapes.length} food shape
+              {food.shapes.length === 1 ? '' : 's'} — edit in{' '}
               <a href="#manage">Manage</a>
             </span>
           </div>

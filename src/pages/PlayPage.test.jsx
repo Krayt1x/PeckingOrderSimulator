@@ -30,6 +30,19 @@ function cardNameOf(button) {
   return button.querySelector('.card-on-board').getAttribute('title');
 }
 
+const TOTAL_FOOD_CELLS = DEFAULT_FOOD.shapes.reduce(
+  (sum, s) => sum + s.cells.length,
+  0,
+);
+
+function findFoodCells(cells) {
+  return cells.filter((cell) => cell.querySelector('.card-food'));
+}
+
+function findFirstFoodIndex(cells) {
+  return cells.findIndex((cell) => cell.querySelector('.card-food'));
+}
+
 describe('PlayPage', () => {
   it('deals a starting hand of 4 for the active player and names whose turn it is', () => {
     render(
@@ -45,7 +58,7 @@ describe('PlayPage', () => {
     expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE);
   });
 
-  it('renders a 10x10 board with 4 Food objective cells built from the food config', () => {
+  it('renders a 10x10 board with every Food shape placed without overlapping', () => {
     render(
       <PlayPage
         players={twoPlayers()}
@@ -57,10 +70,13 @@ describe('PlayPage', () => {
     const cells = screen.getAllByRole('gridcell');
     expect(cells).toHaveLength(100);
 
-    // Food sits at indices 44, 45, 54, 55 on the 10x10 board, cycling
-    // through the food config's card types in order.
-    const foodNames = [44, 45, 54, 55].map((i) => cardNameOf(cells[i]));
-    expect(foodNames).toEqual(DEFAULT_FOOD.cardTypes.map((c) => c.name));
+    const foodCells = findFoodCells(cells);
+    expect(foodCells).toHaveLength(TOTAL_FOOD_CELLS);
+
+    const foodNames = new Set(foodCells.map((cell) => cardNameOf(cell)));
+    DEFAULT_FOOD.shapes.forEach((shape) =>
+      expect(foodNames.has(shape.name)).toBe(true),
+    );
   });
 
   it('plays a card from hand and ends the turn, advancing to the next player', () => {
@@ -94,9 +110,10 @@ describe('PlayPage', () => {
       />,
     );
     const hand = screen.getByRole('list', { name: 'Your hand' });
+    const foodIndex = findFirstFoodIndex(screen.getAllByRole('gridcell'));
 
     fireEvent.click(within(hand).getAllByRole('button')[0]);
-    fireEvent.click(screen.getAllByRole('gridcell')[44]);
+    fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
 
     expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE);
   });
@@ -119,8 +136,8 @@ describe('PlayPage', () => {
     const filledCells = screen
       .getAllByRole('gridcell')
       .filter((cell) => cell.className.includes('board-cell-filled'));
-    // 4 Food cells plus the one card the CPU just played.
-    expect(filledCells).toHaveLength(5);
+    // Every Food cell plus the one card the CPU just played.
+    expect(filledCells).toHaveLength(TOTAL_FOOD_CELLS + 1);
   });
 
   it("disables the hand while it is a CPU player's turn", () => {

@@ -1,54 +1,153 @@
-export const FOOD_COUNT = 4;
+export const FOOD_GRID_SIZE = 4;
 
 export const DEFAULT_FOOD = {
   id: 'food',
   name: 'Standard Food',
-  cardTypes: [
+  shapes: [
     {
-      id: 'grain',
-      name: 'Grain',
-      emoji: '🌾',
-      color: '#16a34a',
-      sides: { top: 3, right: 3, bottom: 3, left: 3 },
+      id: 'chip',
+      name: 'Chip',
+      emoji: '🍟',
+      color: '#eab308',
+      cells: [{ row: 0, col: 0 }],
+      outsideValue: 1,
+      insideValue: 1,
     },
     {
-      id: 'seed',
-      name: 'Seed',
-      emoji: '🌱',
-      color: '#22c55e',
-      sides: { top: 2, right: 4, bottom: 2, left: 4 },
-    },
-    {
-      id: 'berry',
-      name: 'Berry',
-      emoji: '🍓',
-      color: '#dc2626',
-      sides: { top: 4, right: 2, bottom: 4, left: 2 },
-    },
-    {
-      id: 'worm',
-      name: 'Worm',
-      emoji: '🪱',
+      id: 'potato-cake',
+      name: 'Potato Cake',
+      emoji: '🥔',
       color: '#a16207',
-      sides: { top: 3, right: 5, bottom: 3, left: 1 },
+      cells: [
+        { row: 0, col: 0 },
+        { row: 0, col: 1 },
+      ],
+      outsideValue: 2,
+      insideValue: 1,
+    },
+    {
+      id: 'burger',
+      name: 'Burger',
+      emoji: '🍔',
+      color: '#dc2626',
+      cells: [
+        { row: 0, col: 0 },
+        { row: 0, col: 1 },
+        { row: 1, col: 0 },
+        { row: 1, col: 1 },
+      ],
+      outsideValue: 2,
+      insideValue: 1,
     },
   ],
 };
 
-// Food isn't drawn/shuffled like a player deck — it's placed directly on
-// the board, cycling through the configured food card types to fill the
-// fixed number of Food positions.
-export function buildFoodCards(food, count = FOOD_COUNT) {
-  const types = food?.cardTypes ?? [];
-  if (types.length === 0) return Array(count).fill(null);
+let nextFoodShapeId = 1;
 
-  return Array.from({ length: count }, (_, i) => {
-    const type = types[i % types.length];
-    return {
-      ...type,
-      typeId: type.id,
-      id: `${type.id}-food-${i}`,
-      type: 'food',
-    };
+export function createFoodShape() {
+  const id = `custom-food-${Date.now()}-${nextFoodShapeId++}`;
+  return {
+    id,
+    name: 'New Food',
+    emoji: '🍽️',
+    color: '#57534e',
+    cells: [{ row: 0, col: 0 }],
+    outsideValue: 1,
+    insideValue: 1,
+  };
+}
+
+function hasCell(cells, row, col) {
+  return cells.some((c) => c.row === row && c.col === col);
+}
+
+// For each cell in the shape, computes its top/right/bottom/left values —
+// an edge touching another cell of the same shape uses insideValue,
+// otherwise it's on the shape's perimeter and uses outsideValue.
+export function computeShapeCells(shape) {
+  const cells = shape?.cells ?? [];
+  return cells.map(({ row, col }) => ({
+    row,
+    col,
+    sides: {
+      top: hasCell(cells, row - 1, col)
+        ? shape.insideValue
+        : shape.outsideValue,
+      right: hasCell(cells, row, col + 1)
+        ? shape.insideValue
+        : shape.outsideValue,
+      bottom: hasCell(cells, row + 1, col)
+        ? shape.insideValue
+        : shape.outsideValue,
+      left: hasCell(cells, row, col - 1)
+        ? shape.insideValue
+        : shape.outsideValue,
+    },
+  }));
+}
+
+function shapeBounds(shape) {
+  const cells = shape?.cells ?? [];
+  if (cells.length === 0) return { width: 0, height: 0 };
+  return {
+    width: Math.max(...cells.map((c) => c.col)) + 1,
+    height: Math.max(...cells.map((c) => c.row)) + 1,
+  };
+}
+
+// Places every shape in food.shapes onto a boardSize x boardSize board,
+// packed as close to the center as possible without overlapping. Bigger
+// shapes are placed first so smaller ones can fill in around them. Returns
+// a { [boardIndex]: cardFace } map.
+export function placeFoodShapes(food, boardSize) {
+  const shapes = food?.shapes ?? [];
+  const occupied = new Set();
+  const board = {};
+
+  const center = (boardSize - 1) / 2;
+  const anchors = [];
+  for (let row = 0; row < boardSize; row++) {
+    for (let col = 0; col < boardSize; col++) {
+      anchors.push({ row, col });
+    }
+  }
+  anchors.sort(
+    (a, b) =>
+      (a.row - center) ** 2 +
+      (a.col - center) ** 2 -
+      ((b.row - center) ** 2 + (b.col - center) ** 2),
+  );
+
+  const bySize = [...shapes].sort((a, b) => b.cells.length - a.cells.length);
+
+  bySize.forEach((shape) => {
+    if (shape.cells.length === 0) return;
+    const { width, height } = shapeBounds(shape);
+
+    const anchor = anchors.find(({ row, col }) => {
+      if (row + height > boardSize || col + width > boardSize) return false;
+      return shape.cells.every(
+        (cell) =>
+          !occupied.has((row + cell.row) * boardSize + (col + cell.col)),
+      );
+    });
+    if (!anchor) return;
+
+    computeShapeCells(shape).forEach(({ row, col, sides }) => {
+      const boardRow = anchor.row + row;
+      const boardCol = anchor.col + col;
+      const index = boardRow * boardSize + boardCol;
+      occupied.add(index);
+      board[index] = {
+        id: `${shape.id}-${boardRow}-${boardCol}`,
+        type: 'food',
+        name: shape.name,
+        emoji: shape.emoji,
+        color: shape.color,
+        sides,
+      };
+    });
   });
+
+  return board;
 }
