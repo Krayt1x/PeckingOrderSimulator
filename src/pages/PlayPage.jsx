@@ -16,6 +16,7 @@ import { resolveCaptures, canPlaceCard } from '../lib/combat.js';
 import { pickCpuMove, pickCpuEat } from '../lib/cpu.js';
 
 const ACTIONS_PER_TURN = 1;
+const CAPTURE_REMOVAL_DELAY_MS = 250;
 
 let nextFoodCardId = 1;
 
@@ -135,6 +136,20 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
     });
   }
 
+  // Shows the newly placed/moved card right away; if it captured anything,
+  // the captured card stays visible on the board for a beat before it's
+  // actually removed, instead of vanishing the instant the new card lands.
+  function commitBoardAfterCapture(
+    preCaptureBoard,
+    postCaptureBoard,
+    captured,
+  ) {
+    setBoard(preCaptureBoard);
+    if (captured.length > 0) {
+      setTimeout(() => setBoard(postCaptureBoard), CAPTURE_REMOVAL_DELAY_MS);
+    }
+  }
+
   function handleSelectCard(cardId) {
     if (!canAct) return;
     setEatFoodIndex(null);
@@ -163,7 +178,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
     );
     nextPlayerStates = applyOwnerCaptureBookkeeping(nextPlayerStates, captured);
 
-    setBoard(nextBoard);
+    commitBoardAfterCapture(withCard, nextBoard, captured);
     setPlayerStates(nextPlayerStates);
     spendAction(Boolean(card.fromFood));
   }
@@ -182,7 +197,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
       BOARD_SIZE,
     );
 
-    setBoard(nextBoard);
+    commitBoardAfterCapture(withMove, nextBoard, captured);
     setPlayerStates(applyOwnerCaptureBookkeeping(playerStates, captured));
     spendAction();
   }

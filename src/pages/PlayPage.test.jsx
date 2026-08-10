@@ -310,7 +310,7 @@ describe('PlayPage', () => {
     expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE);
   });
 
-  it('captures a weaker adjacent opponent card and discards it to its owner', () => {
+  it('captures a weaker adjacent opponent card and discards it to its owner', async () => {
     render(
       <PlayPage
         players={[
@@ -345,10 +345,16 @@ describe('PlayPage', () => {
     );
     fireEvent.click(screen.getAllByRole('gridcell')[strongSpot]);
 
-    // The Weak card should be gone from the board...
+    // The captured card stays briefly visible before it's actually
+    // removed from the board (a 250ms delay), but the new card lands
+    // immediately.
     cells = screen.getAllByRole('gridcell');
-    expect(isFilled(cells[weakSpot])).toBe(false);
     expect(isFilled(cells[strongSpot])).toBe(true);
+    await waitFor(
+      () =>
+        expect(isFilled(screen.getAllByRole('gridcell')[weakSpot])).toBe(false),
+      { timeout: 2000 },
+    );
 
     // ...and sitting in Player 1's discard pile.
     fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
