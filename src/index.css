@@ -254,12 +254,46 @@ body {
 .score-board {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.6rem;
   list-style: none;
   margin: 0.75rem 0 0;
   padding: 0;
   font-size: 0.85rem;
-  color: var(--text-secondary);
+}
+
+/* Each player's title gets a pill background in their own chosen color,
+   so the score board reads the same colors as their cards on the board. */
+.score-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--player-color);
+  color: #fff;
+  padding: 0.3rem 0.5rem 0.3rem 0.7rem;
+  border-radius: 999px;
+}
+
+.score-name {
+  font-weight: 600;
+}
+
+.score-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+/* Whoever currently has the highest score gets a gold circle behind
+   their number, at a glance during play — not just at game end. */
+.score-leader {
+  background: #facc15;
+  color: #1c1917;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
 }
 
 .hand-header {

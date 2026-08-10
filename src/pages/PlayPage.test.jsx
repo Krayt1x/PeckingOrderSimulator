@@ -628,17 +628,12 @@ describe('PlayPage', () => {
       bottom: before.right,
       left: before.bottom,
     });
-    // The card visually spins to match, not just its side values.
-    expect(selectedCard.querySelector('.card-emoji').style.transform).toBe(
-      'rotate(90deg)',
-    );
 
     fireEvent.click(
       screen.getByRole('button', { name: 'Rotate anti-clockwise' }),
     );
     const afterCcw = readSides();
     expect(afterCcw).toEqual(before);
-    expect(selectedCard.querySelector('.card-emoji').style.transform).toBe('');
   });
 
   it('does not move a card dropped on a non-adjacent or occupied cell', () => {

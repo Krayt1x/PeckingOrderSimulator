@@ -636,11 +636,22 @@ export default function PlayPage({
       />
 
       <ul className="score-board">
-        {players.map((p, i) => (
-          <li key={p.id}>
-            {displayName(p)}: {playerStates[i].score}
-          </li>
-        ))}
+        {players.map((p, i) => {
+          const score = playerStates[i].score;
+          const isLeader = maxScore > 0 && score === maxScore;
+          return (
+            <li
+              key={p.id}
+              className="score-entry"
+              style={{ '--player-color': p.color }}
+            >
+              <span className="score-name">{displayName(p)}</span>:{' '}
+              <span className={`score-value${isLeader ? ' score-leader' : ''}`}>
+                {score}
+              </span>
+            </li>
+          );
+        })}
       </ul>
 
       <div className="hand-header">
