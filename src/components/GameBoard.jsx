@@ -295,12 +295,15 @@ export default function GameBoard({
           }}
         >
           {cells.map((card, index) => {
-            // Cards with side values show the emoji, corner name, and edge
-            // stats (like a Triple Triad-style card) once zoomed in enough
-            // not to collide. Cards without sides (Food) show their name
-            // below the emoji instead, at a lower zoom threshold.
+            // Bird cards show the emoji, corner name, and edge stats (like
+            // a Triple Triad-style card) once zoomed in enough not to
+            // collide. Food cards have edge stats too, but show their name
+            // below the emoji instead of in the corner, at a lower zoom
+            // threshold.
+            const isFoodCard = card?.type === 'food';
             const cardHasSides = Boolean(card?.sides) && showSides;
-            const cardShowsName = !card?.sides && showCardNames;
+            const cardShowsIndex = cardHasSides && !isFoodCard;
+            const cardShowsName = isFoodCard && showCardNames;
 
             const isDraggable = Boolean(draggableIndices?.has(index));
 
@@ -338,26 +341,26 @@ export default function GameBoard({
                     }
                     title={card.name}
                   >
+                    {cardShowsIndex ? (
+                      <span
+                        className="card-index"
+                        style={{ fontSize: sideSize }}
+                      >
+                        {card.name}
+                      </span>
+                    ) : null}
                     {cardHasSides ? (
-                      <>
-                        <span
-                          className="card-index"
-                          style={{ fontSize: sideSize }}
-                        >
-                          {card.name}
-                        </span>
-                        <span className="card-sides">
-                          {SIDE_KEYS.map((side) => (
-                            <span
-                              key={side}
-                              className={`card-side card-side-${side}`}
-                              style={{ fontSize: sideSize }}
-                            >
-                              {card.sides[side]}
-                            </span>
-                          ))}
-                        </span>
-                      </>
+                      <span className="card-sides">
+                        {SIDE_KEYS.map((side) => (
+                          <span
+                            key={side}
+                            className={`card-side card-side-${side}`}
+                            style={{ fontSize: sideSize }}
+                          >
+                            {card.sides[side]}
+                          </span>
+                        ))}
+                      </span>
                     ) : null}
                     <span
                       className="card-emoji"
