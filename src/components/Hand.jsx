@@ -1,3 +1,5 @@
+const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
+
 export default function Hand({ cards, selectedCardId, onSelectCard }) {
   return (
     <div className="hand" role="list" aria-label="Your hand">
@@ -9,6 +11,15 @@ export default function Hand({ cards, selectedCardId, onSelectCard }) {
           style={{ '--card-color': card.color }}
           onClick={() => onSelectCard(card.id)}
         >
+          {card.sides ? (
+            <span className="card-sides">
+              {SIDE_KEYS.map((side) => (
+                <span key={side} className={`card-side card-side-${side}`}>
+                  {card.sides[side]}
+                </span>
+              ))}
+            </span>
+          ) : null}
           <span className="card-emoji">{card.emoji}</span>
           <span className="card-name">{card.name}</span>
         </button>

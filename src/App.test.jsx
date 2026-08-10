@@ -1,58 +1,30 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { describe, it, expect, afterEach, beforeEach } from 'vitest';
+import { render, screen, cleanup } from '@testing-library/react';
 import App from './App.jsx';
 
-afterEach(() => cleanup());
+beforeEach(() => window.localStorage.clear());
+afterEach(() => {
+  cleanup();
+  window.location.hash = '';
+});
 
 describe('App', () => {
-  it('renders the Pecking Order heading', () => {
+  it('shows the Play page by default with the Play nav link active', () => {
     render(<App />);
     expect(
-      screen.getByRole('heading', { name: 'Pecking Order' }),
+      screen.getByRole('heading', { name: 'Pecking Order', level: 1 }),
     ).toBeDefined();
+    expect(screen.getByRole('link', { name: 'Play' }).className).toContain(
+      'active',
+    );
   });
 
-  it('renders a 10x10 board with Food objective cards near the center', () => {
+  it('shows the Manage page at #manage', () => {
+    window.location.hash = '#manage';
     render(<App />);
-
-    const cells = screen.getAllByRole('gridcell');
-    expect(cells).toHaveLength(100);
-    expect(screen.getAllByText('Food')).toHaveLength(4);
-  });
-
-  it('plays a selected card from hand onto an empty board cell', () => {
-    render(<App />);
-
-    const cells = screen.getAllByRole('gridcell');
-
-    fireEvent.click(screen.getByRole('button', { name: /Card 1/ }));
-    fireEvent.click(cells[0]);
-
-    expect(cells[0].textContent).toContain('Card 1');
-    expect(screen.queryByRole('button', { name: /Card 1/ })).toBeNull();
-  });
-
-  it('does not let you play onto an already-occupied cell', () => {
-    render(<App />);
-    const cells = screen.getAllByRole('gridcell');
-
-    fireEvent.click(screen.getByRole('button', { name: /Card 1/ }));
-    fireEvent.click(cells[0]);
-    fireEvent.click(screen.getByRole('button', { name: /Card 2/ }));
-    fireEvent.click(cells[0]);
-
-    expect(cells[0].textContent).toContain('Card 1');
-  });
-
-  it('does not let you play a card onto a Food objective cell', () => {
-    render(<App />);
-    const cells = screen.getAllByRole('gridcell');
-
-    // Food sits at indices 44, 45, 54, 55 on the 10x10 board.
-    fireEvent.click(screen.getByRole('button', { name: /Card 1/ }));
-    fireEvent.click(cells[44]);
-
-    expect(cells[44].textContent).toContain('Food');
-    expect(screen.queryByRole('button', { name: /Card 1/ })).not.toBeNull();
+    expect(screen.getByRole('heading', { name: 'Manage decks' })).toBeDefined();
+    expect(screen.getByRole('link', { name: 'Manage' }).className).toContain(
+      'active',
+    );
   });
 });

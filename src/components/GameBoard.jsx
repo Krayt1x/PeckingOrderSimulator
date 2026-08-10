@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
+const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
+
 export const BOARD_SIZE = 10;
 const VIEWPORT_SIZE = 5;
 const DEFAULT_CELL_SIZE = 72;
@@ -123,8 +125,10 @@ export default function GameBoard({ cells, selectedCard, onCellClick }) {
   }
 
   const showCardNames = cellSize >= 40;
+  const showSides = cellSize >= 48;
   const emojiSize = Math.max(14, Math.round(cellSize * 0.42));
   const nameSize = Math.max(8, Math.round(cellSize * 0.14));
+  const sideSize = Math.max(8, Math.round(cellSize * 0.16));
   const zoomPercent = Math.round((cellSize / DEFAULT_CELL_SIZE) * 100);
 
   return (
@@ -147,34 +151,63 @@ export default function GameBoard({ cells, selectedCard, onCellClick }) {
             transform: `translate(${-offset.x}px, ${-offset.y}px)`,
           }}
         >
-          {cells.map((card, index) => (
-            <button
-              key={index}
-              type="button"
-              role="gridcell"
-              className={`board-cell${card ? ' board-cell-filled' : ''}${
-                !card && selectedCard ? ' board-cell-droppable' : ''
-              }`}
-              style={{ width: cellSize, height: cellSize }}
-              onClick={() => handleCellClick(index)}
-            >
-              {card ? (
-                <span
-                  className={`card card-on-board${card.type === 'food' ? ' card-food' : ''}`}
-                  style={{ '--card-color': card.color }}
-                >
-                  <span className="card-emoji" style={{ fontSize: emojiSize }}>
-                    {card.emoji}
-                  </span>
-                  {showCardNames ? (
-                    <span className="card-name" style={{ fontSize: nameSize }}>
-                      {card.name}
+          {cells.map((card, index) => {
+            // Cards with side values show emoji + corner numbers on the
+            // board (like a Triple Triad-style card) — the name only fits
+            // once zoomed in enough that it won't collide with the numbers.
+            // Cards without sides (Food) use the plain name threshold.
+            const cardHasSides = Boolean(card?.sides) && showSides;
+            const cardShowsName = card?.sides ? cellSize >= 100 : showCardNames;
+
+            return (
+              <button
+                key={index}
+                type="button"
+                role="gridcell"
+                className={`board-cell${card ? ' board-cell-filled' : ''}${
+                  !card && selectedCard ? ' board-cell-droppable' : ''
+                }`}
+                style={{ width: cellSize, height: cellSize }}
+                onClick={() => handleCellClick(index)}
+              >
+                {card ? (
+                  <span
+                    className={`card card-on-board${card.type === 'food' ? ' card-food' : ''}`}
+                    style={{ '--card-color': card.color }}
+                    title={card.name}
+                  >
+                    {cardHasSides ? (
+                      <span className="card-sides">
+                        {SIDE_KEYS.map((side) => (
+                          <span
+                            key={side}
+                            className={`card-side card-side-${side}`}
+                            style={{ fontSize: sideSize }}
+                          >
+                            {card.sides[side]}
+                          </span>
+                        ))}
+                      </span>
+                    ) : null}
+                    <span
+                      className="card-emoji"
+                      style={{ fontSize: emojiSize }}
+                    >
+                      {card.emoji}
                     </span>
-                  ) : null}
-                </span>
-              ) : null}
-            </button>
-          ))}
+                    {cardShowsName ? (
+                      <span
+                        className="card-name"
+                        style={{ fontSize: nameSize }}
+                      >
+                        {card.name}
+                      </span>
+                    ) : null}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
         </div>
       </div>
       <div className="board-controls">
