@@ -47,6 +47,13 @@ function rotateSides(sides, direction) {
   };
 }
 
+// CPU players carry their strategy as a "(A)"/"(D)" suffix wherever their
+// name is shown, so it's visible at a glance during play.
+function displayName(player) {
+  if (!player.isCPU) return player.name;
+  return `${player.name} (${player.cpuStrategy === 'defensive' ? 'D' : 'A'})`;
+}
+
 let nextFoodCardId = 1;
 
 // Food is the objective the game is anchored around, placed as close to
@@ -591,8 +598,8 @@ export default function PlayPage({
           <h2>Game Over</h2>
           <p>
             {winners.length === 1
-              ? `${winners[0].name} wins with ${maxScore} point${maxScore === 1 ? '' : 's'}!`
-              : `It's a tie between ${winners.map((w) => w.name).join(' and ')} at ${maxScore} points!`}
+              ? `${displayName(winners[0])} wins with ${maxScore} point${maxScore === 1 ? '' : 's'}!`
+              : `It's a tie between ${winners.map(displayName).join(' and ')} at ${maxScore} points!`}
           </p>
         </div>
       ) : null}
@@ -611,14 +618,14 @@ export default function PlayPage({
       <ul className="score-board">
         {players.map((p, i) => (
           <li key={p.id}>
-            {p.name}: {playerStates[i].score}
+            {displayName(p)}: {playerStates[i].score}
           </li>
         ))}
       </ul>
 
       <div className="hand-header">
         <h2>
-          {activePlayer.name}&rsquo;s turn
+          {displayName(activePlayer)}&rsquo;s turn
           {activePlayer.isCPU ? ' (CPU)' : ''}
         </h2>
         {!activePlayer.isCPU && !gameOver ? (

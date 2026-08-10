@@ -727,6 +727,34 @@ describe('PlayPage', () => {
     expect(screen.queryByRole('button', { name: 'End Turn' })).toBeNull();
   });
 
+  it('shows an (A)/(D) suffix on CPU player names based on their strategy', () => {
+    render(
+      <PlayPage
+        players={[
+          {
+            id: 'p1',
+            name: 'Player 1',
+            isCPU: false,
+            deckId: DEFAULT_DECKS[0].id,
+          },
+          {
+            id: 'p2',
+            name: 'Player 2',
+            isCPU: true,
+            cpuStrategy: 'defensive',
+            deckId: DEFAULT_DECKS[1].id,
+          },
+        ]}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
+
+    // Human players get no suffix; the CPU gets its strategy's letter.
+    expect(screen.getByText('Player 1: 0')).toBeDefined();
+    expect(screen.getByText('Player 2 (D): 0')).toBeDefined();
+  });
+
   it('lets the CPU eat Food once it has majority control, not just play cards', async () => {
     render(
       <PlayPage
@@ -752,7 +780,7 @@ describe('PlayPage', () => {
     await waitFor(() => expect(screen.getByText('Game Over')).toBeDefined(), {
       timeout: 3000,
     });
-    expect(screen.getByText(/Player 2 wins with 1 point/)).toBeDefined();
+    expect(screen.getByText(/Player 2 \(A\) wins with 1 point/)).toBeDefined();
   });
 
   it('lets you play a Food-derived card for free and grants an extra action', () => {
