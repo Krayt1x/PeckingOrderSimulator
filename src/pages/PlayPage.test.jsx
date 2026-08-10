@@ -654,31 +654,35 @@ describe('PlayPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End Turn' })); // Player 2 passes -> Player 1 turn 2
 
     // Player 1 eats Food A (majority: 1 vs 0, since no opponent bird is
-    // adjacent) — this removes both Food A and their own bird there, so
-    // Food B is the only occupied cell left afterward. Their deck is
-    // empty at this point, so the eaten card becomes their entire draw
-    // pile.
+    // adjacent) — this sacrifices their own bird there (into their
+    // discard pile) and removes Food A, so Food B is the only occupied
+    // cell left afterward. Their deck is otherwise empty, so refilling
+    // draws the eaten Food's card and reshuffles the just-discarded
+    // P1Card back in alongside it.
     fireEvent.click(screen.getAllByRole('gridcell')[foodA]);
     fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
-    fireEvent.click(screen.getByRole('button', { name: 'End Turn' })); // refills hand with the Food card -> Player 2
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' })); // refills hand -> Player 2
     fireEvent.click(screen.getByRole('button', { name: 'End Turn' })); // Player 2 passes -> Player 1 turn 3
 
     const hand = screen.getByRole('list', { name: 'Your hand' });
     const handButtons = within(hand).getAllByRole('button');
-    expect(handButtons).toHaveLength(1);
-    expect(handButtons[0].textContent).toContain('Crumb A');
+    expect(handButtons).toHaveLength(2);
+    const foodCardButton = handButtons.find((b) =>
+      b.textContent.includes('Crumb A'),
+    );
+    expect(foodCardButton).toBeDefined();
 
     cells = screen.getAllByRole('gridcell');
     const destination = neighbors(foodB).find((i) => !isFilled(cells[i]));
 
-    fireEvent.click(handButtons[0]);
+    fireEvent.click(foodCardButton);
     fireEvent.click(screen.getAllByRole('gridcell')[destination]);
 
     expect(
       within(screen.getByRole('list', { name: 'Your hand' })).queryAllByRole(
         'button',
       ),
-    ).toHaveLength(0);
+    ).toHaveLength(1);
     // Playing the Food card cost nothing and granted an extra action.
     expect(screen.getByText('Actions: 2/1')).toBeDefined();
     cells = screen.getAllByRole('gridcell');
@@ -880,5 +884,100 @@ describe('PlayPage', () => {
     const modal = screen.getByRole('dialog', { name: 'Discard pile' });
     expect(within(modal).getAllByRole('listitem')).toHaveLength(1);
     expect(within(modal).getByText('Weak')).toBeDefined();
+  });
+
+  it('reshuffles the discard pile into the draw pile when it runs out during a refill', () => {
+    function reshuffleDecks() {
+      return [
+        {
+          id: 'deck-weak',
+          name: 'Weak',
+          cardTypes: [
+            {
+              id: 'weak',
+              name: 'Weak',
+              emoji: 'WK',
+              color: '#57534e',
+              quantity: 5,
+              sides: { top: 1, right: 1, bottom: 1, left: 1 },
+            },
+          ],
+        },
+        {
+          id: 'deck-strong',
+          name: 'Strong',
+          cardTypes: [
+            {
+              id: 'strong',
+              name: 'Strong',
+              emoji: 'SG',
+              color: '#57534e',
+              quantity: 4,
+              sides: { top: 9, right: 9, bottom: 9, left: 9 },
+            },
+          ],
+        },
+      ];
+    }
+
+    render(
+      <PlayPage
+        players={[
+          { id: 'p1', name: 'Player 1', isCPU: false, deckId: 'deck-weak' },
+          { id: 'p2', name: 'Player 2', isCPU: false, deckId: 'deck-strong' },
+        ]}
+        decks={reshuffleDecks()}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+
+    const hand = () => screen.getByRole('list', { name: 'Your hand' });
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const firstSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    // Player 1 plays a Weak card next to Food; ending the turn refills
+    // their hand from the last draw-pile card (draw pile now empty,
+    // discard pile still empty).
+    fireEvent.click(within(hand()).getAllByRole('button')[0]);
+    fireEvent.click(screen.getAllByRole('gridcell')[firstSpot]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    // Player 2 plays a Strong card next to Player 1's Weak card, capturing
+    // it — the captured card lands in Player 1's discard pile.
+    cells = screen.getAllByRole('gridcell');
+    const secondSpot = neighbors(firstSpot).find((i) => !isFilled(cells[i]));
+    fireEvent.click(within(hand()).getAllByRole('button')[0]);
+    fireEvent.click(screen.getAllByRole('gridcell')[secondSpot]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
+
+    // Player 1 plays another Weak card — hand drops to 3, draw pile is
+    // already empty, discard pile holds the 1 captured card.
+    cells = screen.getAllByRole('gridcell');
+    const thirdSpot = neighbors(foodIndex).find(
+      (i) => !isFilled(cells[i]) && i !== firstSpot && i !== secondSpot,
+    );
+    fireEvent.click(within(hand()).getAllByRole('button')[0]);
+    fireEvent.click(screen.getAllByRole('gridcell')[thirdSpot]);
+
+    expect(within(hand()).getAllByRole('button')).toHaveLength(3);
+    expect(
+      screen.getByRole('button', { name: 'Discard pile: 1 cards' }),
+    ).toBeDefined();
+
+    // Ending Player 1's turn reshuffles the discard pile into the draw
+    // pile to refill the hand back to 4; cycle back around to Player 1 to
+    // see their post-refill state.
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
+    expect(within(hand()).getAllByRole('button')).toHaveLength(4);
+    expect(
+      screen.getByRole('button', { name: 'Discard pile: 0 cards' }),
+    ).toBeDefined();
   });
 });

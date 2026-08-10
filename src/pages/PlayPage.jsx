@@ -44,13 +44,25 @@ function dealFrom(deck) {
   };
 }
 
+// Reshuffles the discard pile back into the draw pile whenever there
+// aren't enough cards left to draw — the discard pile is never a dead
+// end, just a temporary holding area.
 function refillHand(state) {
   const needed = HAND_SIZE - state.hand.length;
   if (needed <= 0) return state;
+
+  let drawPile = state.drawPile;
+  let discardPile = state.discardPile;
+  if (drawPile.length < needed && discardPile.length > 0) {
+    drawPile = [...drawPile, ...shuffle(discardPile)];
+    discardPile = [];
+  }
+
   return {
     ...state,
-    hand: [...state.hand, ...state.drawPile.slice(0, needed)],
-    drawPile: state.drawPile.slice(needed),
+    hand: [...state.hand, ...drawPile.slice(0, needed)],
+    drawPile: drawPile.slice(needed),
+    discardPile,
   };
 }
 
