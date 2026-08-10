@@ -33,7 +33,14 @@ function narrowByStrategy(options, strategy) {
 // strategy. Returns null if the CPU has no legal move (empty hand, no
 // cells adjacent to Food/an existing card, or every adjacent cell would
 // lose to a stronger opponent card).
-export function pickCpuMove(hand, board, boardSize, ownerId, strategy) {
+export function pickCpuMove(
+  hand,
+  board,
+  boardSize,
+  ownerId,
+  strategy,
+  allowEqual = false,
+) {
   if (hand.length === 0) return null;
 
   const playableIndexes = getPlayableIndices(board, boardSize, ownerId);
@@ -46,7 +53,8 @@ export function pickCpuMove(hand, board, boardSize, ownerId, strategy) {
     if (card.fromFood) return;
     const placedCard = { ...card, ownerId };
     playableIndexes.forEach((cellIndex) => {
-      if (!canPlaceCard(board, cellIndex, placedCard, boardSize)) return;
+      if (!canPlaceCard(board, cellIndex, placedCard, boardSize, allowEqual))
+        return;
 
       const withCard = [...board];
       withCard[cellIndex] = placedCard;
@@ -76,8 +84,13 @@ export function pickCpuMove(hand, board, boardSize, ownerId, strategy) {
 // and which of its own adjacent birds to sacrifice for it — only the
 // CPU's own birds are ever legal choices. Returns null if the CPU isn't
 // eligible to eat any Food right now.
-export function pickCpuEat(board, boardSize, ownerId) {
-  const eligible = getEligibleFoodIndices(board, boardSize, ownerId);
+export function pickCpuEat(board, boardSize, ownerId, allowEqual = false) {
+  const eligible = getEligibleFoodIndices(
+    board,
+    boardSize,
+    ownerId,
+    allowEqual,
+  );
   if (eligible.length === 0) return null;
 
   const foodIndex = eligible[Math.floor(Math.random() * eligible.length)];

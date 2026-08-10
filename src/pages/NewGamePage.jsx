@@ -33,6 +33,12 @@ const RULESET_OPTIONS = [
     description:
       'Selecting a card in hand shows rotate arrows — spin its sides clockwise or anti-clockwise before playing it.',
   },
+  {
+    key: 'allowEqualValuePlay',
+    label: 'Equal Value Playable',
+    description:
+      'A card may be placed against an opponent card with the same facing value — normally you can only play into a matchup you would win outright. Also lets you eat Food on a tied bird count.',
+  },
 ];
 
 // Every available visual skin — add new ones here as they're built.
@@ -45,6 +51,7 @@ export const DEFAULT_RULESET = {
   allowMoving: false,
   allowReturnToHand: false,
   allowCardRotation: false,
+  allowEqualValuePlay: false,
   allowCustomSkins: false,
   skin: 'alpha',
 };

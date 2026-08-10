@@ -87,15 +87,23 @@ describe('canPlaceCard', () => {
     expect(canPlaceCard(board, 55, card, BOARD_SIZE)).toBe(false);
   });
 
-  it('allows placement when the facing side is equal or higher', () => {
+  it('blocks a tie by default, but allows it strictly higher', () => {
     const board = Array(100).fill(null);
     board[56] = makeCard('p2', { top: 1, right: 1, bottom: 1, left: 5 });
 
     const tie = makeCard('p1', { top: 1, right: 5, bottom: 1, left: 1 });
-    expect(canPlaceCard(board, 55, tie, BOARD_SIZE)).toBe(true);
+    expect(canPlaceCard(board, 55, tie, BOARD_SIZE)).toBe(false);
 
     const winner = makeCard('p1', { top: 1, right: 9, bottom: 1, left: 1 });
     expect(canPlaceCard(board, 55, winner, BOARD_SIZE)).toBe(true);
+  });
+
+  it('allows a tie when the Equal Value Playable ruleset is on', () => {
+    const board = Array(100).fill(null);
+    board[56] = makeCard('p2', { top: 1, right: 1, bottom: 1, left: 5 });
+
+    const tie = makeCard('p1', { top: 1, right: 5, bottom: 1, left: 1 });
+    expect(canPlaceCard(board, 55, tie, BOARD_SIZE, true)).toBe(true);
   });
 
   it('ignores the owner’s own cards and Food when checking legality', () => {

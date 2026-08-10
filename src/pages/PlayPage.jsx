@@ -24,6 +24,7 @@ const DEFAULT_RULESET = {
   allowMoving: false,
   allowReturnToHand: false,
   allowCardRotation: false,
+  allowEqualValuePlay: false,
   allowCustomSkins: false,
   skin: 'alpha',
 };
@@ -358,12 +359,26 @@ export default function PlayPage({
       if (!card || card.fromFood) return;
       if (!isPlayableCell(board, index, BOARD_SIZE, activePlayer.id)) return;
       const placedCard = { ...card, ownerId: activePlayer.id };
-      if (!canPlaceCard(board, index, placedCard, BOARD_SIZE)) return;
+      if (
+        !canPlaceCard(
+          board,
+          index,
+          placedCard,
+          BOARD_SIZE,
+          ruleset.allowEqualValuePlay,
+        )
+      )
+        return;
       handlePlayCard(index);
       return;
     }
 
-    const eligible = getEligibleFoodIndices(board, BOARD_SIZE, activePlayer.id);
+    const eligible = getEligibleFoodIndices(
+      board,
+      BOARD_SIZE,
+      activePlayer.id,
+      ruleset.allowEqualValuePlay,
+    );
     if (eligible.includes(index)) {
       setEatFoodIndex(index);
     }
@@ -393,7 +408,16 @@ export default function PlayPage({
     if (!destinations.includes(destinationIndex)) return;
     const card = board[source];
     if (!card) return;
-    if (!canPlaceCard(board, destinationIndex, card, BOARD_SIZE)) return;
+    if (
+      !canPlaceCard(
+        board,
+        destinationIndex,
+        card,
+        BOARD_SIZE,
+        ruleset.allowEqualValuePlay,
+      )
+    )
+      return;
     handleMoveCard(source, destinationIndex);
   }
 
@@ -443,7 +467,12 @@ export default function PlayPage({
     let remaining = actionsRemaining;
 
     while (remaining > 0) {
-      const eatChoice = pickCpuEat(workingBoard, BOARD_SIZE, activePlayer.id);
+      const eatChoice = pickCpuEat(
+        workingBoard,
+        BOARD_SIZE,
+        activePlayer.id,
+        ruleset.allowEqualValuePlay,
+      );
       if (eatChoice) {
         const eatenBird = workingBoard[eatChoice.birdIndex];
         const eatenFood = workingBoard[eatChoice.foodIndex];
@@ -478,6 +507,7 @@ export default function PlayPage({
         BOARD_SIZE,
         activePlayer.id,
         activePlayer.cpuStrategy,
+        ruleset.allowEqualValuePlay,
       );
       if (!move) break;
       const card = workingHand.find((c) => c.id === move.cardId);
@@ -557,7 +587,15 @@ export default function PlayPage({
         board,
         BOARD_SIZE,
         activePlayer.id,
-      ).filter((i) => canPlaceCard(board, i, placedCard, BOARD_SIZE));
+      ).filter((i) =>
+        canPlaceCard(
+          board,
+          i,
+          placedCard,
+          BOARD_SIZE,
+          ruleset.allowEqualValuePlay,
+        ),
+      );
       return { highlighted: new Set(indices), selected: null };
     }
 
@@ -579,7 +617,14 @@ export default function PlayPage({
       const card = board[dragSourceIndex];
       const indices = card
         ? getAdjacentEmptyIndices(board, dragSourceIndex, BOARD_SIZE).filter(
-            (i) => canPlaceCard(board, i, card, BOARD_SIZE),
+            (i) =>
+              canPlaceCard(
+                board,
+                i,
+                card,
+                BOARD_SIZE,
+                ruleset.allowEqualValuePlay,
+              ),
           )
         : [];
       return { highlighted: new Set(indices), selected: dragSourceIndex };
@@ -587,7 +632,12 @@ export default function PlayPage({
 
     return {
       highlighted: new Set(
-        getEligibleFoodIndices(board, BOARD_SIZE, activePlayer.id),
+        getEligibleFoodIndices(
+          board,
+          BOARD_SIZE,
+          activePlayer.id,
+          ruleset.allowEqualValuePlay,
+        ),
       ),
       selected: null,
     };

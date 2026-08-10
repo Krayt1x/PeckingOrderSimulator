@@ -374,6 +374,110 @@ describe('PlayPage', () => {
     ).toBeDefined();
   });
 
+  it('blocks a tied-value placement by default, but allows it with Equal Value Playable', () => {
+    function tiedDecks() {
+      return [
+        {
+          id: 'deck-p1',
+          name: 'P1',
+          cardTypes: [
+            {
+              id: 'p1card',
+              name: 'P1Card',
+              emoji: 'P1',
+              color: '#57534e',
+              quantity: 2,
+              sides: { top: 1, right: 1, bottom: 1, left: 1 },
+            },
+          ],
+        },
+        {
+          id: 'deck-p2',
+          name: 'P2',
+          cardTypes: [
+            {
+              id: 'p2card',
+              name: 'P2Card',
+              emoji: 'P2',
+              color: '#57534e',
+              quantity: 2,
+              sides: { top: 1, right: 1, bottom: 1, left: 1 },
+            },
+          ],
+        },
+      ];
+    }
+
+    const { unmount } = render(
+      <PlayPage
+        players={[
+          { id: 'p1', name: 'Player 1', isCPU: false, deckId: 'deck-p1' },
+          { id: 'p2', name: 'Player 2', isCPU: false, deckId: 'deck-p2' },
+        ]}
+        decks={tiedDecks()}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const p1Spot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[p1Spot]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    // Player 2's card is a 1-1-1-1 tie against Player 1's card on every
+    // shared edge — blocked by default.
+    cells = screen.getAllByRole('gridcell');
+    const p2Spot = neighbors(p1Spot).find((i) => !isFilled(cells[i]));
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[p2Spot]);
+    expect(isFilled(screen.getAllByRole('gridcell')[p2Spot])).toBe(false);
+    unmount();
+
+    render(
+      <PlayPage
+        players={[
+          { id: 'p1', name: 'Player 1', isCPU: false, deckId: 'deck-p1' },
+          { id: 'p2', name: 'Player 2', isCPU: false, deckId: 'deck-p2' },
+        ]}
+        decks={tiedDecks()}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+        ruleset={{ allowMoving: false, allowEqualValuePlay: true }}
+      />,
+    );
+    cells = screen.getAllByRole('gridcell');
+    const foodIndex2 = findFoodIndex(cells);
+    const p1Spot2 = neighbors(foodIndex2).find((i) => !isFilled(cells[i]));
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[p1Spot2]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    cells = screen.getAllByRole('gridcell');
+    const p2Spot2 = neighbors(p1Spot2).find((i) => !isFilled(cells[i]));
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[p2Spot2]);
+    expect(isFilled(screen.getAllByRole('gridcell')[p2Spot2])).toBe(true);
+  });
+
   it("borders a played card with the owner's color and fills it with the deck's color", () => {
     render(
       <PlayPage

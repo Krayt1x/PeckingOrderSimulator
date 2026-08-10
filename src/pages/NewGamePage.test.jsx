@@ -449,6 +449,7 @@ describe('NewGamePage', () => {
       allowMoving: true,
       allowReturnToHand: true,
       allowCardRotation: false,
+      allowEqualValuePlay: false,
       allowCustomSkins: false,
       skin: 'alpha',
     });
@@ -471,6 +472,7 @@ describe('NewGamePage', () => {
       allowMoving: false,
       allowReturnToHand: false,
       allowCardRotation: false,
+      allowEqualValuePlay: false,
       allowCustomSkins: false,
       skin: 'alpha',
     });

@@ -186,8 +186,16 @@ export function placeFoodShapes(food, boardSize) {
 // A food cell is "eatable" by a player when, of the birds orthogonally
 // touching it, that player owns strictly more than every other player
 // combined. Each food cell/tile is evaluated independently — a multi-cell
-// piece like Burger doesn't need to be controlled as a whole.
-export function getEligibleFoodIndices(board, boardSize, activePlayerId) {
+// piece like Burger doesn't need to be controlled as a whole. Passing
+// allowEqual (the "Equal Value Playable" ruleset) relaxes a tied count
+// (as long as the active player has at least one bird there) into
+// eligibility too.
+export function getEligibleFoodIndices(
+  board,
+  boardSize,
+  activePlayerId,
+  allowEqual = false,
+) {
   const eligible = [];
 
   board.forEach((cell, index) => {
@@ -208,7 +216,8 @@ export function getEligibleFoodIndices(board, boardSize, activePlayerId) {
         ownerId === activePlayerId ? sum : sum + count,
       0,
     );
-    if (mine > others) eligible.push(index);
+    const eatable = allowEqual ? mine > 0 && mine >= others : mine > others;
+    if (eatable) eligible.push(index);
   });
 
   return eligible;
