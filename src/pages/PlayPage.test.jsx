@@ -8,40 +8,69 @@ import {
 } from '@testing-library/react';
 import PlayPage from './PlayPage.jsx';
 import { DEFAULT_DECKS, HAND_SIZE } from '../lib/decks.js';
+import { DEFAULT_FOOD } from '../lib/food.js';
 
 afterEach(() => cleanup());
 
+function twoPlayers({ cpuSecond = false } = {}) {
+  return [
+    { id: 'p1', name: 'Player 1', isCPU: false, deckId: DEFAULT_DECKS[0].id },
+    {
+      id: 'p2',
+      name: 'Player 2',
+      isCPU: cpuSecond,
+      deckId: DEFAULT_DECKS[1].id,
+    },
+  ];
+}
+
 function cardNameOf(button) {
-  // Board cards hide their name label at default zoom (side values take
-  // over that space), so fall back to the card's title attribute.
   const nameEl = button.querySelector('.card-name');
   if (nameEl) return nameEl.textContent;
   return button.querySelector('.card-on-board').getAttribute('title');
 }
 
 describe('PlayPage', () => {
-  it('deals a starting hand of 4 cards and shows the remaining draw pile', () => {
-    render(<PlayPage decks={DEFAULT_DECKS} />);
+  it('deals a starting hand of 4 for the active player and names whose turn it is', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
 
+    expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
     const hand = screen.getByRole('list', { name: 'Your hand' });
     expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE);
-
-    const chickens = DEFAULT_DECKS.find((d) => d.name === 'Chickens');
-    expect(
-      screen.getByText(`Draw pile: ${chickens.size - HAND_SIZE}`),
-    ).toBeDefined();
   });
 
-  it('renders a 10x10 board with Food objective cards near the center', () => {
-    render(<PlayPage decks={DEFAULT_DECKS} />);
+  it('renders a 10x10 board with 4 Food objective cells built from the food config', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
 
-    expect(screen.getAllByRole('gridcell')).toHaveLength(100);
-    expect(screen.getAllByText('Food')).toHaveLength(4);
+    const cells = screen.getAllByRole('gridcell');
+    expect(cells).toHaveLength(100);
+
+    // Food sits at indices 44, 45, 54, 55 on the 10x10 board, cycling
+    // through the food config's card types in order.
+    const foodNames = [44, 45, 54, 55].map((i) => cardNameOf(cells[i]));
+    expect(foodNames).toEqual(DEFAULT_FOOD.cardTypes.map((c) => c.name));
   });
 
-  it('plays a selected card from hand onto an empty board cell', () => {
-    render(<PlayPage decks={DEFAULT_DECKS} />);
-
+  it('plays a card from hand and ends the turn, advancing to the next player', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
     const hand = screen.getByRole('list', { name: 'Your hand' });
     const firstCard = within(hand).getAllByRole('button')[0];
     const name = cardNameOf(firstCard);
@@ -51,44 +80,62 @@ describe('PlayPage', () => {
 
     expect(cardNameOf(screen.getAllByRole('gridcell')[0])).toBe(name);
     expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE - 1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    expect(screen.getByText(/Player 2.*turn/)).toBeDefined();
   });
 
   it('does not let you play a card onto a Food objective cell', () => {
-    render(<PlayPage decks={DEFAULT_DECKS} />);
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
     const hand = screen.getByRole('list', { name: 'Your hand' });
 
     fireEvent.click(within(hand).getAllByRole('button')[0]);
-    // Food sits at indices 44, 45, 54, 55 on the 10x10 board.
     fireEvent.click(screen.getAllByRole('gridcell')[44]);
 
     expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE);
   });
 
-  it('refills the hand back up to 4 cards when End Turn is clicked', () => {
-    render(<PlayPage decks={DEFAULT_DECKS} />);
-    const hand = screen.getByRole('list', { name: 'Your hand' });
-
-    fireEvent.click(within(hand).getAllByRole('button')[0]);
-    fireEvent.click(screen.getAllByRole('gridcell')[0]);
-    expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE - 1);
+  it('shows a Play CPU Turn button for a CPU player and plays a move for them', () => {
+    render(
+      <PlayPage
+        players={twoPlayers({ cpuSecond: true })}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
-    expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE);
+    expect(screen.getByText(/Player 2.*turn.*CPU/)).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play CPU Turn' }));
+
+    expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
+    const filledCells = screen
+      .getAllByRole('gridcell')
+      .filter((cell) => cell.className.includes('board-cell-filled'));
+    // 4 Food cells plus the one card the CPU just played.
+    expect(filledCells).toHaveLength(5);
   });
 
-  it('lets you switch decks and deals a fresh hand from the new deck', () => {
-    render(<PlayPage decks={DEFAULT_DECKS} />);
-    const ducks = DEFAULT_DECKS.find((d) => d.name === 'Ducks');
-
-    fireEvent.change(screen.getByLabelText('Deck'), {
-      target: { value: ducks.id },
-    });
+  it("disables the hand while it is a CPU player's turn", () => {
+    render(
+      <PlayPage
+        players={twoPlayers({ cpuSecond: true })}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
 
     const hand = screen.getByRole('list', { name: 'Your hand' });
-    const names = within(hand)
+    within(hand)
       .getAllByRole('button')
-      .map((button) => cardNameOf(button));
-    const duckNames = ducks.cardTypes.map((c) => c.name);
-    names.forEach((name) => expect(duckNames).toContain(name));
+      .forEach((button) => expect(button.disabled).toBe(true));
   });
 });

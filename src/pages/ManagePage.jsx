@@ -1,22 +1,29 @@
 import { useState } from 'react';
 import { DEFAULT_DECKS, createCardType } from '../lib/decks.js';
+import { DEFAULT_FOOD } from '../lib/food.js';
 
 const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 
-export default function ManagePage({ decks, setDecks }) {
+export default function ManagePage({ decks, setDecks, food, setFood }) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const deck = decks[activeIndex];
 
-  function updateDeck(updater) {
-    setDecks((current) =>
-      current.map((d, i) => (i === activeIndex ? updater(d) : d)),
-    );
+  const isFoodTab = activeIndex >= decks.length;
+  const activeCollection = isFoodTab ? food : decks[activeIndex];
+
+  function updateActive(updater) {
+    if (isFoodTab) {
+      setFood((current) => updater(current));
+    } else {
+      setDecks((current) =>
+        current.map((d, i) => (i === activeIndex ? updater(d) : d)),
+      );
+    }
   }
 
   function updateCardType(cardIndex, patch) {
-    updateDeck((d) => ({
-      ...d,
-      cardTypes: d.cardTypes.map((c, i) =>
+    updateActive((collection) => ({
+      ...collection,
+      cardTypes: collection.cardTypes.map((c, i) =>
         i === cardIndex ? { ...c, ...patch } : c,
       ),
     }));
@@ -24,9 +31,9 @@ export default function ManagePage({ decks, setDecks }) {
 
   function updateSide(cardIndex, sideKey, value) {
     const clamped = Math.min(9, Math.max(1, Number(value) || 1));
-    updateDeck((d) => ({
-      ...d,
-      cardTypes: d.cardTypes.map((c, i) =>
+    updateActive((collection) => ({
+      ...collection,
+      cardTypes: collection.cardTypes.map((c, i) =>
         i === cardIndex
           ? { ...c, sides: { ...c.sides, [sideKey]: clamped } }
           : c,
@@ -35,20 +42,24 @@ export default function ManagePage({ decks, setDecks }) {
   }
 
   function addCardType() {
-    updateDeck((d) => ({
-      ...d,
-      cardTypes: [...d.cardTypes, createCardType()],
+    updateActive((collection) => ({
+      ...collection,
+      cardTypes: [...collection.cardTypes, createCardType()],
     }));
   }
 
   function removeCardType(cardIndex) {
-    updateDeck((d) => ({
-      ...d,
-      cardTypes: d.cardTypes.filter((_, i) => i !== cardIndex),
+    updateActive((collection) => ({
+      ...collection,
+      cardTypes: collection.cardTypes.filter((_, i) => i !== cardIndex),
     }));
   }
 
-  function resetDeck() {
+  function resetActive() {
+    if (isFoodTab) {
+      setFood(DEFAULT_FOOD);
+      return;
+    }
     const defaults = DEFAULT_DECKS[activeIndex];
     if (!defaults) return;
     setDecks((current) =>
@@ -60,12 +71,11 @@ export default function ManagePage({ decks, setDecks }) {
     <main className="page manage">
       <h1>Manage decks</h1>
       <p>
-        Edit each deck&rsquo;s cards. Every card has four side values (top,
-        right, bottom, left) and a deck is built by cycling through its cards up
-        to the deck size.
+        Edit each deck&rsquo;s cards, or the Food objective cards. Every card
+        has four side values (top, right, bottom, left).
       </p>
 
-      <div className="manage-tabs" role="tablist" aria-label="Decks">
+      <div className="manage-tabs" role="tablist" aria-label="Decks and Food">
         {decks.map((d, i) => (
           <button
             key={d.id}
@@ -78,39 +88,53 @@ export default function ManagePage({ decks, setDecks }) {
             {d.name}
           </button>
         ))}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={isFoodTab}
+          className={`manage-tab${isFoodTab ? ' manage-tab-active' : ''}`}
+          onClick={() => setActiveIndex(decks.length)}
+        >
+          🌾 Food
+        </button>
       </div>
 
-      {deck ? (
+      {activeCollection ? (
         <div className="manage-deck">
           <div className="manage-deck-header">
             <label className="manage-field">
-              Deck name
+              {isFoodTab ? 'Food name' : 'Deck name'}
               <input
                 type="text"
-                value={deck.name}
+                value={activeCollection.name}
                 onChange={(event) =>
-                  updateDeck((d) => ({ ...d, name: event.target.value }))
-                }
-              />
-            </label>
-            <label className="manage-field">
-              Deck size
-              <input
-                type="number"
-                min="1"
-                value={deck.size}
-                onChange={(event) =>
-                  updateDeck((d) => ({
-                    ...d,
-                    size: Math.max(1, Number(event.target.value) || 1),
+                  updateActive((collection) => ({
+                    ...collection,
+                    name: event.target.value,
                   }))
                 }
               />
             </label>
+            {isFoodTab ? null : (
+              <label className="manage-field">
+                Deck size
+                <input
+                  type="number"
+                  min="1"
+                  value={activeCollection.size}
+                  onChange={(event) =>
+                    updateActive((collection) => ({
+                      ...collection,
+                      size: Math.max(1, Number(event.target.value) || 1),
+                    }))
+                  }
+                />
+              </label>
+            )}
             <button
               type="button"
               className="board-recenter"
-              onClick={resetDeck}
+              onClick={resetActive}
             >
               Reset to default
             </button>
@@ -129,7 +153,7 @@ export default function ManagePage({ decks, setDecks }) {
               </tr>
             </thead>
             <tbody>
-              {deck.cardTypes.map((card, i) => (
+              {activeCollection.cardTypes.map((card, i) => (
                 <tr key={card.id}>
                   <td>
                     <input
@@ -172,7 +196,7 @@ export default function ManagePage({ decks, setDecks }) {
                       type="button"
                       className="manage-remove"
                       onClick={() => removeCardType(i)}
-                      disabled={deck.cardTypes.length <= 1}
+                      disabled={activeCollection.cardTypes.length <= 1}
                       aria-label={`Remove ${card.name || 'card'}`}
                     >
                       ✕

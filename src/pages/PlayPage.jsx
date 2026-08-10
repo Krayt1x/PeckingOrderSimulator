@@ -2,22 +2,18 @@ import { useState } from 'react';
 import GameBoard, { BOARD_SIZE } from '../components/GameBoard.jsx';
 import Hand from '../components/Hand.jsx';
 import { HAND_SIZE, buildDrawPile } from '../lib/decks.js';
+import { buildFoodCards } from '../lib/food.js';
+import { pickCpuMove } from '../lib/cpu.js';
 
 // Food is the objective cards the game is anchored around — a few fixed
-// spots near the center of the board for now, until real placement rules
-// are defined.
+// spots near the center of the board.
 const FOOD_POSITIONS = [44, 45, 54, 55];
 
-function createInitialBoard() {
+function createInitialBoard(food) {
   const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+  const foodCards = buildFoodCards(food, FOOD_POSITIONS.length);
   FOOD_POSITIONS.forEach((index, i) => {
-    cells[index] = {
-      id: `food-${i}`,
-      type: 'food',
-      name: 'Food',
-      emoji: '🌾',
-      color: '#16a34a',
-    };
+    cells[index] = foodCards[i];
   });
   return cells;
 }
@@ -27,57 +23,75 @@ function dealFrom(deck) {
   return { hand: pile.slice(0, HAND_SIZE), drawPile: pile.slice(HAND_SIZE) };
 }
 
-export default function PlayPage({ decks }) {
-  const [selectedDeckId, setSelectedDeckId] = useState(decks[0]?.id ?? null);
-  const selectedDeck = decks.find((d) => d.id === selectedDeckId) ?? decks[0];
-
-  const [board, setBoard] = useState(createInitialBoard);
-  const [game, setGame] = useState(() => dealFrom(selectedDeck));
+export default function PlayPage({ players, decks, food }) {
+  const [board, setBoard] = useState(() => createInitialBoard(food));
+  const [playerStates, setPlayerStates] = useState(() =>
+    players.map((p) => dealFrom(decks.find((d) => d.id === p.deckId))),
+  );
+  const [activeIndex, setActiveIndex] = useState(0);
   const [selectedCardId, setSelectedCardId] = useState(null);
 
-  function handleDeckChange(id) {
-    setSelectedDeckId(id);
-    setGame(dealFrom(decks.find((d) => d.id === id)));
-    setSelectedCardId(null);
+  const activePlayer = players[activeIndex];
+  const activeState = playerStates[activeIndex];
+
+  function placeCard(playerIndex, cardId, cellIndex) {
+    setBoard((current) => {
+      const card = playerStates[playerIndex].hand.find((c) => c.id === cardId);
+      if (!card) return current;
+      const next = [...current];
+      next[cellIndex] = card;
+      return next;
+    });
+    setPlayerStates((current) =>
+      current.map((state, i) =>
+        i === playerIndex
+          ? { ...state, hand: state.hand.filter((c) => c.id !== cardId) }
+          : state,
+      ),
+    );
   }
 
-  function reshuffle() {
-    setGame(dealFrom(selectedDeck));
+  function endTurnFor(playerIndex) {
+    setPlayerStates((current) =>
+      current.map((state, i) => {
+        if (i !== playerIndex) return state;
+        const needed = HAND_SIZE - state.hand.length;
+        if (needed <= 0) return state;
+        return {
+          hand: [...state.hand, ...state.drawPile.slice(0, needed)],
+          drawPile: state.drawPile.slice(needed),
+        };
+      }),
+    );
+    setActiveIndex((current) => (current + 1) % players.length);
     setSelectedCardId(null);
   }
 
   function handleSelectCard(cardId) {
+    if (activePlayer.isCPU) return;
     setSelectedCardId((current) => (current === cardId ? null : cardId));
   }
 
   function handleCellClick(index) {
+    if (activePlayer.isCPU) return;
     if (!selectedCardId || board[index]) return;
-
-    const card = game.hand.find((c) => c.id === selectedCardId);
-    setBoard((current) => {
-      const next = [...current];
-      next[index] = card;
-      return next;
-    });
-    setGame((current) => ({
-      ...current,
-      hand: current.hand.filter((c) => c.id !== selectedCardId),
-    }));
+    placeCard(activeIndex, selectedCardId, index);
     setSelectedCardId(null);
   }
 
   function handleEndTurn() {
-    setGame((current) => {
-      const needed = HAND_SIZE - current.hand.length;
-      if (needed <= 0) return current;
-      return {
-        hand: [...current.hand, ...current.drawPile.slice(0, needed)],
-        drawPile: current.drawPile.slice(needed),
-      };
-    });
+    endTurnFor(activeIndex);
   }
 
-  const selectedCard = game.hand.find((c) => c.id === selectedCardId) ?? null;
+  function handleCpuTurn() {
+    if (!activePlayer.isCPU) return;
+    const move = pickCpuMove(activeState.hand, board);
+    if (move) placeCard(activeIndex, move.cardId, move.cellIndex);
+    endTurnFor(activeIndex);
+  }
+
+  const selectedCard =
+    activeState.hand.find((c) => c.id === selectedCardId) ?? null;
 
   return (
     <main className="page">
@@ -85,7 +99,8 @@ export default function PlayPage({ decks }) {
       <p>
         Pick a card from your hand, then click an empty square on the board to
         play it. The board is 10x10 — drag it to look around. The 🌾 Food cards
-        near the center are the objectives the game is anchored around.
+        near the center are the objectives the game is anchored around.{' '}
+        <a href="#new-game">Start a new game</a>
       </p>
       <GameBoard
         cells={board}
@@ -94,34 +109,36 @@ export default function PlayPage({ decks }) {
       />
 
       <div className="hand-header">
-        <h2>Your hand</h2>
-        <label className="deck-picker">
-          Deck
-          <select
-            value={selectedDeckId ?? ''}
-            onChange={(event) => handleDeckChange(event.target.value)}
-          >
-            {decks.map((deck) => (
-              <option key={deck.id} value={deck.id}>
-                {deck.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <h2>
+          {activePlayer.name}&rsquo;s turn
+          {activePlayer.isCPU ? ' (CPU)' : ''}
+        </h2>
         <span className="draw-pile-count">
-          Draw pile: {game.drawPile.length}
+          Draw pile: {activeState.drawPile.length}
         </span>
-        <button type="button" className="board-recenter" onClick={reshuffle}>
-          New hand
-        </button>
-        <button type="button" className="end-turn-btn" onClick={handleEndTurn}>
-          End Turn
-        </button>
+        {activePlayer.isCPU ? (
+          <button
+            type="button"
+            className="end-turn-btn"
+            onClick={handleCpuTurn}
+          >
+            Play CPU Turn
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="end-turn-btn"
+            onClick={handleEndTurn}
+          >
+            End Turn
+          </button>
+        )}
       </div>
       <Hand
-        cards={game.hand}
+        cards={activeState.hand}
         selectedCardId={selectedCardId}
         onSelectCard={handleSelectCard}
+        disabled={activePlayer.isCPU}
       />
     </main>
   );

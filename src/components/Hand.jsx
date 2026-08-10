@@ -1,12 +1,22 @@
 const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 
-export default function Hand({ cards, selectedCardId, onSelectCard }) {
+export default function Hand({
+  cards,
+  selectedCardId,
+  onSelectCard,
+  disabled = false,
+}) {
   return (
-    <div className="hand" role="list" aria-label="Your hand">
+    <div
+      className={`hand${disabled ? ' hand-disabled' : ''}`}
+      role="list"
+      aria-label="Your hand"
+    >
       {cards.map((card) => (
         <button
           key={card.id}
           type="button"
+          disabled={disabled}
           className={`card${selectedCardId === card.id ? ' card-selected' : ''}`}
           style={{ '--card-color': card.color }}
           onClick={() => onSelectCard(card.id)}

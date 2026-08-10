@@ -1,17 +1,25 @@
 import { useEffect, useState } from 'react';
+import HomePage from './pages/HomePage.jsx';
+import NewGamePage from './pages/NewGamePage.jsx';
 import PlayPage from './pages/PlayPage.jsx';
 import ManagePage from './pages/ManagePage.jsx';
 import { DEFAULT_DECKS } from './lib/decks.js';
+import { DEFAULT_FOOD } from './lib/food.js';
 import { loadJSON, saveJSON } from './lib/storage.js';
 
 const DECKS_STORAGE_KEY = 'peckingorder:decks';
+const FOOD_STORAGE_KEY = 'peckingorder:food';
 
 function getInitialTheme() {
   return document.documentElement.getAttribute('data-theme') || 'light';
 }
 
 function getRoute() {
-  return window.location.hash === '#manage' ? 'manage' : 'play';
+  const hash = window.location.hash;
+  if (hash === '#new-game') return 'new-game';
+  if (hash === '#play') return 'play';
+  if (hash === '#manage') return 'manage';
+  return 'home';
 }
 
 export default function App() {
@@ -20,6 +28,10 @@ export default function App() {
   const [decks, setDecks] = useState(() =>
     loadJSON(DECKS_STORAGE_KEY, DEFAULT_DECKS),
   );
+  const [food, setFood] = useState(() =>
+    loadJSON(FOOD_STORAGE_KEY, DEFAULT_FOOD),
+  );
+  const [gameSetup, setGameSetup] = useState(null);
 
   useEffect(() => {
     function onHashChange() {
@@ -33,6 +45,10 @@ export default function App() {
     saveJSON(DECKS_STORAGE_KEY, decks);
   }, [decks]);
 
+  useEffect(() => {
+    saveJSON(FOOD_STORAGE_KEY, food);
+  }, [food]);
+
   function toggleTheme() {
     const next = theme === 'dark' ? 'light' : 'dark';
     setTheme(next);
@@ -40,14 +56,45 @@ export default function App() {
     localStorage.setItem('theme', next);
   }
 
+  function startGame(setup) {
+    setGameSetup(setup);
+    window.location.hash = '#play';
+    setRoute('play');
+  }
+
+  function renderRoute() {
+    if (route === 'manage') {
+      return (
+        <ManagePage
+          decks={decks}
+          setDecks={setDecks}
+          food={food}
+          setFood={setFood}
+        />
+      );
+    }
+    if (route === 'new-game') {
+      return <NewGamePage decks={decks} food={food} onStart={startGame} />;
+    }
+    if (route === 'play' && gameSetup) {
+      return <PlayPage players={gameSetup.players} decks={decks} food={food} />;
+    }
+    return <HomePage />;
+  }
+
   return (
     <div>
       <header className="topnav">
         <div className="topnav-left">
-          <strong>Pecking Order</strong>
+          <a href="#" className="topnav-brand">
+            <strong>Pecking Order</strong>
+          </a>
           <nav className="topnav-links">
-            <a href="#play" className={route === 'play' ? 'active' : ''}>
-              Play
+            <a
+              href="#new-game"
+              className={route === 'new-game' ? 'active' : ''}
+            >
+              New Game
             </a>
             <a href="#manage" className={route === 'manage' ? 'active' : ''}>
               Manage
@@ -62,11 +109,7 @@ export default function App() {
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
       </header>
-      {route === 'manage' ? (
-        <ManagePage decks={decks} setDecks={setDecks} />
-      ) : (
-        <PlayPage decks={decks} />
-      )}
+      {renderRoute()}
     </div>
   );
 }

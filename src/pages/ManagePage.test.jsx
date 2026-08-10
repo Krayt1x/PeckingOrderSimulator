@@ -3,12 +3,21 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import ManagePage from './ManagePage.jsx';
 import { DEFAULT_DECKS } from '../lib/decks.js';
+import { DEFAULT_FOOD } from '../lib/food.js';
 
 afterEach(() => cleanup());
 
 function Harness() {
   const [decks, setDecks] = useState(DEFAULT_DECKS);
-  return <ManagePage decks={decks} setDecks={setDecks} />;
+  const [food, setFood] = useState(DEFAULT_FOOD);
+  return (
+    <ManagePage
+      decks={decks}
+      setDecks={setDecks}
+      food={food}
+      setFood={setFood}
+    />
+  );
 }
 
 describe('ManagePage', () => {
@@ -47,5 +56,18 @@ describe('ManagePage', () => {
       screen.getByRole('tab', { name: 'Ducks' }).getAttribute('aria-selected'),
     ).toBe('true');
     expect(screen.getByDisplayValue('Ducks')).toBeDefined();
+  });
+
+  it('lets you edit the Food config from its own tab, with no deck size field', () => {
+    const { container } = render(<Harness />);
+
+    fireEvent.click(screen.getByRole('tab', { name: /Food/ }));
+
+    expect(screen.getByDisplayValue('Standard Food')).toBeDefined();
+    expect(screen.queryByText('Deck size')).toBeNull();
+
+    const topInputs = container.querySelectorAll('.manage-side-input');
+    fireEvent.change(topInputs[0], { target: { value: '7' } });
+    expect(topInputs[0].value).toBe('7');
   });
 });
