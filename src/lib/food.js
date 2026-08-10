@@ -7,7 +7,7 @@ export const DEFAULT_FOOD = {
     {
       id: 'chip',
       name: 'Chip',
-      emoji: '🍟',
+      emoji: 'CP',
       color: '#eab308',
       cells: [{ row: 0, col: 0 }],
       outsideValue: 1,
@@ -16,7 +16,7 @@ export const DEFAULT_FOOD = {
     {
       id: 'potato-cake',
       name: 'Potato Cake',
-      emoji: '🥔',
+      emoji: 'PC',
       color: '#a16207',
       cells: [
         { row: 0, col: 0 },
@@ -28,7 +28,7 @@ export const DEFAULT_FOOD = {
     {
       id: 'burger',
       name: 'Burger',
-      emoji: '🍔',
+      emoji: 'BG',
       color: '#dc2626',
       cells: [
         { row: 0, col: 0 },
@@ -49,7 +49,7 @@ export function createFoodShape() {
   return {
     id,
     name: 'New Food',
-    emoji: '🍽️',
+    emoji: 'NF',
     color: '#57534e',
     cells: [{ row: 0, col: 0 }],
     outsideValue: 1,

@@ -126,7 +126,7 @@ export default function GameBoard({ cells, selectedCard, onCellClick }) {
 
   const showCardNames = cellSize >= 40;
   const showSides = cellSize >= 48;
-  const emojiSize = Math.max(14, Math.round(cellSize * 0.42));
+  const emojiSize = Math.max(10, Math.round(cellSize * 0.22));
   const nameSize = Math.max(8, Math.round(cellSize * 0.14));
   const sideSize = Math.max(8, Math.round(cellSize * 0.16));
   const zoomPercent = Math.round((cellSize / DEFAULT_CELL_SIZE) * 100);

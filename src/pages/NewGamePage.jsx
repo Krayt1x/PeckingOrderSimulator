@@ -86,9 +86,6 @@ export default function NewGamePage({ decks, food, onStart }) {
               className={`home-tile${players.length === count ? ' selected' : ''}`}
               onClick={() => setPlayerCount(count)}
             >
-              <span className="home-tile-icon" aria-hidden="true">
-                🧑‍🤝‍🧑
-              </span>
               <span className="home-tile-title">{count}</span>
             </button>
           ))}
@@ -160,9 +157,6 @@ export default function NewGamePage({ decks, food, onStart }) {
         <p className="stage-label">What food is being used?</p>
         <div className="home-tile-grid two-col-mobile-grid">
           <div className="home-tile selected">
-            <span className="home-tile-icon" aria-hidden="true">
-              🌾
-            </span>
             <span className="home-tile-title">{food.name}</span>
             <span className="home-tile-description">
               {food.shapes.length} food shape

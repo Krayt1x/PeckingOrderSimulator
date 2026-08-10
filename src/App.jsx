@@ -106,7 +106,7 @@ export default function App() {
           onClick={toggleTheme}
           aria-label="Toggle dark mode"
         >
-          {theme === 'dark' ? '☀️' : '🌙'}
+          {theme === 'dark' ? 'Light' : 'Dark'}
         </button>
       </header>
       {renderRoute()}

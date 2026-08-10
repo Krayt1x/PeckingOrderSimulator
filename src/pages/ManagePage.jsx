@@ -136,7 +136,7 @@ export default function ManagePage({ decks, setDecks, food, setFood }) {
           className={`manage-tab${isFoodTab ? ' manage-tab-active' : ''}`}
           onClick={() => setActiveIndex(decks.length)}
         >
-          🌾 Food
+          Food
         </button>
       </div>
 
@@ -168,7 +168,7 @@ export default function ManagePage({ decks, setDecks, food, setFood }) {
                 <input
                   className="manage-emoji-input"
                   type="text"
-                  aria-label={`Emoji for ${shape.name || 'food shape'}`}
+                  aria-label={`Icon for ${shape.name || 'food shape'}`}
                   value={shape.emoji}
                   onChange={(event) =>
                     updateShape(i, { emoji: event.target.value })
@@ -189,7 +189,7 @@ export default function ManagePage({ decks, setDecks, food, setFood }) {
                   disabled={food.shapes.length <= 1}
                   aria-label={`Remove ${shape.name || 'food shape'}`}
                 >
-                  ✕
+                  X
                 </button>
               </div>
 
@@ -297,7 +297,7 @@ export default function ManagePage({ decks, setDecks, food, setFood }) {
           <table className="manage-cards">
             <thead>
               <tr>
-                <th>Emoji</th>
+                <th>Icon</th>
                 <th>Name</th>
                 <th>Top</th>
                 <th>Right</th>
@@ -313,7 +313,7 @@ export default function ManagePage({ decks, setDecks, food, setFood }) {
                     <input
                       className="manage-emoji-input"
                       type="text"
-                      aria-label={`Emoji for ${card.name || 'card'}`}
+                      aria-label={`Icon for ${card.name || 'card'}`}
                       value={card.emoji}
                       onChange={(event) =>
                         updateCardType(i, { emoji: event.target.value })
@@ -353,7 +353,7 @@ export default function ManagePage({ decks, setDecks, food, setFood }) {
                       disabled={deck.cardTypes.length <= 1}
                       aria-label={`Remove ${card.name || 'card'}`}
                     >
-                      ✕
+                      X
                     </button>
                   </td>
                 </tr>

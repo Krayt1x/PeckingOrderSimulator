@@ -96,7 +96,7 @@ export default function PlayPage({ players, decks, food }) {
       <h1>Pecking Order</h1>
       <p>
         Pick a card from your hand, then click an empty square on the board to
-        play it. The board is 10x10 — drag it to look around. The 🌾 Food cards
+        play it. The board is 10x10 — drag it to look around. The Food cards
         near the center are the objectives the game is anchored around.{' '}
         <a href="#new-game">Start a new game</a>
       </p>
