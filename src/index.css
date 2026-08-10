@@ -302,7 +302,7 @@ body {
    the same width as a pile tile regardless of how much they've shrunk. */
 .hand-row {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 0.5rem;
   flex-wrap: nowrap;
   margin: 1rem 0;
