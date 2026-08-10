@@ -74,8 +74,9 @@ describe('ManagePage', () => {
     );
     expect(screen.getByText(String(expectedSize))).toBeDefined();
 
-    const henQtyInput = screen.getByLabelText('Quantity for Hen');
-    fireEvent.change(henQtyInput, { target: { value: '10' } });
+    const firstCardName = cityDeck.cardTypes[0].name;
+    const qtyInput = screen.getByLabelText(`Quantity for ${firstCardName}`);
+    fireEvent.change(qtyInput, { target: { value: '10' } });
 
     expect(
       screen.getByText(

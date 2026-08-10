@@ -21,6 +21,54 @@ describe('DEFAULT_DECKS', () => {
       });
     });
   });
+
+  it('matches the requested City/Beach/Park bird rosters', () => {
+    function findDeck(name) {
+      return DEFAULT_DECKS.find((d) => d.name === name);
+    }
+    function findCard(deck, name) {
+      return deck.cardTypes.find((c) => c.name === name);
+    }
+
+    const expected = {
+      City: {
+        Sparrow: { quantity: 4, sides: [2, 2, 1, 1] },
+        Pigeon: { quantity: 4, sides: [2, 2, 2, 2] },
+        Crow: { quantity: 2, sides: [4, 2, 4, 2] },
+        'Bin Chicken': { quantity: 2, sides: [5, 3, 3, 2] },
+      },
+      Park: {
+        Sparrow: { quantity: 4, sides: [2, 2, 1, 1] },
+        Duck: { quantity: 4, sides: [3, 3, 2, 1] },
+        Magpie: { quantity: 2, sides: [4, 2, 2, 1] },
+        Swan: { quantity: 2, sides: [4, 4, 4, 2] },
+      },
+      Beach: {
+        Sparrow: { quantity: 3, sides: [2, 2, 1, 1] },
+        Seagull: { quantity: 5, sides: [3, 2, 2, 1] },
+        Pelican: { quantity: 2, sides: [4, 4, 4, 2] },
+        Cockatoo: { quantity: 2, sides: [5, 2, 2, 1] },
+      },
+    };
+
+    Object.entries(expected).forEach(([setName, birds]) => {
+      const deck = findDeck(setName);
+      expect(deck).toBeDefined();
+      expect(deck.cardTypes).toHaveLength(Object.keys(birds).length);
+
+      Object.entries(birds).forEach(([birdName, { quantity, sides }]) => {
+        const card = findCard(deck, birdName);
+        expect(card, `${setName} is missing ${birdName}`).toBeDefined();
+        expect(card.quantity).toBe(quantity);
+        expect(card.sides).toEqual({
+          top: sides[0],
+          right: sides[1],
+          bottom: sides[2],
+          left: sides[3],
+        });
+      });
+    });
+  });
 });
 
 describe('deckSize', () => {
