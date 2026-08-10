@@ -72,7 +72,7 @@ describe('pickCpuEat', () => {
     expect(pickCpuEat(board, BOARD_SIZE, 'p1')).toBeNull();
   });
 
-  it('picks an eligible Food tile and prefers eating an opponent bird', () => {
+  it('picks an eligible Food tile and only ever nominates its own bird, never an opponent’s', () => {
     const board = Array(100).fill(null);
     board[55] = { type: 'food', sides: SIDES };
     board[45] = bird('p1'); // top
@@ -82,10 +82,10 @@ describe('pickCpuEat', () => {
     const choice = pickCpuEat(board, BOARD_SIZE, 'p1');
 
     expect(choice.foodIndex).toBe(55);
-    expect(choice.birdIndex).toBe(56); // the opponent's bird, not p1's own
+    expect([45, 54]).toContain(choice.birdIndex);
   });
 
-  it('falls back to eating its own bird when no opponent bird is adjacent', () => {
+  it('eats its own bird when that is the only adjacent one', () => {
     const board = Array(100).fill(null);
     board[55] = { type: 'food', sides: SIDES };
     board[45] = bird('p1');

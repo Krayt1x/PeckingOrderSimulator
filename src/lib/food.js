@@ -12,8 +12,8 @@ export const DEFAULT_FOOD = {
       emoji: 'CH',
       color: '#eab308',
       cells: [{ row: 0, col: 0 }],
-      outsideValue: 1,
-      insideValue: 1,
+      outsideValue: 0,
+      insideValue: 0,
     },
     {
       id: 'potato-cake',
@@ -24,8 +24,8 @@ export const DEFAULT_FOOD = {
         { row: 0, col: 0 },
         { row: 0, col: 1 },
       ],
-      outsideValue: 2,
-      insideValue: 1,
+      outsideValue: 1,
+      insideValue: 0,
     },
     {
       id: 'burger',
@@ -214,14 +214,17 @@ export function getEligibleFoodIndices(board, boardSize, activePlayerId) {
   return eligible;
 }
 
-// The bird cells orthogonally touching a given food index — the choices
-// available when eating that food.
-export function getAdjacentBirdIndices(board, foodIndex, boardSize) {
+// The bird cells orthogonally touching a given food index that belong to
+// the eating player — the choices available when eating that food. Only
+// your own birds can be nominated; an opponent's bird is never a legal
+// choice, no matter how the food is being eaten.
+export function getAdjacentBirdIndices(board, foodIndex, boardSize, ownerId) {
   const neighbors = getNeighbors(foodIndex, boardSize);
   return Object.values(neighbors).filter(
     (neighborIndex) =>
       neighborIndex !== null &&
       board[neighborIndex] &&
-      board[neighborIndex].type !== 'food',
+      board[neighborIndex].type !== 'food' &&
+      board[neighborIndex].ownerId === ownerId,
   );
 }

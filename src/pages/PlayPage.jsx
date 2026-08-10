@@ -217,6 +217,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
         board,
         eatFoodIndex,
         BOARD_SIZE,
+        activePlayer.id,
       );
       if (birdChoices.includes(index)) {
         handleEatBird(index);
@@ -391,7 +392,12 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
     if (eatFoodIndex !== null) {
       return {
         highlighted: new Set(
-          getAdjacentBirdIndices(board, eatFoodIndex, BOARD_SIZE),
+          getAdjacentBirdIndices(
+            board,
+            eatFoodIndex,
+            BOARD_SIZE,
+            activePlayer.id,
+          ),
         ),
         selected: eatFoodIndex,
       };

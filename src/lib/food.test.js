@@ -30,7 +30,7 @@ describe('computeShapeCells', () => {
   it('gives a 1x1 shape all outside edges', () => {
     const cells = computeShapeCells(chip);
     expect(cells).toHaveLength(1);
-    expect(cells[0].sides).toEqual({ top: 1, right: 1, bottom: 1, left: 1 });
+    expect(cells[0].sides).toEqual({ top: 0, right: 0, bottom: 0, left: 0 });
   });
 
   it('gives a 2x1 shape one inside edge per cell, outside elsewhere', () => {
@@ -39,8 +39,8 @@ describe('computeShapeCells', () => {
 
     const left = cells.find((c) => c.col === 0);
     const right = cells.find((c) => c.col === 1);
-    expect(left.sides).toEqual({ top: 2, right: 1, bottom: 2, left: 2 });
-    expect(right.sides).toEqual({ top: 2, right: 2, bottom: 2, left: 1 });
+    expect(left.sides).toEqual({ top: 1, right: 0, bottom: 1, left: 1 });
+    expect(right.sides).toEqual({ top: 1, right: 1, bottom: 1, left: 0 });
   });
 
   it('gives a 2x2 shape two inside edges and two outside edges per cell', () => {
@@ -199,18 +199,19 @@ describe('getEligibleFoodIndices', () => {
 });
 
 describe('getAdjacentBirdIndices', () => {
-  it('returns only bird-occupied neighbors, not food or empty ones', () => {
+  it('returns only the given owner’s bird-occupied neighbors, not food, empty, or opponent-owned ones', () => {
     const board = Array(100).fill(null);
     board[55] = {
       type: 'food',
       sides: { top: 1, right: 1, bottom: 1, left: 1 },
     };
     board[45] = bird('p1');
+    board[54] = bird('p2');
     board[56] = {
       type: 'food',
       sides: { top: 1, right: 1, bottom: 1, left: 1 },
     };
 
-    expect(getAdjacentBirdIndices(board, 55, BOARD_SIZE)).toEqual([45]);
+    expect(getAdjacentBirdIndices(board, 55, BOARD_SIZE, 'p1')).toEqual([45]);
   });
 });

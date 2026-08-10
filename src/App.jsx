@@ -12,7 +12,7 @@ import { loadJSON, saveJSON } from './lib/storage.js';
 // with older cached data keeps seeing stale names, or worse, data that no
 // longer matches the current schema (e.g. Food without `shapes`).
 const DECKS_STORAGE_KEY = 'peckingorder:decks:v6';
-const FOOD_STORAGE_KEY = 'peckingorder:food:v2';
+const FOOD_STORAGE_KEY = 'peckingorder:food:v3';
 
 function getInitialTheme() {
   return document.documentElement.getAttribute('data-theme') || 'light';

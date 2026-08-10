@@ -715,6 +715,63 @@ describe('PlayPage', () => {
     expect(screen.getByText('Actions: 1/1')).toBeDefined();
   });
 
+  it('only lets you select your own bird when eating Food, never an opponent’s', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const [spotA, spotB, spotC] = neighbors(foodIndex).filter(
+      (i) => !isFilled(cells[i]),
+    );
+    const hand = screen.getByRole('list', { name: 'Your hand' });
+
+    // Turn 1: Player 1 plays a bird at spotA.
+    fireEvent.click(within(hand).getAllByRole('button')[0]);
+    fireEvent.click(screen.getAllByRole('gridcell')[spotA]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    // Turn 2: Player 2 plays a bird at spotB.
+    fireEvent.click(within(hand).getAllByRole('button')[0]);
+    fireEvent.click(screen.getAllByRole('gridcell')[spotB]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    // Turn 3: Player 1 plays a second bird at spotC — now 2 vs 1, majority
+    // control of the Food for Player 1.
+    fireEvent.click(within(hand).getAllByRole('button')[0]);
+    fireEvent.click(screen.getAllByRole('gridcell')[spotC]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    // Turn 4: Player 2 passes.
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
+
+    // Selecting Food then tapping Player 2's bird (spotB) does nothing —
+    // it's not a legal choice, just cancels the eat-selection.
+    fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
+    fireEvent.click(screen.getAllByRole('gridcell')[spotB]);
+
+    cells = screen.getAllByRole('gridcell');
+    expect(isFilled(cells[foodIndex])).toBe(true);
+    expect(isFilled(cells[spotB])).toBe(true);
+    expect(screen.getByText('Actions: 1/1')).toBeDefined();
+
+    // But selecting one of Player 1's own birds (spotA) works.
+    fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
+    fireEvent.click(screen.getAllByRole('gridcell')[spotA]);
+
+    cells = screen.getAllByRole('gridcell');
+    expect(isFilled(cells[foodIndex])).toBe(false);
+    expect(isFilled(cells[spotA])).toBe(false);
+    // Player 2's bird is untouched.
+    expect(isFilled(cells[spotB])).toBe(true);
+  });
+
   it("automatically plays a CPU player's turn", async () => {
     render(
       <PlayPage
