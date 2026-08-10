@@ -229,7 +229,15 @@ export default function PlayPage({
               ...state,
               hand: state.hand.map((c) =>
                 c.id === cardId
-                  ? { ...c, sides: rotateSides(c.sides, direction) }
+                  ? {
+                      ...c,
+                      sides: rotateSides(c.sides, direction),
+                      rotation:
+                        ((c.rotation ?? 0) +
+                          (direction === 'cw' ? 90 : -90) +
+                          360) %
+                        360,
+                    }
                   : c,
               ),
             }

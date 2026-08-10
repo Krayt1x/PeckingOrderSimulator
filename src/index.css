@@ -422,7 +422,9 @@ body {
 }
 
 .card-emoji {
+  display: inline-block;
   font-size: clamp(0.7rem, 3.5vw, 1.75rem);
+  transition: transform 0.15s ease;
 }
 
 .card-name {

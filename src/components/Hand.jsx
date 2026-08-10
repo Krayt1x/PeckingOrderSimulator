@@ -37,7 +37,16 @@ export default function Hand({
               </span>
             </>
           ) : null}
-          <span className="card-emoji">{card.emoji}</span>
+          <span
+            className="card-emoji"
+            style={
+              card.rotation
+                ? { transform: `rotate(${card.rotation}deg)` }
+                : undefined
+            }
+          >
+            {card.emoji}
+          </span>
           {card.fromFood ? (
             <span
               role="button"

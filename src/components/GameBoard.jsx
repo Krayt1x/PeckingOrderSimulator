@@ -364,7 +364,12 @@ export default function GameBoard({
                     ) : null}
                     <span
                       className="card-emoji"
-                      style={{ fontSize: emojiSize }}
+                      style={{
+                        fontSize: emojiSize,
+                        transform: card.rotation
+                          ? `rotate(${card.rotation}deg)`
+                          : undefined,
+                      }}
                     >
                       {card.emoji}
                     </span>
