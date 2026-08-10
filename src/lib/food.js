@@ -101,20 +101,29 @@ function shapeBounds(shape) {
 // *different* food pieces — placements any closer than this are rejected.
 export const MIN_FOOD_DISTANCE = 3;
 
+// Food may not spawn within this many tiles of the board's outer edge —
+// every food cell needs at least this much clearance from row/col 0 and
+// from the last row/col.
+export const EDGE_MARGIN = 3;
+
 function chebyshevDistance(rowA, colA, rowB, colB) {
   return Math.max(Math.abs(rowA - rowB), Math.abs(colA - colB));
 }
 
 // Places every shape in food.shapes onto a boardSize x boardSize board,
-// packed as close to the center as possible without overlapping and
-// without any two distinct pieces landing within MIN_FOOD_DISTANCE tiles
-// of each other. Bigger shapes are placed first so smaller ones can fill
+// packed as close to the center as possible without overlapping, without
+// any two distinct pieces landing within MIN_FOOD_DISTANCE tiles of each
+// other, and without any cell landing within EDGE_MARGIN tiles of the
+// board's edge. Bigger shapes are placed first so smaller ones can fill
 // in around them. Returns a { [boardIndex]: cardFace } map.
 export function placeFoodShapes(food, boardSize) {
   const shapes = food?.shapes ?? [];
   const occupied = new Set();
   const placedCells = []; // [{ row, col }] across every shape placed so far
   const board = {};
+
+  const minCoord = EDGE_MARGIN;
+  const maxCoord = boardSize - 1 - EDGE_MARGIN;
 
   const center = (boardSize - 1) / 2;
   const anchors = [];
@@ -142,6 +151,9 @@ export function placeFoodShapes(food, boardSize) {
       return shape.cells.every((cell) => {
         const r = row + cell.row;
         const c = col + cell.col;
+        if (r < minCoord || r > maxCoord || c < minCoord || c > maxCoord) {
+          return false;
+        }
         if (occupied.has(r * boardSize + c)) return false;
         return placedCells.every(
           (other) =>

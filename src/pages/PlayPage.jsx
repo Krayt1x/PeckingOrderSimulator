@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import GameBoard, { BOARD_SIZE } from '../components/GameBoard.jsx';
 import Hand from '../components/Hand.jsx';
-import { HAND_SIZE, buildDrawPile } from '../lib/decks.js';
+import { HAND_SIZE, buildDrawPile, shuffle } from '../lib/decks.js';
 import {
   placeFoodShapes,
   getEligibleFoodIndices,
@@ -15,7 +15,7 @@ import {
 import { resolveCaptures, canPlaceCard } from '../lib/combat.js';
 import { pickCpuMove } from '../lib/cpu.js';
 
-const ACTIONS_PER_TURN = 2;
+const ACTIONS_PER_TURN = 1;
 
 // Food is the objective the game is anchored around, placed as close to
 // the board's center as the chosen shapes allow.
@@ -60,10 +60,10 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
   );
   const [activeIndex, setActiveIndex] = useState(0);
   const [actionsRemaining, setActionsRemaining] = useState(ACTIONS_PER_TURN);
-  const [mode, setMode] = useState('play');
   const [selectedCardId, setSelectedCardId] = useState(null);
-  const [moveSource, setMoveSource] = useState(null);
   const [eatFoodIndex, setEatFoodIndex] = useState(null);
+  const [dragSourceIndex, setDragSourceIndex] = useState(null);
+  const [pileModal, setPileModal] = useState(null);
 
   const activePlayer = players[activeIndex];
   const activeState = playerStates[activeIndex];
@@ -71,25 +71,18 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
 
   function clearSelections() {
     setSelectedCardId(null);
-    setMoveSource(null);
     setEatFoodIndex(null);
-  }
-
-  function switchMode(nextMode) {
-    setMode(nextMode);
-    clearSelections();
+    setDragSourceIndex(null);
   }
 
   function spendAction() {
     setActionsRemaining((n) => Math.max(0, n - 1));
-    setMode('play');
     clearSelections();
   }
 
   function advanceTurn() {
     setActiveIndex((current) => (current + 1) % players.length);
     setActionsRemaining(ACTIONS_PER_TURN);
-    setMode('play');
     clearSelections();
   }
 
@@ -108,9 +101,8 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
 
   function handleSelectCard(cardId) {
     if (!canAct) return;
-    setMode('play');
-    setMoveSource(null);
     setEatFoodIndex(null);
+    setDragSourceIndex(null);
     setSelectedCardId((current) => (current === cardId ? null : cardId));
   }
 
@@ -140,12 +132,12 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
     spendAction();
   }
 
-  function handleMoveCard(cellIndex) {
-    const card = board[moveSource];
+  function handleMoveCard(sourceIndex, cellIndex) {
+    const card = board[sourceIndex];
     if (!card) return;
 
     const withMove = [...board];
-    withMove[moveSource] = null;
+    withMove[sourceIndex] = null;
     withMove[cellIndex] = card;
     const { board: nextBoard, captured } = resolveCaptures(
       withMove,
@@ -181,49 +173,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
   function handleCellClick(index) {
     if (!canAct) return;
 
-    if (mode === 'play') {
-      if (!selectedCardId || !isPlayableCell(board, index, BOARD_SIZE)) return;
-      const card = activeState.hand.find((c) => c.id === selectedCardId);
-      if (!card) return;
-      const placedCard = { ...card, ownerId: activePlayer.id };
-      if (!canPlaceCard(board, index, placedCard, BOARD_SIZE)) return;
-      handlePlayCard(index);
-      return;
-    }
-
-    if (mode === 'move') {
-      if (moveSource === null) {
-        const card = board[index];
-        if (card && card.type !== 'food' && card.ownerId === activePlayer.id) {
-          setMoveSource(index);
-        }
-        return;
-      }
-      if (index === moveSource) {
-        setMoveSource(null);
-        return;
-      }
-      const destinations = getAdjacentEmptyIndices(
-        board,
-        moveSource,
-        BOARD_SIZE,
-      );
-      if (!destinations.includes(index)) return;
-      if (!canPlaceCard(board, index, board[moveSource], BOARD_SIZE)) return;
-      handleMoveCard(index);
-      return;
-    }
-
-    if (mode === 'eat') {
-      if (eatFoodIndex === null) {
-        const eligible = getEligibleFoodIndices(
-          board,
-          BOARD_SIZE,
-          activePlayer.id,
-        );
-        if (eligible.includes(index)) setEatFoodIndex(index);
-        return;
-      }
+    if (eatFoodIndex !== null) {
       if (index === eatFoodIndex) {
         setEatFoodIndex(null);
         return;
@@ -233,8 +183,56 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
         eatFoodIndex,
         BOARD_SIZE,
       );
-      if (birdChoices.includes(index)) handleEatBird(index);
+      if (birdChoices.includes(index)) {
+        handleEatBird(index);
+      } else {
+        setEatFoodIndex(null);
+      }
+      return;
     }
+
+    if (selectedCardId) {
+      if (!isPlayableCell(board, index, BOARD_SIZE)) return;
+      const card = activeState.hand.find((c) => c.id === selectedCardId);
+      if (!card) return;
+      const placedCard = { ...card, ownerId: activePlayer.id };
+      if (!canPlaceCard(board, index, placedCard, BOARD_SIZE)) return;
+      handlePlayCard(index);
+      return;
+    }
+
+    const eligible = getEligibleFoodIndices(board, BOARD_SIZE, activePlayer.id);
+    if (eligible.includes(index)) {
+      setEatFoodIndex(index);
+    }
+  }
+
+  function handleCardDragStart(index) {
+    if (!canAct) return;
+    const card = board[index];
+    if (!card || card.type === 'food' || card.ownerId !== activePlayer.id) {
+      return;
+    }
+    setSelectedCardId(null);
+    setEatFoodIndex(null);
+    setDragSourceIndex(index);
+  }
+
+  function handleCardDragEnd() {
+    setDragSourceIndex(null);
+  }
+
+  function handleCardDrop(destinationIndex) {
+    const source = dragSourceIndex;
+    setDragSourceIndex(null);
+    if (source === null || !canAct) return;
+
+    const destinations = getAdjacentEmptyIndices(board, source, BOARD_SIZE);
+    if (!destinations.includes(destinationIndex)) return;
+    const card = board[source];
+    if (!card) return;
+    if (!canPlaceCard(board, destinationIndex, card, BOARD_SIZE)) return;
+    handleMoveCard(source, destinationIndex);
   }
 
   function handleEndTurn() {
@@ -295,12 +293,17 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
     advanceTurn();
   }
 
+  function openPileModal(type) {
+    const pile =
+      type === 'draw' ? activeState.drawPile : activeState.discardPile;
+    setPileModal({ type, cards: shuffle(pile) });
+  }
+
   function computeBoardHighlights() {
     const none = { highlighted: new Set(), selected: null };
     if (!canAct) return none;
 
-    if (mode === 'play') {
-      if (!selectedCardId) return none;
+    if (selectedCardId) {
       const card = activeState.hand.find((c) => c.id === selectedCardId);
       if (!card) return none;
       const placedCard = { ...card, ownerId: activePlayer.id };
@@ -310,40 +313,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
       return { highlighted: new Set(indices), selected: null };
     }
 
-    if (mode === 'move') {
-      if (moveSource === null) {
-        const ownIndices = [];
-        board.forEach((cell, i) => {
-          if (
-            cell &&
-            cell.type !== 'food' &&
-            cell.ownerId === activePlayer.id
-          ) {
-            ownIndices.push(i);
-          }
-        });
-        return { highlighted: new Set(ownIndices), selected: null };
-      }
-      const indices = getAdjacentEmptyIndices(
-        board,
-        moveSource,
-        BOARD_SIZE,
-      ).filter((i) => canPlaceCard(board, i, board[moveSource], BOARD_SIZE));
-      return {
-        highlighted: new Set(indices),
-        selected: moveSource,
-      };
-    }
-
-    if (mode === 'eat') {
-      if (eatFoodIndex === null) {
-        return {
-          highlighted: new Set(
-            getEligibleFoodIndices(board, BOARD_SIZE, activePlayer.id),
-          ),
-          selected: null,
-        };
-      }
+    if (eatFoodIndex !== null) {
       return {
         highlighted: new Set(
           getAdjacentBirdIndices(board, eatFoodIndex, BOARD_SIZE),
@@ -352,27 +322,48 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
       };
     }
 
-    return none;
+    if (dragSourceIndex !== null) {
+      const card = board[dragSourceIndex];
+      const indices = card
+        ? getAdjacentEmptyIndices(board, dragSourceIndex, BOARD_SIZE).filter(
+            (i) => canPlaceCard(board, i, card, BOARD_SIZE),
+          )
+        : [];
+      return { highlighted: new Set(indices), selected: dragSourceIndex };
+    }
+
+    return {
+      highlighted: new Set(
+        getEligibleFoodIndices(board, BOARD_SIZE, activePlayer.id),
+      ),
+      selected: null,
+    };
   }
 
   const { highlighted, selected } = computeBoardHighlights();
   const playerColors = Object.fromEntries(players.map((p) => [p.id, p.color]));
 
+  const draggableIndices = new Set();
+  if (canAct) {
+    board.forEach((cell, i) => {
+      if (cell && cell.type !== 'food' && cell.ownerId === activePlayer.id) {
+        draggableIndices.add(i);
+      }
+    });
+  }
+
   return (
     <main className="page">
-      <h1>Pecking Order</h1>
-      <p>
-        Each turn you get {ACTIONS_PER_TURN} actions to spend on playing a card,
-        moving one of your cards, or eating a piece of Food you control. New
-        cards and moves must land next to Food or another card.{' '}
-        <a href="#new-game">Start a new game</a>
-      </p>
       <GameBoard
         cells={board}
         highlightedIndices={highlighted}
         selectedIndex={selected}
         onCellClick={handleCellClick}
         playerColors={playerColors}
+        draggableIndices={draggableIndices}
+        onCardDragStart={handleCardDragStart}
+        onCardDragEnd={handleCardDragEnd}
+        onCardDrop={handleCardDrop}
       />
 
       <div className="hand-header">
@@ -385,37 +376,20 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
             Actions: {actionsRemaining}/{ACTIONS_PER_TURN}
           </span>
         ) : null}
-        <span className="draw-pile-count">
+        <button
+          type="button"
+          className="draw-pile-count pile-btn"
+          onClick={() => openPileModal('draw')}
+        >
           Draw pile: {activeState.drawPile.length}
-        </span>
-        <span className="draw-pile-count">
+        </button>
+        <button
+          type="button"
+          className="draw-pile-count pile-btn"
+          onClick={() => openPileModal('discard')}
+        >
           Discard: {activeState.discardPile.length}
-        </span>
-        {canAct ? (
-          <div className="action-mode-group" role="group" aria-label="Action">
-            <button
-              type="button"
-              className={`action-mode-btn${mode === 'play' ? ' active' : ''}`}
-              onClick={() => switchMode('play')}
-            >
-              Play Card
-            </button>
-            <button
-              type="button"
-              className={`action-mode-btn${mode === 'move' ? ' active' : ''}`}
-              onClick={() => switchMode('move')}
-            >
-              Move Card
-            </button>
-            <button
-              type="button"
-              className={`action-mode-btn${mode === 'eat' ? ' active' : ''}`}
-              onClick={() => switchMode('eat')}
-            >
-              Eat Food
-            </button>
-          </div>
-        ) : null}
+        </button>
         {activePlayer.isCPU ? (
           <button
             type="button"
@@ -436,11 +410,58 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
       </div>
       <Hand
         cards={activeState.hand}
-        selectedCardId={mode === 'play' ? selectedCardId : null}
+        selectedCardId={selectedCardId}
         onSelectCard={handleSelectCard}
         playerColor={activePlayer.color}
-        disabled={!canAct || mode !== 'play'}
+        disabled={!canAct}
       />
+      {pileModal ? (
+        <div
+          className="color-modal-backdrop"
+          onClick={() => setPileModal(null)}
+        >
+          <div
+            className="pile-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={
+              pileModal.type === 'draw' ? 'Draw pile' : 'Discard pile'
+            }
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3>
+              {pileModal.type === 'draw' ? 'Draw pile' : 'Discard pile'} (
+              {pileModal.cards.length})
+            </h3>
+            {pileModal.cards.length === 0 ? (
+              <p className="hand-empty">Empty</p>
+            ) : (
+              <ul className="pile-modal-list">
+                {pileModal.cards.map((card, i) => (
+                  <li
+                    key={`${card.id}-${i}`}
+                    className="pile-modal-card"
+                    style={{
+                      '--card-border': activePlayer.color,
+                      '--card-bg': card.deckColor,
+                    }}
+                  >
+                    <span className="card-emoji">{card.emoji}</span>
+                    <span>{card.name}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <button
+              type="button"
+              className="board-recenter"
+              onClick={() => setPileModal(null)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

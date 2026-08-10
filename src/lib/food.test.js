@@ -2,11 +2,17 @@ import { describe, it, expect } from 'vitest';
 import {
   DEFAULT_FOOD,
   MIN_FOOD_DISTANCE,
+  EDGE_MARGIN,
   computeShapeCells,
   placeFoodShapes,
   getEligibleFoodIndices,
   getAdjacentBirdIndices,
 } from './food.js';
+
+// Real board size the app uses — large enough that DEFAULT_FOOD's shapes
+// fit inside the EDGE_MARGIN-restricted interior along with MIN_FOOD_DISTANCE
+// spacing between them.
+const REAL_BOARD_SIZE = 16;
 
 const BOARD_SIZE = 10;
 
@@ -53,7 +59,7 @@ describe('computeShapeCells', () => {
 
 describe('placeFoodShapes', () => {
   it('places every cell of every shape without overlapping', () => {
-    const board = placeFoodShapes(DEFAULT_FOOD, 10);
+    const board = placeFoodShapes(DEFAULT_FOOD, REAL_BOARD_SIZE);
     const totalCells = DEFAULT_FOOD.shapes.reduce(
       (sum, s) => sum + s.cells.length,
       0,
@@ -67,7 +73,7 @@ describe('placeFoodShapes', () => {
   });
 
   it('keeps every placed cell within the board bounds', () => {
-    const boardSize = 10;
+    const boardSize = REAL_BOARD_SIZE;
     const board = placeFoodShapes(DEFAULT_FOOD, boardSize);
     Object.keys(board).forEach((index) => {
       expect(Number(index)).toBeGreaterThanOrEqual(0);
@@ -80,15 +86,15 @@ describe('placeFoodShapes', () => {
       ...DEFAULT_FOOD,
       shapes: [{ ...chip, cells: [] }],
     };
-    expect(placeFoodShapes(food, 10)).toEqual({});
+    expect(placeFoodShapes(food, REAL_BOARD_SIZE)).toEqual({});
   });
 
   it('keeps every pair of distinct food pieces more than MIN_FOOD_DISTANCE tiles apart', () => {
-    const board = placeFoodShapes(DEFAULT_FOOD, 10);
+    const board = placeFoodShapes(DEFAULT_FOOD, REAL_BOARD_SIZE);
     const byShape = new Map();
     Object.entries(board).forEach(([index, card]) => {
-      const row = Math.floor(Number(index) / 10);
-      const col = Number(index) % 10;
+      const row = Math.floor(Number(index) / REAL_BOARD_SIZE);
+      const col = Number(index) % REAL_BOARD_SIZE;
       const list = byShape.get(card.name) ?? [];
       list.push({ row, col });
       byShape.set(card.name, list);
@@ -110,9 +116,24 @@ describe('placeFoodShapes', () => {
     }
   });
 
+  it('keeps every placed cell at least EDGE_MARGIN tiles from the board edge', () => {
+    const boardSize = REAL_BOARD_SIZE;
+    const board = placeFoodShapes(DEFAULT_FOOD, boardSize);
+    Object.keys(board).forEach((index) => {
+      const row = Math.floor(Number(index) / boardSize);
+      const col = Number(index) % boardSize;
+      expect(row).toBeGreaterThanOrEqual(EDGE_MARGIN);
+      expect(row).toBeLessThanOrEqual(boardSize - 1 - EDGE_MARGIN);
+      expect(col).toBeGreaterThanOrEqual(EDGE_MARGIN);
+      expect(col).toBeLessThanOrEqual(boardSize - 1 - EDGE_MARGIN);
+    });
+  });
+
   it('skips a piece entirely rather than violating the minimum distance', () => {
-    // A board too small for two 1x1 pieces to be more than
-    // MIN_FOOD_DISTANCE apart — the second piece should be skipped.
+    // A board whose EDGE_MARGIN-restricted interior is a single cell —
+    // only one of two identical 1x1 pieces can fit, so the second must be
+    // skipped rather than overlapping or violating the edge margin.
+    const boardSize = EDGE_MARGIN * 2 + 1;
     const food = {
       ...DEFAULT_FOOD,
       shapes: [
@@ -120,8 +141,15 @@ describe('placeFoodShapes', () => {
         { ...chip, id: 'b', cells: [{ row: 0, col: 0 }] },
       ],
     };
-    const board = placeFoodShapes(food, 2);
+    const board = placeFoodShapes(food, boardSize);
     expect(Object.keys(board)).toHaveLength(1);
+  });
+
+  it('skips a shape entirely when the board is too small to have a valid interior', () => {
+    // With boardSize smaller than 2*EDGE_MARGIN + 1, no cell is ever
+    // EDGE_MARGIN tiles from every edge — nothing can be placed.
+    const board = placeFoodShapes(DEFAULT_FOOD, EDGE_MARGIN * 2);
+    expect(board).toEqual({});
   });
 });
 
