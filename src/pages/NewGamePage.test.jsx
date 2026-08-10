@@ -82,13 +82,13 @@ describe('NewGamePage', () => {
 
     const player1Cube = screen.getByRole('button', { name: 'Player 1 color' });
     const player2Cube = screen.getByRole('button', { name: 'Player 2 color' });
+    const color1 = player1Cube.style.getPropertyValue('--swatch-color');
+    const color2 = player2Cube.style.getPropertyValue('--swatch-color');
 
-    expect(player1Cube.style.getPropertyValue('--swatch-color')).toBe(
-      PLAYER_COLOR_PALETTE[0],
-    );
-    expect(player2Cube.style.getPropertyValue('--swatch-color')).toBe(
-      PLAYER_COLOR_PALETTE[1],
-    );
+    // Colors are picked randomly from the palette, but distinctly.
+    expect(PLAYER_COLOR_PALETTE).toContain(color1);
+    expect(PLAYER_COLOR_PALETTE).toContain(color2);
+    expect(color1).not.toBe(color2);
   });
 
   it('opens a 5x5 color chart modal from the cube and lets you pick a color', () => {
@@ -101,6 +101,10 @@ describe('NewGamePage', () => {
       />,
     );
     goToStep('Rosters');
+
+    const player2ColorBefore = screen
+      .getByRole('button', { name: 'Player 2 color' })
+      .style.getPropertyValue('--swatch-color');
 
     fireEvent.click(screen.getByRole('button', { name: 'Player 1 color' }));
     const modal = screen.getByRole('dialog', { name: 'Player 1 color' });
@@ -126,7 +130,7 @@ describe('NewGamePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
     const setup = onStart.mock.calls[0][0];
     expect(setup.players[0].color).toBe(PLAYER_COLOR_PALETTE[12]);
-    expect(setup.players[1].color).toBe(PLAYER_COLOR_PALETTE[1]);
+    expect(setup.players[1].color).toBe(player2ColorBefore);
   });
 
   it('defaults the food selection for 2 players to Potato Cake and Chip only', () => {

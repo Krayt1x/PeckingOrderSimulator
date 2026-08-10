@@ -65,20 +65,41 @@ function defaultFoodShapeIds(playerCount, food) {
   return ids.length > 0 ? ids : allIds;
 }
 
-function defaultPlayer(index, decks) {
+// Picks a random color from the palette, avoiding any already in use by
+// another default player so players stay visually distinct — falls back
+// to any random color if every one is somehow already taken.
+function randomPlayerColor(usedColors) {
+  const available = PLAYER_COLOR_PALETTE.filter(
+    (color) => !usedColors.includes(color),
+  );
+  const pool = available.length > 0 ? available : PLAYER_COLOR_PALETTE;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function defaultPlayer(index, decks, usedColors = []) {
   return {
     id: `player-${index}`,
     name: `Player ${index + 1}`,
     isCPU: false,
     deckId: decks[index % decks.length]?.id,
-    color: PLAYER_COLOR_PALETTE[index % PLAYER_COLOR_PALETTE.length],
+    color: randomPlayerColor(usedColors),
   };
 }
 
 export default function NewGamePage({ decks, food, onStart }) {
-  const [players, setPlayers] = useState(() =>
-    Array.from({ length: 2 }, (_, i) => defaultPlayer(i, decks)),
-  );
+  const [players, setPlayers] = useState(() => {
+    const initial = [];
+    for (let i = 0; i < 2; i++) {
+      initial.push(
+        defaultPlayer(
+          i,
+          decks,
+          initial.map((p) => p.color),
+        ),
+      );
+    }
+    return initial;
+  });
   const [selectedFoodShapeIds, setSelectedFoodShapeIds] = useState(() =>
     defaultFoodShapeIds(2, food),
   );
@@ -97,7 +118,13 @@ export default function NewGamePage({ decks, food, onStart }) {
     setPlayers((current) => {
       const next = current.slice(0, clamped);
       while (next.length < clamped) {
-        next.push(defaultPlayer(next.length, decks));
+        next.push(
+          defaultPlayer(
+            next.length,
+            decks,
+            next.map((p) => p.color),
+          ),
+        );
       }
       return next;
     });
