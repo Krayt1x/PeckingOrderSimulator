@@ -37,6 +37,16 @@ function cardNameOf(cell) {
   return face ? face.getAttribute('title') : null;
 }
 
+// The score board's name and score sit in separate spans now (so each can
+// be styled independently), so their combined text isn't a single text
+// node getByText can match — read the whole entry's textContent instead.
+function scoreEntryText(name) {
+  const entry = Array.from(document.querySelectorAll('.score-entry')).find(
+    (li) => li.querySelector('.score-name')?.textContent === name,
+  );
+  return entry?.textContent;
+}
+
 function twoPlayers({ cpuSecond = false } = {}) {
   return [
     { id: 'p1', name: 'Player 1', isCPU: false, deckId: DEFAULT_DECKS[0].id },
@@ -691,7 +701,7 @@ describe('PlayPage', () => {
       screen.getByRole('button', { name: 'Discard pile: 1 cards' }),
     ).toBeDefined();
     expect(screen.getByText('Actions: 0/1')).toBeDefined();
-    expect(screen.getByText('Player 1: 1')).toBeDefined();
+    expect(scoreEntryText('Player 1')).toBe('Player 1: 1');
 
     // Draw pile lost 1 card refilling the hand after the earlier play, and
     // gained 1 back as the eaten Food's card — net unchanged.
@@ -722,6 +732,39 @@ describe('PlayPage', () => {
     expect(screen.queryByRole('button', { name: 'End Turn' })).toBeNull();
   });
 
+  it("puts a gold circle behind the current leader's score, not a tied/trailing one", () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={TWO_FOOD}
+        foodShapeIds={['crumb-a', 'crumb-b']}
+      />,
+    );
+    const scoreLeaderClass = (name) =>
+      Array.from(document.querySelectorAll('.score-entry'))
+        .find((li) => li.querySelector('.score-name')?.textContent === name)
+        .querySelector('.score-value').className;
+
+    // 0-0 at the start — nobody is "leading" yet.
+    expect(scoreLeaderClass('Player 1')).not.toContain('score-leader');
+    expect(scoreLeaderClass('Player 2')).not.toContain('score-leader');
+
+    const cells = screen.getAllByRole('gridcell');
+    const [foodA] = cells
+      .map((c, i) => (c.querySelector('.card-food') ? i : -1))
+      .filter((i) => i >= 0);
+    const birdSpot = neighbors(foodA).find((i) => !isFilled(cells[i]));
+
+    playThenCycleBackToPlayer1(birdSpot);
+    fireEvent.click(screen.getAllByRole('gridcell')[foodA]);
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+
+    // Player 1 is now 1-0 and takes the gold circle; Player 2 doesn't.
+    expect(scoreLeaderClass('Player 1')).toContain('score-leader');
+    expect(scoreLeaderClass('Player 2')).not.toContain('score-leader');
+  });
+
   it('shows an (A)/(D) suffix on CPU player names based on their strategy', () => {
     render(
       <PlayPage
@@ -746,8 +789,8 @@ describe('PlayPage', () => {
     );
 
     // Human players get no suffix; the CPU gets its strategy's letter.
-    expect(screen.getByText('Player 1: 0')).toBeDefined();
-    expect(screen.getByText('Player 2 (D): 0')).toBeDefined();
+    expect(scoreEntryText('Player 1')).toBe('Player 1: 0');
+    expect(scoreEntryText('Player 2 (D)')).toBe('Player 2 (D): 0');
   });
 
   it('lets the CPU eat Food once it has majority control, not just play cards', async () => {
@@ -950,7 +993,7 @@ describe('PlayPage', () => {
     // later happens to the card it produces.
     fireEvent.click(screen.getAllByRole('gridcell')[foodA]);
     fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
-    expect(screen.getByText('Player 1: 1')).toBeDefined();
+    expect(scoreEntryText('Player 1')).toBe('Player 1: 1');
     fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
     fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
 
@@ -970,7 +1013,7 @@ describe('PlayPage', () => {
         .filter((b) => b.classList.contains('card')),
     ).toHaveLength(1);
     expect(screen.getByText('Actions: 2/1')).toBeDefined();
-    expect(screen.getByText('Player 1: 1')).toBeDefined();
+    expect(scoreEntryText('Player 1')).toBe('Player 1: 1');
     expect(
       screen.getByRole('button', { name: 'Discard pile: 1 cards' }),
     ).toBeDefined();

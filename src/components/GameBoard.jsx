@@ -298,15 +298,14 @@ export default function GameBoard({
           }}
         >
           {cells.map((card, index) => {
-            // Bird cards show the emoji, corner name, and edge stats (like
-            // a Triple Triad-style card) once zoomed in enough not to
-            // collide. Food cards have edge stats too, but show their name
-            // below the emoji instead of in the corner, at a lower zoom
-            // threshold.
+            // Every card shows its name in the center once zoomed in
+            // enough for that not to collide, at a lower zoom threshold
+            // than the edge stats (like a Triple Triad-style card) that
+            // birds — and Food, which also carries an emoji above its
+            // name — show once zoomed in further still.
             const isFoodCard = card?.type === 'food';
             const cardHasSides = Boolean(card?.sides) && showSides;
-            const cardShowsIndex = cardHasSides && !isFoodCard;
-            const cardShowsName = isFoodCard && showCardNames;
+            const cardShowsName = showCardNames;
 
             const isDraggable = Boolean(draggableIndices?.has(index));
 
@@ -344,14 +343,6 @@ export default function GameBoard({
                     }
                     title={card.name}
                   >
-                    {cardShowsIndex ? (
-                      <span
-                        className="card-index"
-                        style={{ fontSize: sideSize }}
-                      >
-                        {card.name}
-                      </span>
-                    ) : null}
                     {cardHasSides ? (
                       <span className="card-sides">
                         {SIDE_KEYS.map((side) => (
@@ -365,17 +356,14 @@ export default function GameBoard({
                         ))}
                       </span>
                     ) : null}
-                    <span
-                      className="card-emoji"
-                      style={{
-                        fontSize: emojiSize,
-                        transform: card.rotation
-                          ? `rotate(${card.rotation}deg)`
-                          : undefined,
-                      }}
-                    >
-                      {card.emoji}
-                    </span>
+                    {isFoodCard ? (
+                      <span
+                        className="card-emoji"
+                        style={{ fontSize: emojiSize }}
+                      >
+                        {card.emoji}
+                      </span>
+                    ) : null}
                     {cardShowsName ? (
                       <span
                         className="card-name"
