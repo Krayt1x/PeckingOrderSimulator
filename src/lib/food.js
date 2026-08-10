@@ -1,3 +1,5 @@
+import { getNeighbors } from './board.js';
+
 export const FOOD_GRID_SIZE = 4;
 
 export const DEFAULT_FOOD = {
@@ -95,13 +97,23 @@ function shapeBounds(shape) {
   };
 }
 
+// Minimum Chebyshev (chessboard) distance required between cells of two
+// *different* food pieces — placements any closer than this are rejected.
+export const MIN_FOOD_DISTANCE = 3;
+
+function chebyshevDistance(rowA, colA, rowB, colB) {
+  return Math.max(Math.abs(rowA - rowB), Math.abs(colA - colB));
+}
+
 // Places every shape in food.shapes onto a boardSize x boardSize board,
-// packed as close to the center as possible without overlapping. Bigger
-// shapes are placed first so smaller ones can fill in around them. Returns
-// a { [boardIndex]: cardFace } map.
+// packed as close to the center as possible without overlapping and
+// without any two distinct pieces landing within MIN_FOOD_DISTANCE tiles
+// of each other. Bigger shapes are placed first so smaller ones can fill
+// in around them. Returns a { [boardIndex]: cardFace } map.
 export function placeFoodShapes(food, boardSize) {
   const shapes = food?.shapes ?? [];
   const occupied = new Set();
+  const placedCells = []; // [{ row, col }] across every shape placed so far
   const board = {};
 
   const center = (boardSize - 1) / 2;
@@ -126,10 +138,16 @@ export function placeFoodShapes(food, boardSize) {
 
     const anchor = anchors.find(({ row, col }) => {
       if (row + height > boardSize || col + width > boardSize) return false;
-      return shape.cells.every(
-        (cell) =>
-          !occupied.has((row + cell.row) * boardSize + (col + cell.col)),
-      );
+
+      return shape.cells.every((cell) => {
+        const r = row + cell.row;
+        const c = col + cell.col;
+        if (occupied.has(r * boardSize + c)) return false;
+        return placedCells.every(
+          (other) =>
+            chebyshevDistance(r, c, other.row, other.col) > MIN_FOOD_DISTANCE,
+        );
+      });
     });
     if (!anchor) return;
 
@@ -138,6 +156,7 @@ export function placeFoodShapes(food, boardSize) {
       const boardCol = anchor.col + col;
       const index = boardRow * boardSize + boardCol;
       occupied.add(index);
+      placedCells.push({ row: boardRow, col: boardCol });
       board[index] = {
         id: `${shape.id}-${boardRow}-${boardCol}`,
         type: 'food',
@@ -150,4 +169,47 @@ export function placeFoodShapes(food, boardSize) {
   });
 
   return board;
+}
+
+// A food cell is "eatable" by a player when, of the birds orthogonally
+// touching it, that player owns strictly more than every other player
+// combined. Each food cell/tile is evaluated independently — a multi-cell
+// piece like Burger doesn't need to be controlled as a whole.
+export function getEligibleFoodIndices(board, boardSize, activePlayerId) {
+  const eligible = [];
+
+  board.forEach((cell, index) => {
+    if (!cell || cell.type !== 'food') return;
+
+    const neighbors = getNeighbors(index, boardSize);
+    const counts = {};
+    Object.values(neighbors).forEach((neighborIndex) => {
+      if (neighborIndex === null) return;
+      const neighbor = board[neighborIndex];
+      if (!neighbor || neighbor.type === 'food') return;
+      counts[neighbor.ownerId] = (counts[neighbor.ownerId] ?? 0) + 1;
+    });
+
+    const mine = counts[activePlayerId] ?? 0;
+    const others = Object.entries(counts).reduce(
+      (sum, [ownerId, count]) =>
+        ownerId === activePlayerId ? sum : sum + count,
+      0,
+    );
+    if (mine > others) eligible.push(index);
+  });
+
+  return eligible;
+}
+
+// The bird cells orthogonally touching a given food index — the choices
+// available when eating that food.
+export function getAdjacentBirdIndices(board, foodIndex, boardSize) {
+  const neighbors = getNeighbors(foodIndex, boardSize);
+  return Object.values(neighbors).filter(
+    (neighborIndex) =>
+      neighborIndex !== null &&
+      board[neighborIndex] &&
+      board[neighborIndex].type !== 'food',
+  );
 }

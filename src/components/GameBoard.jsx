@@ -37,7 +37,12 @@ function centeredOffset(cellSize) {
   return snapOffset(cellSize, maxOffsetOf(cellSize) / 2);
 }
 
-export default function GameBoard({ cells, selectedCard, onCellClick }) {
+export default function GameBoard({
+  cells,
+  highlightedIndices,
+  selectedIndex,
+  onCellClick,
+}) {
   const [cellSize, setCellSize] = useState(DEFAULT_CELL_SIZE);
   const [offset, setOffset] = useState(() => ({
     x: centeredOffset(DEFAULT_CELL_SIZE),
@@ -165,8 +170,8 @@ export default function GameBoard({ cells, selectedCard, onCellClick }) {
                 type="button"
                 role="gridcell"
                 className={`board-cell${card ? ' board-cell-filled' : ''}${
-                  !card && selectedCard ? ' board-cell-droppable' : ''
-                }`}
+                  highlightedIndices?.has(index) ? ' board-cell-droppable' : ''
+                }${index === selectedIndex ? ' board-cell-selected' : ''}`}
                 style={{ width: cellSize, height: cellSize }}
                 onClick={() => handleCellClick(index)}
               >

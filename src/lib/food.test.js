@@ -1,5 +1,22 @@
 import { describe, it, expect } from 'vitest';
-import { DEFAULT_FOOD, computeShapeCells, placeFoodShapes } from './food.js';
+import {
+  DEFAULT_FOOD,
+  MIN_FOOD_DISTANCE,
+  computeShapeCells,
+  placeFoodShapes,
+  getEligibleFoodIndices,
+  getAdjacentBirdIndices,
+} from './food.js';
+
+const BOARD_SIZE = 10;
+
+function bird(ownerId) {
+  return {
+    ownerId,
+    type: 'bird',
+    sides: { top: 1, right: 1, bottom: 1, left: 1 },
+  };
+}
 
 const [chip, potatoCake, burger] = DEFAULT_FOOD.shapes;
 
@@ -64,5 +81,108 @@ describe('placeFoodShapes', () => {
       shapes: [{ ...chip, cells: [] }],
     };
     expect(placeFoodShapes(food, 10)).toEqual({});
+  });
+
+  it('keeps every pair of distinct food pieces more than MIN_FOOD_DISTANCE tiles apart', () => {
+    const board = placeFoodShapes(DEFAULT_FOOD, 10);
+    const byShape = new Map();
+    Object.entries(board).forEach(([index, card]) => {
+      const row = Math.floor(Number(index) / 10);
+      const col = Number(index) % 10;
+      const list = byShape.get(card.name) ?? [];
+      list.push({ row, col });
+      byShape.set(card.name, list);
+    });
+
+    const groups = [...byShape.values()];
+    for (let i = 0; i < groups.length; i++) {
+      for (let j = i + 1; j < groups.length; j++) {
+        groups[i].forEach((a) => {
+          groups[j].forEach((b) => {
+            const distance = Math.max(
+              Math.abs(a.row - b.row),
+              Math.abs(a.col - b.col),
+            );
+            expect(distance).toBeGreaterThan(MIN_FOOD_DISTANCE);
+          });
+        });
+      }
+    }
+  });
+
+  it('skips a piece entirely rather than violating the minimum distance', () => {
+    // A board too small for two 1x1 pieces to be more than
+    // MIN_FOOD_DISTANCE apart — the second piece should be skipped.
+    const food = {
+      ...DEFAULT_FOOD,
+      shapes: [
+        { ...chip, id: 'a', cells: [{ row: 0, col: 0 }] },
+        { ...chip, id: 'b', cells: [{ row: 0, col: 0 }] },
+      ],
+    };
+    const board = placeFoodShapes(food, 2);
+    expect(Object.keys(board)).toHaveLength(1);
+  });
+});
+
+describe('getEligibleFoodIndices', () => {
+  it('is eligible for a player with strictly more adjacent birds than everyone else combined', () => {
+    const board = Array(100).fill(null);
+    board[55] = {
+      type: 'food',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+    board[45] = bird('p1'); // top
+    board[54] = bird('p1'); // left
+    board[56] = bird('p2'); // right — p1 has 2, p2 has 1: p1 qualifies
+
+    expect(getEligibleFoodIndices(board, BOARD_SIZE, 'p1')).toEqual([55]);
+    expect(getEligibleFoodIndices(board, BOARD_SIZE, 'p2')).toEqual([]);
+  });
+
+  it('is not eligible on a tie', () => {
+    const board = Array(100).fill(null);
+    board[55] = {
+      type: 'food',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+    board[45] = bird('p1');
+    board[56] = bird('p2');
+
+    expect(getEligibleFoodIndices(board, BOARD_SIZE, 'p1')).toEqual([]);
+  });
+
+  it('evaluates each food tile of a multi-cell piece independently', () => {
+    const board = Array(100).fill(null);
+    // Two food cells side by side; p1 controls only the left one.
+    board[55] = {
+      type: 'food',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+    board[56] = {
+      type: 'food',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+    board[45] = bird('p1'); // touches 55 only
+
+    const eligible = getEligibleFoodIndices(board, BOARD_SIZE, 'p1');
+    expect(eligible).toEqual([55]);
+  });
+});
+
+describe('getAdjacentBirdIndices', () => {
+  it('returns only bird-occupied neighbors, not food or empty ones', () => {
+    const board = Array(100).fill(null);
+    board[55] = {
+      type: 'food',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+    board[45] = bird('p1');
+    board[56] = {
+      type: 'food',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+
+    expect(getAdjacentBirdIndices(board, 55, BOARD_SIZE)).toEqual([45]);
   });
 });

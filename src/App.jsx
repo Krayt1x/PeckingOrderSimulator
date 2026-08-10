@@ -7,8 +7,12 @@ import { DEFAULT_DECKS } from './lib/decks.js';
 import { DEFAULT_FOOD } from './lib/food.js';
 import { loadJSON, saveJSON } from './lib/storage.js';
 
-const DECKS_STORAGE_KEY = 'peckingorder:decks';
-const FOOD_STORAGE_KEY = 'peckingorder:food';
+// Bump the trailing version whenever DEFAULT_DECKS/DEFAULT_FOOD's shape
+// changes meaningfully (renames, schema changes) — otherwise a browser
+// with older cached data keeps seeing stale names, or worse, data that no
+// longer matches the current schema (e.g. Food without `shapes`).
+const DECKS_STORAGE_KEY = 'peckingorder:decks:v2';
+const FOOD_STORAGE_KEY = 'peckingorder:food:v2';
 
 function getInitialTheme() {
   return document.documentElement.getAttribute('data-theme') || 'light';
@@ -77,7 +81,14 @@ export default function App() {
       return <NewGamePage decks={decks} food={food} onStart={startGame} />;
     }
     if (route === 'play' && gameSetup) {
-      return <PlayPage players={gameSetup.players} decks={decks} food={food} />;
+      return (
+        <PlayPage
+          players={gameSetup.players}
+          decks={decks}
+          food={food}
+          foodShapeIds={gameSetup.foodShapeIds}
+        />
+      );
     }
     return <HomePage />;
   }

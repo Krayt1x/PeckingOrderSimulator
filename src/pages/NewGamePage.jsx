@@ -24,6 +24,9 @@ export default function NewGamePage({ decks, food, onStart }) {
   const [players, setPlayers] = useState(() =>
     Array.from({ length: 2 }, (_, i) => defaultPlayer(i, decks)),
   );
+  const [selectedFoodShapeIds, setSelectedFoodShapeIds] = useState(() =>
+    food.shapes.map((s) => s.id),
+  );
   const [wizardStep, setWizardStep] = useState('players');
 
   // Mirrors the tile-pick-then-advance pattern from DropshipSimulator's own
@@ -51,8 +54,16 @@ export default function NewGamePage({ decks, food, onStart }) {
     );
   }
 
+  function toggleFoodShape(id) {
+    setSelectedFoodShapeIds((current) =>
+      current.includes(id)
+        ? current.filter((shapeId) => shapeId !== id)
+        : [...current, id],
+    );
+  }
+
   function handleStart() {
-    onStart({ players, foodId: food.id });
+    onStart({ players, foodId: food.id, foodShapeIds: selectedFoodShapeIds });
   }
 
   function stepSummary(key) {
@@ -64,7 +75,14 @@ export default function NewGamePage({ decks, food, onStart }) {
         .map((p) => `${p.name}${p.isCPU ? ' (CPU)' : ''}`)
         .join(', ');
     }
-    if (key === 'food') return food.name;
+    if (key === 'food') {
+      const chosen = food.shapes.filter((s) =>
+        selectedFoodShapeIds.includes(s.id),
+      );
+      return chosen.length === 0
+        ? 'None'
+        : chosen.map((s) => s.name).join(', ');
+    }
     return '';
   }
 
@@ -154,16 +172,33 @@ export default function NewGamePage({ decks, food, onStart }) {
   function renderFoodStep() {
     return (
       <>
-        <p className="stage-label">What food is being used?</p>
+        <p className="stage-label">Which food is in play?</p>
+        <p className="wizard-body-hint">
+          Pick which food shapes will be placed on the board. Edit shapes in{' '}
+          <a href="#manage">Manage</a>.
+        </p>
         <div className="home-tile-grid two-col-mobile-grid">
-          <div className="home-tile selected">
-            <span className="home-tile-title">{food.name}</span>
-            <span className="home-tile-description">
-              {food.shapes.length} food shape
-              {food.shapes.length === 1 ? '' : 's'} — edit in{' '}
-              <a href="#manage">Manage</a>
-            </span>
-          </div>
+          {food.shapes.map((shape) => {
+            const selected = selectedFoodShapeIds.includes(shape.id);
+            const width = Math.max(...shape.cells.map((c) => c.col), 0) + 1;
+            const height = Math.max(...shape.cells.map((c) => c.row), 0) + 1;
+            return (
+              <button
+                key={shape.id}
+                type="button"
+                role="switch"
+                aria-checked={selected}
+                className={`home-tile${selected ? ' selected' : ''}`}
+                onClick={() => toggleFoodShape(shape.id)}
+              >
+                <span className="home-tile-title">{shape.name}</span>
+                <span className="home-tile-description">
+                  {width}x{height} &mdash; outside {shape.outsideValue}, inside{' '}
+                  {shape.insideValue}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </>
     );

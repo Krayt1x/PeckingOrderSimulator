@@ -69,7 +69,7 @@ describe('NewGamePage', () => {
     );
   });
 
-  it('shows the food config on the Food step', () => {
+  it('shows every food shape as its own tile, all selected by default', () => {
     render(
       <NewGamePage
         decks={DEFAULT_DECKS}
@@ -79,7 +79,26 @@ describe('NewGamePage', () => {
     );
     goToStep('Food');
 
-    expect(screen.getAllByText('Standard Food').length).toBeGreaterThan(0);
+    DEFAULT_FOOD.shapes.forEach((shape) => {
+      const tile = screen.getByRole('switch', { name: new RegExp(shape.name) });
+      expect(tile.getAttribute('aria-checked')).toBe('true');
+    });
+  });
+
+  it('lets you deselect a food shape', () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    goToStep('Food');
+
+    const burgerTile = screen.getByRole('switch', { name: /Burger/ });
+    fireEvent.click(burgerTile);
+
+    expect(burgerTile.getAttribute('aria-checked')).toBe('false');
   });
 
   it('summarizes every step and calls onStart from the Review step', () => {
@@ -101,5 +120,25 @@ describe('NewGamePage', () => {
     const setup = onStart.mock.calls[0][0];
     expect(setup.players).toHaveLength(2);
     expect(setup.foodId).toBe(DEFAULT_FOOD.id);
+    expect(setup.foodShapeIds).toEqual(DEFAULT_FOOD.shapes.map((s) => s.id));
+  });
+
+  it('excludes a deselected food shape from the final setup', () => {
+    const onStart = vi.fn();
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={onStart}
+      />,
+    );
+    goToStep('Food');
+    fireEvent.click(screen.getByRole('switch', { name: /Chip/ }));
+    goToStep('Review');
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
+
+    const setup = onStart.mock.calls[0][0];
+    const chip = DEFAULT_FOOD.shapes.find((s) => s.name === 'Chip');
+    expect(setup.foodShapeIds).not.toContain(chip.id);
   });
 });

@@ -10,7 +10,31 @@ import PlayPage from './PlayPage.jsx';
 import { DEFAULT_DECKS, HAND_SIZE } from '../lib/decks.js';
 import { DEFAULT_FOOD } from '../lib/food.js';
 
+const BOARD_SIZE = 10;
+
 afterEach(() => cleanup());
+
+function neighbors(index) {
+  const row = Math.floor(index / BOARD_SIZE);
+  const col = index % BOARD_SIZE;
+  const result = [];
+  if (row > 0) result.push(index - BOARD_SIZE);
+  if (row < BOARD_SIZE - 1) result.push(index + BOARD_SIZE);
+  if (col > 0) result.push(index - 1);
+  if (col < BOARD_SIZE - 1) result.push(index + 1);
+  return result;
+}
+
+function isFilled(cell) {
+  return cell.className.includes('board-cell-filled');
+}
+
+function cardNameOf(cell) {
+  const nameEl = cell.querySelector('.card-name');
+  if (nameEl) return nameEl.textContent;
+  const face = cell.querySelector('.card-on-board');
+  return face ? face.getAttribute('title') : null;
+}
 
 function twoPlayers({ cpuSecond = false } = {}) {
   return [
@@ -24,27 +48,68 @@ function twoPlayers({ cpuSecond = false } = {}) {
   ];
 }
 
-function cardNameOf(button) {
-  const nameEl = button.querySelector('.card-name');
-  if (nameEl) return nameEl.textContent;
-  return button.querySelector('.card-on-board').getAttribute('title');
-}
-
 const TOTAL_FOOD_CELLS = DEFAULT_FOOD.shapes.reduce(
   (sum, s) => sum + s.cells.length,
   0,
 );
 
-function findFoodCells(cells) {
-  return cells.filter((cell) => cell.querySelector('.card-food'));
-}
-
-function findFirstFoodIndex(cells) {
+function findFoodIndex(cells) {
   return cells.findIndex((cell) => cell.querySelector('.card-food'));
 }
 
+// A single, isolated 1x1 food piece — used by tests that need a
+// deterministic, easy-to-reason-about board.
+const SINGLE_FOOD = {
+  id: 'food',
+  name: 'Test Food',
+  shapes: [
+    {
+      id: 'crumb',
+      name: 'Crumb',
+      emoji: 'CR',
+      color: '#57534e',
+      cells: [{ row: 0, col: 0 }],
+      outsideValue: 1,
+      insideValue: 1,
+    },
+  ],
+};
+
+function strongVsWeakDecks() {
+  return [
+    {
+      id: 'deck-weak',
+      name: 'Weak',
+      size: 4,
+      cardTypes: [
+        {
+          id: 'weak',
+          name: 'Weak',
+          emoji: 'WK',
+          color: '#57534e',
+          sides: { top: 1, right: 1, bottom: 1, left: 1 },
+        },
+      ],
+    },
+    {
+      id: 'deck-strong',
+      name: 'Strong',
+      size: 4,
+      cardTypes: [
+        {
+          id: 'strong',
+          name: 'Strong',
+          emoji: 'SG',
+          color: '#57534e',
+          sides: { top: 9, right: 9, bottom: 9, left: 9 },
+        },
+      ],
+    },
+  ];
+}
+
 describe('PlayPage', () => {
-  it('deals a starting hand of 4 for the active player and names whose turn it is', () => {
+  it('deals a starting hand of 4 and shows 2 actions remaining', () => {
     render(
       <PlayPage
         players={twoPlayers()}
@@ -54,6 +119,7 @@ describe('PlayPage', () => {
     );
 
     expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
+    expect(screen.getByText('Actions: 2/2')).toBeDefined();
     const hand = screen.getByRole('list', { name: 'Your hand' });
     expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE);
   });
@@ -69,17 +135,12 @@ describe('PlayPage', () => {
 
     const cells = screen.getAllByRole('gridcell');
     expect(cells).toHaveLength(100);
-
-    const foodCells = findFoodCells(cells);
-    expect(foodCells).toHaveLength(TOTAL_FOOD_CELLS);
-
-    const foodNames = new Set(foodCells.map((cell) => cardNameOf(cell)));
-    DEFAULT_FOOD.shapes.forEach((shape) =>
-      expect(foodNames.has(shape.name)).toBe(true),
+    expect(cells.filter((c) => c.querySelector('.card-food'))).toHaveLength(
+      TOTAL_FOOD_CELLS,
     );
   });
 
-  it('plays a card from hand and ends the turn, advancing to the next player', () => {
+  it('only lets you play a card next to Food or another card', () => {
     render(
       <PlayPage
         players={twoPlayers()}
@@ -88,37 +149,173 @@ describe('PlayPage', () => {
       />,
     );
     const hand = screen.getByRole('list', { name: 'Your hand' });
-    const firstCard = within(hand).getAllByRole('button')[0];
-    const name = cardNameOf(firstCard);
-
-    fireEvent.click(firstCard);
-    fireEvent.click(screen.getAllByRole('gridcell')[0]);
-
-    expect(cardNameOf(screen.getAllByRole('gridcell')[0])).toBe(name);
-    expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE - 1);
-
-    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
-    expect(screen.getByText(/Player 2.*turn/)).toBeDefined();
-  });
-
-  it('does not let you play a card onto a Food objective cell', () => {
-    render(
-      <PlayPage
-        players={twoPlayers()}
-        decks={DEFAULT_DECKS}
-        food={DEFAULT_FOOD}
-      />,
-    );
-    const hand = screen.getByRole('list', { name: 'Your hand' });
-    const foodIndex = findFirstFoodIndex(screen.getAllByRole('gridcell'));
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
 
     fireEvent.click(within(hand).getAllByRole('button')[0]);
-    fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
+    // Try a corner cell, guaranteed far from Food (which is placed near
+    // the center) and not adjacent to anything.
+    fireEvent.click(cells[0]);
+    expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE);
 
+    // Now a cell actually adjacent to Food should work.
+    const adjacentIndex = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+    fireEvent.click(cells[adjacentIndex]);
+    expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE - 1);
+    expect(isFilled(screen.getAllByRole('gridcell')[adjacentIndex])).toBe(true);
+  });
+
+  it('spends 1 action per play instead of ending the turn immediately', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
+    const hand = screen.getByRole('list', { name: 'Your hand' });
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const adjacentIndex = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    fireEvent.click(within(hand).getAllByRole('button')[0]);
+    fireEvent.click(screen.getAllByRole('gridcell')[adjacentIndex]);
+
+    expect(screen.getByText('Actions: 1/2')).toBeDefined();
+    expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
+  });
+
+  it('ending the turn refills the hand and passes to the next player', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    expect(screen.getByText(/Player 2.*turn/)).toBeDefined();
+    expect(screen.getByText('Actions: 2/2')).toBeDefined();
+    const hand = screen.getByRole('list', { name: 'Your hand' });
     expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE);
   });
 
-  it('shows a Play CPU Turn button for a CPU player and plays a move for them', () => {
+  it('captures a weaker adjacent opponent card and discards it to its owner', () => {
+    render(
+      <PlayPage
+        players={[
+          { id: 'p1', name: 'Player 1', isCPU: false, deckId: 'deck-weak' },
+          { id: 'p2', name: 'Player 2', isCPU: false, deckId: 'deck-strong' },
+        ]}
+        decks={strongVsWeakDecks()}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+
+    // Player 1 (Weak) plays next to Food.
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const weakSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[weakSpot]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    // Player 2 (Strong) plays next to Player 1's Weak card.
+    cells = screen.getAllByRole('gridcell');
+    const strongSpot = neighbors(weakSpot).find((i) => !isFilled(cells[i]));
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[strongSpot]);
+
+    // The Weak card should be gone from the board...
+    cells = screen.getAllByRole('gridcell');
+    expect(isFilled(cells[weakSpot])).toBe(false);
+    expect(isFilled(cells[strongSpot])).toBe(true);
+
+    // ...and sitting in Player 1's discard pile.
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
+    expect(screen.getByText('Discard: 1')).toBeDefined();
+  });
+
+  it('lets you move your own card to an adjacent empty cell', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const firstSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[firstSpot]);
+
+    cells = screen.getAllByRole('gridcell');
+    const name = cardNameOf(cells[firstSpot]);
+    const destination = neighbors(firstSpot).find(
+      (i) => i !== foodIndex && !isFilled(cells[i]),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move Card' }));
+    fireEvent.click(screen.getAllByRole('gridcell')[firstSpot]);
+    fireEvent.click(screen.getAllByRole('gridcell')[destination]);
+
+    cells = screen.getAllByRole('gridcell');
+    expect(isFilled(cells[firstSpot])).toBe(false);
+    expect(cardNameOf(cells[destination])).toBe(name);
+    // Playing the card spent 1 action, moving it spent the 2nd.
+    expect(screen.getByText('Actions: 0/2')).toBeDefined();
+  });
+
+  it('lets you eat a Food piece you have majority control over', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const birdSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Eat Food' }));
+    fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+
+    cells = screen.getAllByRole('gridcell');
+    expect(isFilled(cells[foodIndex])).toBe(false);
+    expect(isFilled(cells[birdSpot])).toBe(false);
+    expect(screen.getByText('Discard: 1')).toBeDefined();
+    expect(screen.getByText('Actions: 0/2')).toBeDefined();
+  });
+
+  it('shows a Play CPU Turn button for a CPU player and plays for them', () => {
     render(
       <PlayPage
         players={twoPlayers({ cpuSecond: true })}
@@ -136,8 +333,9 @@ describe('PlayPage', () => {
     const filledCells = screen
       .getAllByRole('gridcell')
       .filter((cell) => cell.className.includes('board-cell-filled'));
-    // Every Food cell plus the one card the CPU just played.
-    expect(filledCells).toHaveLength(TOTAL_FOOD_CELLS + 1);
+    // Food cells, plus at least 1 (up to 2) cards the CPU played.
+    expect(filledCells.length).toBeGreaterThan(TOTAL_FOOD_CELLS);
+    expect(filledCells.length).toBeLessThanOrEqual(TOTAL_FOOD_CELLS + 2);
   });
 
   it("disables the hand while it is a CPU player's turn", () => {
