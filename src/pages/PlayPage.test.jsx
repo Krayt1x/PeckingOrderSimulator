@@ -783,7 +783,7 @@ describe('PlayPage', () => {
     expect(screen.getByText(/Player 2 \(A\) wins with 1 point/)).toBeDefined();
   });
 
-  it('lets you play a Food-derived card for free and grants an extra action', () => {
+  it('never lets a Food-derived card be played onto the board (only discarded via Use Food)', () => {
     function tinyDecks() {
       return [
         {
@@ -872,18 +872,21 @@ describe('PlayPage', () => {
     cells = screen.getAllByRole('gridcell');
     const destination = neighbors(foodB).find((i) => !isFilled(cells[i]));
 
+    // Selecting the Food-derived card highlights no board cells, and
+    // clicking a cell that would otherwise be a legal placement does
+    // nothing — the card stays in hand, untouched.
     fireEvent.click(foodCardButton);
+    expect(document.querySelectorAll('.board-cell-droppable')).toHaveLength(0);
     fireEvent.click(screen.getAllByRole('gridcell')[destination]);
 
     expect(
-      within(screen.getByRole('list', { name: 'Your hand' })).queryAllByRole(
-        'button',
-      ),
-    ).toHaveLength(1);
-    // Playing the Food card cost nothing and granted an extra action.
-    expect(screen.getByText('Actions: 2/1')).toBeDefined();
+      within(screen.getByRole('list', { name: 'Your hand' }))
+        .getAllByRole('button')
+        .filter((b) => b.classList.contains('card')),
+    ).toHaveLength(2);
+    expect(screen.getByText('Actions: 1/1')).toBeDefined();
     cells = screen.getAllByRole('gridcell');
-    expect(cardNameOf(cells[destination])).toBe('Crumb A');
+    expect(isFilled(cells[destination])).toBe(false);
   });
 
   it('discards a food-derived card via its Use Food badge, for free plus a bonus action, without touching the banked score', () => {

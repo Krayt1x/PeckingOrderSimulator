@@ -41,6 +41,9 @@ export function pickCpuMove(hand, board, boardSize, ownerId, strategy) {
 
   const options = [];
   hand.forEach((card) => {
+    // A Food-derived card can only be discarded via Use Food, never
+    // played onto the board.
+    if (card.fromFood) return;
     const placedCard = { ...card, ownerId };
     playableIndexes.forEach((cellIndex) => {
       if (!canPlaceCard(board, cellIndex, placedCard, boardSize)) return;

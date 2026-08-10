@@ -32,6 +32,14 @@ describe('pickCpuMove', () => {
     expect([45, 65, 54, 56]).toContain(move.cellIndex);
   });
 
+  it('never offers a Food-derived card as a move — those are only discarded via Use Food', () => {
+    const hand = [{ id: 'c1', sides: SIDES, fromFood: true }];
+    const board = Array(100).fill(null);
+    board[55] = { type: 'food', sides: SIDES };
+
+    expect(pickCpuMove(hand, board, BOARD_SIZE, 'p1')).toBeNull();
+  });
+
   it('never picks a cell whose only adjacency is its own card', () => {
     const hand = [{ id: 'c1', sides: SIDES }];
     const board = Array(100).fill(null);

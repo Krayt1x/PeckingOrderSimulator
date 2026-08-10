@@ -277,7 +277,7 @@ export default function PlayPage({
 
     commitBoardAfterCapture(withCard, nextBoard, captured);
     setPlayerStates(nextPlayerStates);
-    spendAction(Boolean(card.fromFood));
+    spendAction();
   }
 
   function handleMoveCard(sourceIndex, cellIndex) {
@@ -352,9 +352,11 @@ export default function PlayPage({
     }
 
     if (selectedCardId) {
-      if (!isPlayableCell(board, index, BOARD_SIZE, activePlayer.id)) return;
       const card = activeState.hand.find((c) => c.id === selectedCardId);
-      if (!card) return;
+      // A Food-derived card can only be discarded via its Use Food badge,
+      // never played onto the board.
+      if (!card || card.fromFood) return;
+      if (!isPlayableCell(board, index, BOARD_SIZE, activePlayer.id)) return;
       const placedCard = { ...card, ownerId: activePlayer.id };
       if (!canPlaceCard(board, index, placedCard, BOARD_SIZE)) return;
       handlePlayCard(index);
@@ -437,6 +439,7 @@ export default function PlayPage({
     let workingHand = activeState.hand;
     let capturedList = [];
     let eatenFoodCards = [];
+    let usedFoodCards = [];
     let remaining = actionsRemaining;
 
     while (remaining > 0) {
@@ -455,6 +458,17 @@ export default function PlayPage({
         ];
         eatenFoodCards = [...eatenFoodCards, foodToCard(eatenFood)];
         remaining -= 1;
+        continue;
+      }
+
+      // A Food-derived card is never played onto the board — it's
+      // discarded via Use Food, same as a human player would, for free
+      // plus a bonus action.
+      const foodDerivedCard = workingHand.find((c) => c.fromFood);
+      if (foodDerivedCard) {
+        workingHand = workingHand.filter((c) => c.id !== foodDerivedCard.id);
+        usedFoodCards = [...usedFoodCards, foodDerivedCard];
+        remaining += 1;
         continue;
       }
 
@@ -481,11 +495,17 @@ export default function PlayPage({
       workingBoard = afterCaptures;
       workingHand = workingHand.filter((c) => c.id !== move.cardId);
       capturedList = [...capturedList, ...captured];
-      remaining += card.fromFood ? 1 : -1;
+      remaining -= 1;
     }
 
     let nextPlayerStates = playerStates.map((state, i) =>
-      i === activeIndex ? { ...state, hand: workingHand } : state,
+      i === activeIndex
+        ? {
+            ...state,
+            hand: workingHand,
+            discardPile: [...state.discardPile, ...usedFoodCards],
+          }
+        : state,
     );
     nextPlayerStates = applyOwnerCaptureBookkeeping(
       nextPlayerStates,
@@ -531,7 +551,7 @@ export default function PlayPage({
 
     if (selectedCardId) {
       const card = activeState.hand.find((c) => c.id === selectedCardId);
-      if (!card) return none;
+      if (!card || card.fromFood) return none;
       const placedCard = { ...card, ownerId: activePlayer.id };
       const indices = getPlayableIndices(
         board,
