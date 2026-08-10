@@ -4,7 +4,6 @@ export const DEFAULT_DECKS = [
   {
     id: 'deck-chickens',
     name: 'City',
-    size: 9,
     color: '#e2e2df',
     cardTypes: [
       {
@@ -12,6 +11,7 @@ export const DEFAULT_DECKS = [
         name: 'Hen',
         emoji: 'HE',
         color: '#d97706',
+        quantity: 3,
         sides: { top: 5, right: 3, bottom: 4, left: 2 },
       },
       {
@@ -19,6 +19,7 @@ export const DEFAULT_DECKS = [
         name: 'Rooster',
         emoji: 'RO',
         color: '#dc2626',
+        quantity: 2,
         sides: { top: 6, right: 7, bottom: 2, left: 3 },
       },
       {
@@ -26,6 +27,7 @@ export const DEFAULT_DECKS = [
         name: 'Chick',
         emoji: 'CH',
         color: '#eab308',
+        quantity: 2,
         sides: { top: 2, right: 2, bottom: 2, left: 6 },
       },
       {
@@ -33,6 +35,7 @@ export const DEFAULT_DECKS = [
         name: 'Hatchling',
         emoji: 'HA',
         color: '#65a30d',
+        quantity: 2,
         sides: { top: 1, right: 4, bottom: 5, left: 3 },
       },
     ],
@@ -40,7 +43,6 @@ export const DEFAULT_DECKS = [
   {
     id: 'deck-ducks',
     name: 'Beach',
-    size: 9,
     color: '#f6e7c1',
     cardTypes: [
       {
@@ -48,6 +50,7 @@ export const DEFAULT_DECKS = [
         name: 'Duck',
         emoji: 'DU',
         color: '#0891b2',
+        quantity: 3,
         sides: { top: 4, right: 5, bottom: 3, left: 4 },
       },
       {
@@ -55,6 +58,7 @@ export const DEFAULT_DECKS = [
         name: 'Duckling',
         emoji: 'DL',
         color: '#0284c7',
+        quantity: 2,
         sides: { top: 2, right: 3, bottom: 2, left: 5 },
       },
       {
@@ -62,6 +66,7 @@ export const DEFAULT_DECKS = [
         name: 'Swan',
         emoji: 'SW',
         color: '#0d9488',
+        quantity: 2,
         sides: { top: 7, right: 4, bottom: 6, left: 3 },
       },
       {
@@ -69,6 +74,7 @@ export const DEFAULT_DECKS = [
         name: 'Goose',
         emoji: 'GO',
         color: '#059669',
+        quantity: 2,
         sides: { top: 5, right: 6, bottom: 4, left: 5 },
       },
     ],
@@ -76,7 +82,6 @@ export const DEFAULT_DECKS = [
   {
     id: 'deck-birds-of-prey',
     name: 'Park',
-    size: 9,
     color: '#dbead9',
     cardTypes: [
       {
@@ -84,6 +89,7 @@ export const DEFAULT_DECKS = [
         name: 'Eagle',
         emoji: 'EA',
         color: '#7c3aed',
+        quantity: 3,
         sides: { top: 8, right: 6, bottom: 3, left: 5 },
       },
       {
@@ -91,6 +97,7 @@ export const DEFAULT_DECKS = [
         name: 'Owl',
         emoji: 'OW',
         color: '#a21caf',
+        quantity: 2,
         sides: { top: 5, right: 4, bottom: 7, left: 4 },
       },
       {
@@ -98,6 +105,7 @@ export const DEFAULT_DECKS = [
         name: 'Hawk',
         emoji: 'HK',
         color: '#4338ca',
+        quantity: 2,
         sides: { top: 6, right: 5, bottom: 4, left: 6 },
       },
       {
@@ -105,6 +113,7 @@ export const DEFAULT_DECKS = [
         name: 'Falcon',
         emoji: 'FA',
         color: '#57534e',
+        quantity: 2,
         sides: { top: 7, right: 7, bottom: 2, left: 4 },
       },
     ],
@@ -120,8 +129,18 @@ export function createCardType() {
     name: 'New Card',
     emoji: 'NC',
     color: '#57534e',
+    quantity: 1,
     sides: { top: 1, right: 1, bottom: 1, left: 1 },
   };
+}
+
+// The deck's total size is derived from its card quantities, not stored
+// separately — editing a card's quantity is always what changes it.
+export function deckSize(deck) {
+  return (deck?.cardTypes ?? []).reduce(
+    (sum, type) => sum + (Number(type.quantity) || 0),
+    0,
+  );
 }
 
 export function shuffle(list) {
@@ -133,24 +152,26 @@ export function shuffle(list) {
   return copy;
 }
 
-// Builds a shuffled deck of `deck.size` card instances, cycling through
-// `deck.cardTypes` to fill it out. Each card carries the deck's own color
-// (deckColor) so it renders with a consistent background regardless of
-// which card type it is — card-type color is no longer used for display,
-// since telling players apart by card border color takes priority.
+// Builds a shuffled deck, expanding each card type by its own `quantity`.
+// Each card carries the deck's own color (deckColor) so it renders with a
+// consistent background regardless of which card type it is — card-type
+// color is no longer used for display, since telling players apart by
+// card border color takes priority.
 export function buildDrawPile(deck) {
   const types = deck?.cardTypes ?? [];
   if (types.length === 0) return [];
 
   const cards = [];
-  for (let i = 0; i < deck.size; i++) {
-    const type = types[i % types.length];
-    cards.push({
-      ...type,
-      typeId: type.id,
-      id: `${type.id}-${i}`,
-      deckColor: deck.color,
-    });
-  }
+  types.forEach((type) => {
+    const quantity = Math.max(1, Number(type.quantity) || 1);
+    for (let i = 0; i < quantity; i++) {
+      cards.push({
+        ...type,
+        typeId: type.id,
+        id: `${type.id}-${i}`,
+        deckColor: deck.color,
+      });
+    }
+  });
   return shuffle(cards);
 }

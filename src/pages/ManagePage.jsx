@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DEFAULT_DECKS, createCardType } from '../lib/decks.js';
+import { DEFAULT_DECKS, createCardType, deckSize } from '../lib/decks.js';
 import { DEFAULT_FOOD, createFoodShape, FOOD_GRID_SIZE } from '../lib/food.js';
 
 const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
@@ -8,6 +8,10 @@ const GRID_COLS = Array.from({ length: FOOD_GRID_SIZE }, (_, col) => col);
 
 function clampSideValue(value) {
   return Math.min(9, Math.max(1, Number(value) || 1));
+}
+
+function clampQuantity(value) {
+  return Math.max(1, Number(value) || 1);
 }
 
 export default function ManagePage({ decks, setDecks, food, setFood }) {
@@ -304,20 +308,10 @@ export default function ManagePage({ decks, setDecks, food, setFood }) {
                   }
                 />
               </label>
-              <label className="manage-field">
+              <div className="manage-field">
                 Deck size
-                <input
-                  type="number"
-                  min="1"
-                  value={deck.size}
-                  onChange={(event) =>
-                    updateDeck((d) => ({
-                      ...d,
-                      size: Math.max(1, Number(event.target.value) || 1),
-                    }))
-                  }
-                />
-              </label>
+                <span className="manage-deck-size">{deckSize(deck)}</span>
+              </div>
               <button
                 type="button"
                 className="board-recenter"
@@ -348,6 +342,21 @@ export default function ManagePage({ decks, setDecks, food, setFood }) {
                       updateCardType(i, { name: event.target.value })
                     }
                   />
+                  <label className="manage-side-field">
+                    Qty
+                    <input
+                      className="manage-side-input"
+                      type="number"
+                      min="1"
+                      aria-label={`Quantity for ${card.name || 'card'}`}
+                      value={card.quantity}
+                      onChange={(event) =>
+                        updateCardType(i, {
+                          quantity: clampQuantity(event.target.value),
+                        })
+                      }
+                    />
+                  </label>
                   <div className="manage-card-sides">
                     {SIDE_KEYS.map((side) => (
                       <label key={side} className="manage-side-field">

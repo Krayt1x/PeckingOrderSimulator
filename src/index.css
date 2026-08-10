@@ -498,6 +498,13 @@ body {
   color: var(--text-primary);
 }
 
+.manage-deck-size {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
 .manage-emoji-input,
 .manage-side-input {
   padding: 0.3rem 0.4rem;

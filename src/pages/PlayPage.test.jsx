@@ -80,13 +80,13 @@ function strongVsWeakDecks() {
     {
       id: 'deck-weak',
       name: 'Weak',
-      size: 4,
       cardTypes: [
         {
           id: 'weak',
           name: 'Weak',
           emoji: 'WK',
           color: '#57534e',
+          quantity: 4,
           sides: { top: 1, right: 1, bottom: 1, left: 1 },
         },
       ],
@@ -94,13 +94,13 @@ function strongVsWeakDecks() {
     {
       id: 'deck-strong',
       name: 'Strong',
-      size: 4,
       cardTypes: [
         {
           id: 'strong',
           name: 'Strong',
           emoji: 'SG',
           color: '#57534e',
+          quantity: 4,
           sides: { top: 9, right: 9, bottom: 9, left: 9 },
         },
       ],

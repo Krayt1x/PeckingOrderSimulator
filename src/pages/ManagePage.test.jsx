@@ -55,11 +55,33 @@ describe('ManagePage', () => {
   });
 
   it('lets you edit a card side value', () => {
-    const { container } = render(<Harness />);
-    const topInputs = container.querySelectorAll('.manage-side-input');
+    render(<Harness />);
+    const topInputs = screen.getAllByLabelText(/top value for/i);
 
     fireEvent.change(topInputs[0], { target: { value: '9' } });
     expect(topInputs[0].value).toBe('9');
+  });
+
+  it("has no editable deck-size field — it's the sum of each card's quantity", () => {
+    render(<Harness />);
+
+    expect(screen.queryByRole('spinbutton', { name: /deck size/i })).toBeNull();
+
+    const cityDeck = DEFAULT_DECKS[0];
+    const expectedSize = cityDeck.cardTypes.reduce(
+      (sum, c) => sum + c.quantity,
+      0,
+    );
+    expect(screen.getByText(String(expectedSize))).toBeDefined();
+
+    const henQtyInput = screen.getByLabelText('Quantity for Hen');
+    fireEvent.change(henQtyInput, { target: { value: '10' } });
+
+    expect(
+      screen.getByText(
+        String(expectedSize - cityDeck.cardTypes[0].quantity + 10),
+      ),
+    ).toBeDefined();
   });
 
   it('adds and removes cards from the active deck', () => {
