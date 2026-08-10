@@ -24,6 +24,8 @@ const DEFAULT_RULESET = {
   allowMoving: true,
   allowReturnToHand: false,
   allowCardRotation: false,
+  allowCustomSkins: false,
+  skin: 'alpha',
 };
 
 // Rotating a card 90° spins which edge each side value faces — physically
@@ -571,9 +573,10 @@ export default function PlayPage({
   const winners = gameOver
     ? players.filter((p, i) => playerStates[i].score === maxScore)
     : [];
+  const activeSkin = ruleset.allowCustomSkins ? ruleset.skin : 'alpha';
 
   return (
-    <main className="page">
+    <main className="page" data-skin={activeSkin}>
       {gameOver ? (
         <div className="game-over-banner">
           <h2>Game Over</h2>

@@ -35,10 +35,15 @@ const RULESET_OPTIONS = [
   },
 ];
 
+// Every available visual skin — add new ones here as they're built.
+export const SKIN_OPTIONS = [{ id: 'alpha', name: 'Alpha Skin' }];
+
 export const DEFAULT_RULESET = {
   allowMoving: true,
   allowReturnToHand: false,
   allowCardRotation: false,
+  allowCustomSkins: false,
+  skin: 'alpha',
 };
 
 // A player's color borders their cards on the board, independent of which
@@ -218,6 +223,11 @@ export default function NewGamePage({ decks, food, onStart }) {
       const enabled = RULESET_OPTIONS.filter((o) => ruleset[o.key]).map(
         (o) => o.label,
       );
+      if (ruleset.allowCustomSkins) {
+        const skinName =
+          SKIN_OPTIONS.find((s) => s.id === ruleset.skin)?.name ?? ruleset.skin;
+        enabled.push(`Custom Skins (${skinName})`);
+      }
       return enabled.length === 0 ? 'None' : enabled.join(', ');
     }
     return '';
@@ -379,6 +389,36 @@ export default function NewGamePage({ decks, food, onStart }) {
               </span>
             </label>
           ))}
+          <label className="ruleset-option">
+            <input
+              type="checkbox"
+              checked={Boolean(ruleset.allowCustomSkins)}
+              aria-label="Custom Skins"
+              onChange={() => toggleRuleset('allowCustomSkins')}
+            />
+            <span>
+              <span className="ruleset-option-label">Custom Skins</span>
+              <span className="wizard-body-hint">
+                Choose a visual skin for the game.
+              </span>
+              {ruleset.allowCustomSkins ? (
+                <select
+                  className="ruleset-skin-select"
+                  value={ruleset.skin || 'alpha'}
+                  aria-label="Skin"
+                  onChange={(event) =>
+                    setRuleset((r) => ({ ...r, skin: event.target.value }))
+                  }
+                >
+                  {SKIN_OPTIONS.map((skin) => (
+                    <option key={skin.id} value={skin.id}>
+                      {skin.name}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
+            </span>
+          </label>
         </div>
       </>
     );

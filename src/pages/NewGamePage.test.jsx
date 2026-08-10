@@ -350,6 +350,8 @@ describe('NewGamePage', () => {
       allowMoving: false,
       allowReturnToHand: true,
       allowCardRotation: false,
+      allowCustomSkins: false,
+      skin: 'alpha',
     });
   });
 
@@ -370,6 +372,32 @@ describe('NewGamePage', () => {
       allowMoving: true,
       allowReturnToHand: false,
       allowCardRotation: false,
+      allowCustomSkins: false,
+      skin: 'alpha',
     });
+  });
+
+  it('shows the skin dropdown only once Custom Skins is enabled, and includes the chosen skin in the setup', () => {
+    const onStart = vi.fn();
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={onStart}
+      />,
+    );
+    goToStep('Ruleset');
+
+    expect(screen.queryByLabelText('Skin')).toBeNull();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Custom Skins' }));
+    expect(screen.getByLabelText('Skin').value).toBe('alpha');
+
+    goToStep('Review');
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
+
+    const setup = onStart.mock.calls[0][0];
+    expect(setup.ruleset.allowCustomSkins).toBe(true);
+    expect(setup.ruleset.skin).toBe('alpha');
   });
 });
