@@ -1,13 +1,23 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import {
+  render,
+  screen,
+  cleanup,
+  fireEvent,
+  waitFor,
+} from '@testing-library/react';
 import NewGamePage from './NewGamePage.jsx';
 import { DEFAULT_DECKS } from '../lib/decks.js';
 import { DEFAULT_FOOD } from '../lib/food.js';
 
 afterEach(() => cleanup());
 
+function goToStep(label) {
+  fireEvent.click(screen.getByRole('button', { name: label }));
+}
+
 describe('NewGamePage', () => {
-  it('starts with 2 player rows, each assigned a deck', () => {
+  it('starts on the Players step with 2 players picked by default', () => {
     render(
       <NewGamePage
         decks={DEFAULT_DECKS}
@@ -15,10 +25,13 @@ describe('NewGamePage', () => {
         onStart={() => {}}
       />,
     );
-    expect(screen.getAllByRole('row')).toHaveLength(3); // header + 2 players
+    expect(screen.getByText('How many players?')).toBeDefined();
+    expect(screen.getByRole('button', { name: '2' }).className).toContain(
+      'selected',
+    );
   });
 
-  it('adds player rows when the player count increases', () => {
+  it('picking a player count advances to the Rosters step with that many rows', async () => {
     render(
       <NewGamePage
         decks={DEFAULT_DECKS}
@@ -26,13 +39,16 @@ describe('NewGamePage', () => {
         onStart={() => {}}
       />,
     );
-    fireEvent.change(screen.getByLabelText('Number of players'), {
-      target: { value: '4' },
-    });
+
+    fireEvent.click(screen.getByRole('button', { name: '4' }));
+
+    await waitFor(() =>
+      expect(screen.getByText(/playing, and with which deck/)).toBeDefined(),
+    );
     expect(screen.getAllByRole('row')).toHaveLength(5); // header + 4 players
   });
 
-  it('lets you mark a player as CPU and change their deck', () => {
+  it('lets you mark a player as CPU and change their deck on the Rosters step', () => {
     render(
       <NewGamePage
         decks={DEFAULT_DECKS}
@@ -40,6 +56,8 @@ describe('NewGamePage', () => {
         onStart={() => {}}
       />,
     );
+    goToStep('Rosters');
+
     fireEvent.click(screen.getByLabelText('Player 2 is CPU'));
     fireEvent.change(screen.getByLabelText('Player 2 deck'), {
       target: { value: DEFAULT_DECKS[2].id },
@@ -51,7 +69,20 @@ describe('NewGamePage', () => {
     );
   });
 
-  it('calls onStart with the configured players and food when starting', () => {
+  it('shows the food config on the Food step', () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    goToStep('Food');
+
+    expect(screen.getAllByText('Standard Food').length).toBeGreaterThan(0);
+  });
+
+  it('summarizes every step and calls onStart from the Review step', () => {
     const onStart = vi.fn();
     render(
       <NewGamePage
@@ -60,6 +91,9 @@ describe('NewGamePage', () => {
         onStart={onStart}
       />,
     );
+    goToStep('Review');
+
+    expect(screen.getAllByText('2 players').length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
 

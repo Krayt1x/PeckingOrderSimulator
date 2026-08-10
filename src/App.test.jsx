@@ -54,6 +54,7 @@ describe('App', () => {
     window.location.hash = '#new-game';
     render(<App />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Review' }));
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
 
     expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
