@@ -32,6 +32,16 @@ describe('pickCpuMove', () => {
     expect([45, 65, 54, 56]).toContain(move.cellIndex);
   });
 
+  it('never picks a cell whose only adjacency is its own card', () => {
+    const hand = [{ id: 'c1', sides: SIDES }];
+    const board = Array(100).fill(null);
+    // The only occupied cell on the board is the CPU's own card — none of
+    // its neighbors touch Food or an opponent, so there's no legal move.
+    board[55] = { type: 'bird', ownerId: 'p1', sides: SIDES };
+
+    expect(pickCpuMove(hand, board, BOARD_SIZE, 'p1')).toBeNull();
+  });
+
   it('never picks a cell that would lose to a stronger adjacent opponent card', () => {
     const hand = [
       { id: 'c1', sides: { top: 1, right: 1, bottom: 1, left: 1 } },

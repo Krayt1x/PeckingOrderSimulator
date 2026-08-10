@@ -40,37 +40,58 @@ describe('getNeighbors', () => {
 describe('isPlayableCell', () => {
   it('is false for an already-occupied cell', () => {
     const board = Array(100).fill(null);
-    board[55] = { id: 'card' };
-    expect(isPlayableCell(board, 55, BOARD_SIZE)).toBe(false);
+    board[55] = { id: 'card', ownerId: 'p1' };
+    expect(isPlayableCell(board, 55, BOARD_SIZE, 'p2')).toBe(false);
   });
 
   it('is false for an empty cell with no occupied neighbor', () => {
     const board = Array(100).fill(null);
-    expect(isPlayableCell(board, 0, BOARD_SIZE)).toBe(false);
+    expect(isPlayableCell(board, 0, BOARD_SIZE, 'p1')).toBe(false);
   });
 
-  it('is true for an empty cell orthogonally touching an occupied cell', () => {
+  it('is true for an empty cell orthogonally touching Food', () => {
     const board = Array(100).fill(null);
-    board[55] = { id: 'card' };
-    expect(isPlayableCell(board, 45, BOARD_SIZE)).toBe(true);
-    expect(isPlayableCell(board, 56, BOARD_SIZE)).toBe(true);
+    board[55] = { id: 'food', type: 'food' };
+    expect(isPlayableCell(board, 45, BOARD_SIZE, 'p1')).toBe(true);
+    expect(isPlayableCell(board, 56, BOARD_SIZE, 'p1')).toBe(true);
+  });
+
+  it('is true for an empty cell orthogonally touching an opponent card', () => {
+    const board = Array(100).fill(null);
+    board[55] = { id: 'card', ownerId: 'p2' };
+    expect(isPlayableCell(board, 45, BOARD_SIZE, 'p1')).toBe(true);
+  });
+
+  it('is false for an empty cell whose only occupied neighbor is the same owner’s own card', () => {
+    const board = Array(100).fill(null);
+    board[55] = { id: 'card', ownerId: 'p1' };
+    expect(isPlayableCell(board, 45, BOARD_SIZE, 'p1')).toBe(false);
   });
 
   it('is false for a diagonal neighbor of an occupied cell', () => {
     const board = Array(100).fill(null);
-    board[55] = { id: 'card' };
-    expect(isPlayableCell(board, 44, BOARD_SIZE)).toBe(false);
+    board[55] = { id: 'food', type: 'food' };
+    expect(isPlayableCell(board, 44, BOARD_SIZE, 'p1')).toBe(false);
   });
 });
 
 describe('getPlayableIndices', () => {
-  it('returns exactly the 4 orthogonal neighbors of a single occupied cell', () => {
+  it('returns exactly the 4 orthogonal neighbors of a single Food cell', () => {
     const board = Array(100).fill(null);
-    board[55] = { id: 'card' };
-    const playable = getPlayableIndices(board, BOARD_SIZE).sort(
+    board[55] = { id: 'food', type: 'food' };
+    const playable = getPlayableIndices(board, BOARD_SIZE, 'p1').sort(
       (a, b) => a - b,
     );
     expect(playable).toEqual([45, 54, 56, 65]);
+  });
+
+  it('excludes cells only adjacent to the given owner’s own card', () => {
+    const board = Array(100).fill(null);
+    board[55] = { id: 'card', ownerId: 'p1' };
+    expect(getPlayableIndices(board, BOARD_SIZE, 'p1')).toEqual([]);
+    expect(
+      getPlayableIndices(board, BOARD_SIZE, 'p2').sort((a, b) => a - b),
+    ).toEqual([45, 54, 56, 65]);
   });
 });
 

@@ -227,7 +227,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
     }
 
     if (selectedCardId) {
-      if (!isPlayableCell(board, index, BOARD_SIZE)) return;
+      if (!isPlayableCell(board, index, BOARD_SIZE, activePlayer.id)) return;
       const card = activeState.hand.find((c) => c.id === selectedCardId);
       if (!card) return;
       const placedCard = { ...card, ownerId: activePlayer.id };
@@ -380,9 +380,11 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
       const card = activeState.hand.find((c) => c.id === selectedCardId);
       if (!card) return none;
       const placedCard = { ...card, ownerId: activePlayer.id };
-      const indices = getPlayableIndices(board, BOARD_SIZE).filter((i) =>
-        canPlaceCard(board, i, placedCard, BOARD_SIZE),
-      );
+      const indices = getPlayableIndices(
+        board,
+        BOARD_SIZE,
+        activePlayer.id,
+      ).filter((i) => canPlaceCard(board, i, placedCard, BOARD_SIZE));
       return { highlighted: new Set(indices), selected: null };
     }
 

@@ -236,6 +236,44 @@ describe('PlayPage', () => {
     expect(isFilled(screen.getAllByRole('gridcell')[adjacentIndex])).toBe(true);
   });
 
+  it('does not let you play a card whose only adjacency is your own card', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const firstSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    playThenCycleBackToPlayer1(firstSpot);
+    expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
+
+    cells = screen.getAllByRole('gridcell');
+    const filledIndices = cells
+      .map((c, i) => (isFilled(c) ? i : null))
+      .filter((i) => i !== null);
+    // A neighbor of our own card whose only filled neighbor is that card
+    // itself — not Food, not an opponent card.
+    const ownOnlySpot = neighbors(firstSpot).find((i) => {
+      if (isFilled(cells[i])) return false;
+      return !neighbors(i).some(
+        (n) => n !== firstSpot && filledIndices.includes(n),
+      );
+    });
+    expect(ownOnlySpot).toBeDefined();
+
+    const hand = screen.getByRole('list', { name: 'Your hand' });
+    const handCountBefore = within(hand).getAllByRole('button').length;
+    fireEvent.click(within(hand).getAllByRole('button')[0]);
+    fireEvent.click(screen.getAllByRole('gridcell')[ownOnlySpot]);
+
+    expect(within(hand).getAllByRole('button')).toHaveLength(handCountBefore);
+    expect(isFilled(screen.getAllByRole('gridcell')[ownOnlySpot])).toBe(false);
+  });
+
   it('spends the turn’s only action on a play, requiring End Turn afterward', () => {
     render(
       <PlayPage

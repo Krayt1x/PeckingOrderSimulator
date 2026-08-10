@@ -10,7 +10,7 @@ import { getEligibleFoodIndices, getAdjacentBirdIndices } from './food.js';
 export function pickCpuMove(hand, board, boardSize, ownerId) {
   if (hand.length === 0) return null;
 
-  const playableIndexes = getPlayableIndices(board, boardSize);
+  const playableIndexes = getPlayableIndices(board, boardSize, ownerId);
   if (playableIndexes.length === 0) return null;
 
   const options = [];

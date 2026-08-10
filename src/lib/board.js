@@ -12,21 +12,25 @@ export function getNeighbors(index, boardSize) {
   };
 }
 
-// A cell is playable if it's empty and orthogonally touches at least one
-// occupied cell (Food or any played card) — cards expand out from Food or
-// an existing card rather than landing in open space.
-export function isPlayableCell(board, index, boardSize) {
+// A cell is playable if it's empty and orthogonally touches Food or an
+// opponent's card — cards expand out from Food or into contested ground,
+// never simply outward through a player's own cluster (that alone isn't
+// enough to unlock a new cell).
+export function isPlayableCell(board, index, boardSize, ownerId) {
   if (board[index]) return false;
   const neighbors = getNeighbors(index, boardSize);
-  return Object.values(neighbors).some(
-    (neighborIndex) => neighborIndex !== null && board[neighborIndex],
-  );
+  return Object.values(neighbors).some((neighborIndex) => {
+    if (neighborIndex === null) return false;
+    const neighbor = board[neighborIndex];
+    if (!neighbor) return false;
+    return neighbor.type === 'food' || neighbor.ownerId !== ownerId;
+  });
 }
 
-export function getPlayableIndices(board, boardSize) {
+export function getPlayableIndices(board, boardSize, ownerId) {
   const indices = [];
   board.forEach((_, index) => {
-    if (isPlayableCell(board, index, boardSize)) indices.push(index);
+    if (isPlayableCell(board, index, boardSize, ownerId)) indices.push(index);
   });
   return indices;
 }
