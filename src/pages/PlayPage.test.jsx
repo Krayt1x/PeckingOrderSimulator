@@ -4,6 +4,7 @@ import {
   screen,
   cleanup,
   fireEvent,
+  waitFor,
   within,
 } from '@testing-library/react';
 import PlayPage from './PlayPage.jsx';
@@ -523,7 +524,7 @@ describe('PlayPage', () => {
     expect(screen.queryByRole('button', { name: 'End Turn' })).toBeNull();
   });
 
-  it('lets the CPU eat Food once it has majority control, not just play cards', () => {
+  it('lets the CPU eat Food once it has majority control, not just play cards', async () => {
     render(
       <PlayPage
         players={twoPlayers({ cpuSecond: true })}
@@ -533,17 +534,21 @@ describe('PlayPage', () => {
       />,
     );
 
-    // Player 1 never acts. Player 2 (CPU) needs two of its own turns: the
-    // first plays a bird next to Food (0 vs 0 adjacent birds isn't
+    // Player 1 never acts. Player 2 (CPU) auto-plays two of its own turns:
+    // the first plays a bird next to Food (0 vs 0 adjacent birds isn't
     // eligible to eat yet), the second now has majority (1 vs 0) and
     // should eat instead of playing another card.
     fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Play CPU Turn' }));
-    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Play CPU Turn' }));
+    await waitFor(
+      () => expect(screen.getByText(/Player 1.*turn/)).toBeDefined(),
+      { timeout: 3000 },
+    );
 
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
     // With SINGLE_FOOD, eating the only Food ends the game.
-    expect(screen.getByText('Game Over')).toBeDefined();
+    await waitFor(() => expect(screen.getByText('Game Over')).toBeDefined(), {
+      timeout: 3000,
+    });
     expect(screen.getByText(/Player 2 wins with 1 point/)).toBeDefined();
   });
 
@@ -672,7 +677,7 @@ describe('PlayPage', () => {
     expect(screen.getByText('Actions: 1/1')).toBeDefined();
   });
 
-  it('shows a Play CPU Turn button for a CPU player and plays for them', () => {
+  it("automatically plays a CPU player's turn", async () => {
     render(
       <PlayPage
         players={twoPlayers({ cpuSecond: true })}
@@ -683,10 +688,13 @@ describe('PlayPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
     expect(screen.getByText(/Player 2.*turn.*CPU/)).toBeDefined();
+    expect(screen.getByText('CPU is playing…')).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Play CPU Turn' }));
+    await waitFor(
+      () => expect(screen.getByText(/Player 1.*turn/)).toBeDefined(),
+      { timeout: 3000 },
+    );
 
-    expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
     const filledCells = screen
       .getAllByRole('gridcell')
       .filter((cell) => cell.className.includes('board-cell-filled'));

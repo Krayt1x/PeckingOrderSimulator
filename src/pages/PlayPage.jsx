@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import GameBoard, { BOARD_SIZE } from '../components/GameBoard.jsx';
 import Hand from '../components/Hand.jsx';
 import { HAND_SIZE, buildDrawPile, shuffle } from '../lib/decks.js';
@@ -358,6 +358,14 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
     advanceTurn();
   }
 
+  // CPU turns play themselves — a short delay keeps each turn's board
+  // update visible instead of chaining every CPU turn through instantly.
+  useEffect(() => {
+    if (!activePlayer.isCPU || gameOver) return;
+    const timer = setTimeout(() => handleCpuTurn(), 600);
+    return () => clearTimeout(timer);
+  }, [activeIndex, gameOver]);
+
   function openPileModal(type) {
     const pile =
       type === 'draw' ? activeState.drawPile : activeState.discardPile;
@@ -465,13 +473,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
           </span>
         ) : null}
         {gameOver ? null : activePlayer.isCPU ? (
-          <button
-            type="button"
-            className="end-turn-btn"
-            onClick={handleCpuTurn}
-          >
-            Play CPU Turn
-          </button>
+          <span className="draw-pile-count">CPU is playing&hellip;</span>
         ) : (
           <button
             type="button"
