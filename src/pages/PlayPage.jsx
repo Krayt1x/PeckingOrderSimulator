@@ -13,9 +13,11 @@ import {
   getAdjacentEmptyIndices,
 } from '../lib/board.js';
 import { resolveCaptures, canPlaceCard } from '../lib/combat.js';
-import { pickCpuMove } from '../lib/cpu.js';
+import { pickCpuMove, pickCpuEat } from '../lib/cpu.js';
 
 const ACTIONS_PER_TURN = 1;
+
+let nextFoodCardId = 1;
 
 // Food is the objective the game is anchored around, placed as close to
 // the board's center as the chosen shapes allow.
@@ -38,6 +40,7 @@ function dealFrom(deck) {
     hand: pile.slice(0, HAND_SIZE),
     drawPile: pile.slice(HAND_SIZE),
     discardPile: [],
+    score: 0,
   };
 }
 
@@ -48,6 +51,21 @@ function refillHand(state) {
     ...state,
     hand: [...state.hand, ...state.drawPile.slice(0, needed)],
     drawPile: state.drawPile.slice(needed),
+  };
+}
+
+// A Food tile, once eaten, becomes a card in the eating player's deck —
+// it keeps the shape's name/emoji/sides but loses its `type: 'food'`, so
+// once played it behaves like any other bird card and never re-registers
+// as an objective (the game's remaining-Food count only ever goes down).
+function foodToCard(foodCell) {
+  return {
+    id: `${foodCell.id}-card-${nextFoodCardId++}`,
+    name: foodCell.name,
+    emoji: foodCell.emoji,
+    deckColor: foodCell.color,
+    sides: foodCell.sides,
+    fromFood: true,
   };
 }
 
@@ -67,7 +85,9 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
 
   const activePlayer = players[activeIndex];
   const activeState = playerStates[activeIndex];
-  const canAct = !activePlayer.isCPU && actionsRemaining > 0;
+  const foodRemaining = board.some((cell) => cell?.type === 'food');
+  const gameOver = !foodRemaining;
+  const canAct = !activePlayer.isCPU && actionsRemaining > 0 && !gameOver;
 
   function clearSelections() {
     setSelectedCardId(null);
@@ -75,8 +95,11 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
     setDragSourceIndex(null);
   }
 
-  function spendAction() {
-    setActionsRemaining((n) => Math.max(0, n - 1));
+  // `bonus` is true when the action came from playing a Food-derived
+  // card from hand — that doesn't cost the turn's action, it grants an
+  // extra one instead.
+  function spendAction(bonus = false) {
+    setActionsRemaining((n) => (bonus ? n + 1 : Math.max(0, n - 1)));
     clearSelections();
   }
 
@@ -129,7 +152,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
 
     setBoard(nextBoard);
     setPlayerStates(nextPlayerStates);
-    spendAction();
+    spendAction(Boolean(card.fromFood));
   }
 
   function handleMoveCard(sourceIndex, cellIndex) {
@@ -153,17 +176,28 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
 
   function handleEatBird(birdIndex) {
     const eatenBird = board[birdIndex];
-    if (!eatenBird) return;
+    const eatenFood = board[eatFoodIndex];
+    if (!eatenBird || !eatenFood) return;
 
     const nextBoard = [...board];
     nextBoard[eatFoodIndex] = null;
     nextBoard[birdIndex] = null;
 
-    const nextPlayerStates = playerStates.map((state, i) =>
-      players[i].id === eatenBird.ownerId
-        ? { ...state, discardPile: [...state.discardPile, eatenBird] }
-        : state,
-    );
+    const foodCard = foodToCard(eatenFood);
+    const nextPlayerStates = playerStates.map((state, i) => {
+      let next = state;
+      if (players[i].id === eatenBird.ownerId) {
+        next = { ...next, discardPile: [...next.discardPile, eatenBird] };
+      }
+      if (i === activeIndex) {
+        next = {
+          ...next,
+          drawPile: shuffle([...next.drawPile, foodCard]),
+          score: next.score + 1,
+        };
+      }
+      return next;
+    });
 
     setBoard(nextBoard);
     setPlayerStates(nextPlayerStates);
@@ -249,9 +283,28 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
     let workingBoard = board;
     let workingHand = activeState.hand;
     let capturedList = [];
+    let eatenFoodCards = [];
     let remaining = actionsRemaining;
 
     while (remaining > 0) {
+      const eatChoice = pickCpuEat(workingBoard, BOARD_SIZE, activePlayer.id);
+      if (eatChoice) {
+        const eatenBird = workingBoard[eatChoice.birdIndex];
+        const eatenFood = workingBoard[eatChoice.foodIndex];
+        const nextBoard = [...workingBoard];
+        nextBoard[eatChoice.foodIndex] = null;
+        nextBoard[eatChoice.birdIndex] = null;
+
+        workingBoard = nextBoard;
+        capturedList = [
+          ...capturedList,
+          { index: eatChoice.birdIndex, card: eatenBird },
+        ];
+        eatenFoodCards = [...eatenFoodCards, foodToCard(eatenFood)];
+        remaining -= 1;
+        continue;
+      }
+
       const move = pickCpuMove(
         workingHand,
         workingBoard,
@@ -274,7 +327,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
       workingBoard = afterCaptures;
       workingHand = workingHand.filter((c) => c.id !== move.cardId);
       capturedList = [...capturedList, ...captured];
-      remaining -= 1;
+      remaining += card.fromFood ? 1 : -1;
     }
 
     let nextPlayerStates = playerStates.map((state, i) =>
@@ -284,6 +337,17 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
       nextPlayerStates,
       capturedList,
     );
+    if (eatenFoodCards.length > 0) {
+      nextPlayerStates = nextPlayerStates.map((state, i) =>
+        i === activeIndex
+          ? {
+              ...state,
+              drawPile: shuffle([...state.drawPile, ...eatenFoodCards]),
+              score: state.score + eatenFoodCards.length,
+            }
+          : state,
+      );
+    }
     nextPlayerStates = nextPlayerStates.map((state, i) =>
       i === activeIndex ? refillHand(state) : state,
     );
@@ -352,8 +416,23 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
     });
   }
 
+  const maxScore = Math.max(...playerStates.map((s) => s.score));
+  const winners = gameOver
+    ? players.filter((p, i) => playerStates[i].score === maxScore)
+    : [];
+
   return (
     <main className="page">
+      {gameOver ? (
+        <div className="game-over-banner">
+          <h2>Game Over</h2>
+          <p>
+            {winners.length === 1
+              ? `${winners[0].name} wins with ${maxScore} point${maxScore === 1 ? '' : 's'}!`
+              : `It's a tie between ${winners.map((w) => w.name).join(' and ')} at ${maxScore} points!`}
+          </p>
+        </div>
+      ) : null}
       <GameBoard
         cells={board}
         highlightedIndices={highlighted}
@@ -366,12 +445,20 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
         onCardDrop={handleCardDrop}
       />
 
+      <ul className="score-board">
+        {players.map((p, i) => (
+          <li key={p.id}>
+            {p.name}: {playerStates[i].score}
+          </li>
+        ))}
+      </ul>
+
       <div className="hand-header">
         <h2>
           {activePlayer.name}&rsquo;s turn
           {activePlayer.isCPU ? ' (CPU)' : ''}
         </h2>
-        {!activePlayer.isCPU ? (
+        {!activePlayer.isCPU && !gameOver ? (
           <span className="draw-pile-count">
             Actions: {actionsRemaining}/{ACTIONS_PER_TURN}
           </span>
@@ -390,7 +477,7 @@ export default function PlayPage({ players, decks, food, foodShapeIds }) {
         >
           Discard: {activeState.discardPile.length}
         </button>
-        {activePlayer.isCPU ? (
+        {gameOver ? null : activePlayer.isCPU ? (
           <button
             type="button"
             className="end-turn-btn"

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pickCpuMove } from './cpu.js';
+import { pickCpuMove, pickCpuEat } from './cpu.js';
 
 const BOARD_SIZE = 10;
 
@@ -46,5 +46,43 @@ describe('pickCpuMove', () => {
     };
 
     expect(pickCpuMove(hand, board, BOARD_SIZE, 'p1')).toBeNull();
+  });
+});
+
+describe('pickCpuEat', () => {
+  function bird(ownerId) {
+    return { type: 'bird', ownerId, sides: SIDES };
+  }
+
+  it('returns null when the CPU has no Food it is eligible to eat', () => {
+    const board = Array(100).fill(null);
+    board[55] = { type: 'food', sides: SIDES };
+    board[45] = bird('p2');
+
+    expect(pickCpuEat(board, BOARD_SIZE, 'p1')).toBeNull();
+  });
+
+  it('picks an eligible Food tile and prefers eating an opponent bird', () => {
+    const board = Array(100).fill(null);
+    board[55] = { type: 'food', sides: SIDES };
+    board[45] = bird('p1'); // top
+    board[54] = bird('p1'); // left
+    board[56] = bird('p2'); // right — p1 has majority (2 vs 1)
+
+    const choice = pickCpuEat(board, BOARD_SIZE, 'p1');
+
+    expect(choice.foodIndex).toBe(55);
+    expect(choice.birdIndex).toBe(56); // the opponent's bird, not p1's own
+  });
+
+  it('falls back to eating its own bird when no opponent bird is adjacent', () => {
+    const board = Array(100).fill(null);
+    board[55] = { type: 'food', sides: SIDES };
+    board[45] = bird('p1');
+
+    const choice = pickCpuEat(board, BOARD_SIZE, 'p1');
+
+    expect(choice.foodIndex).toBe(55);
+    expect(choice.birdIndex).toBe(45);
   });
 });

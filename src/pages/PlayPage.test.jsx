@@ -75,6 +75,34 @@ const SINGLE_FOOD = {
   ],
 };
 
+// Two isolated 1x1 food pieces — used by tests that need to eat Food
+// without immediately ending the game (which SINGLE_FOOD, with only one
+// piece, always does now that eating the last Food ends the game).
+const TWO_FOOD = {
+  id: 'food',
+  name: 'Test Food',
+  shapes: [
+    {
+      id: 'crumb-a',
+      name: 'Crumb A',
+      emoji: 'CA',
+      color: '#57534e',
+      cells: [{ row: 0, col: 0 }],
+      outsideValue: 1,
+      insideValue: 1,
+    },
+    {
+      id: 'crumb-b',
+      name: 'Crumb B',
+      emoji: 'CB',
+      color: '#57534e',
+      cells: [{ row: 0, col: 0 }],
+      outsideValue: 1,
+      insideValue: 1,
+    },
+  ],
+};
+
 function strongVsWeakDecks() {
   return [
     {
@@ -427,13 +455,16 @@ describe('PlayPage', () => {
       <PlayPage
         players={twoPlayers()}
         decks={DEFAULT_DECKS}
-        food={SINGLE_FOOD}
-        foodShapeIds={['crumb']}
+        food={TWO_FOOD}
+        foodShapeIds={['crumb-a', 'crumb-b']}
       />,
     );
     let cells = screen.getAllByRole('gridcell');
     const foodIndex = findFoodIndex(cells);
     const birdSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+    const drawPileBefore = Number(
+      screen.getByText(/Draw pile: \d+/).textContent.match(/\d+/)[0],
+    );
 
     playThenCycleBackToPlayer1(birdSpot);
     expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
@@ -446,6 +477,156 @@ describe('PlayPage', () => {
     expect(isFilled(cells[birdSpot])).toBe(false);
     expect(screen.getByText('Discard: 1')).toBeDefined();
     expect(screen.getByText('Actions: 0/1')).toBeDefined();
+    expect(screen.getByText('Player 1: 1')).toBeDefined();
+
+    // Draw pile lost 1 card refilling the hand after the earlier play, and
+    // gained 1 back as the eaten Food's card — net unchanged.
+    const drawPileAfter = Number(
+      screen.getByText(/Draw pile: \d+/).textContent.match(/\d+/)[0],
+    );
+    expect(drawPileAfter).toBe(drawPileBefore);
+  });
+
+  it('ends the game and announces a winner when the last Food is eaten', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const birdSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    playThenCycleBackToPlayer1(birdSpot);
+
+    fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+
+    expect(screen.getByText('Game Over')).toBeDefined();
+    expect(screen.getByText(/Player 1 wins with 1 point/)).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'End Turn' })).toBeNull();
+  });
+
+  it('lets the CPU eat Food once it has majority control, not just play cards', () => {
+    render(
+      <PlayPage
+        players={twoPlayers({ cpuSecond: true })}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+
+    // Player 1 never acts. Player 2 (CPU) needs two of its own turns: the
+    // first plays a bird next to Food (0 vs 0 adjacent birds isn't
+    // eligible to eat yet), the second now has majority (1 vs 0) and
+    // should eat instead of playing another card.
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Play CPU Turn' }));
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Play CPU Turn' }));
+
+    // With SINGLE_FOOD, eating the only Food ends the game.
+    expect(screen.getByText('Game Over')).toBeDefined();
+    expect(screen.getByText(/Player 2 wins with 1 point/)).toBeDefined();
+  });
+
+  it('lets you play a Food-derived card for free and grants an extra action', () => {
+    function tinyDecks() {
+      return [
+        {
+          id: 'deck-p1',
+          name: 'P1Deck',
+          cardTypes: [
+            {
+              id: 'p1card',
+              name: 'P1Card',
+              emoji: 'P1',
+              color: '#57534e',
+              quantity: 1,
+              sides: { top: 1, right: 1, bottom: 1, left: 1 },
+            },
+          ],
+        },
+        {
+          id: 'deck-p2',
+          name: 'P2Deck',
+          cardTypes: [
+            {
+              id: 'p2card',
+              name: 'P2Card',
+              emoji: 'P2',
+              color: '#57534e',
+              quantity: 1,
+              sides: { top: 1, right: 1, bottom: 1, left: 1 },
+            },
+          ],
+        },
+      ];
+    }
+
+    render(
+      <PlayPage
+        players={[
+          { id: 'p1', name: 'Player 1', isCPU: false, deckId: 'deck-p1' },
+          { id: 'p2', name: 'Player 2', isCPU: false, deckId: 'deck-p2' },
+        ]}
+        decks={tinyDecks()}
+        food={TWO_FOOD}
+        foodShapeIds={['crumb-a', 'crumb-b']}
+      />,
+    );
+
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndices = cells
+      .map((c, i) => (c.querySelector('.card-food') ? i : -1))
+      .filter((i) => i >= 0);
+    const [foodA, foodB] = foodIndices;
+    const birdSpot = neighbors(foodA).find((i) => !isFilled(cells[i]));
+
+    // Player 1 plays their only card next to Food A.
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' })); // -> Player 2
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' })); // Player 2 passes -> Player 1 turn 2
+
+    // Player 1 eats Food A (majority: 1 vs 0, since no opponent bird is
+    // adjacent) — this removes both Food A and their own bird there, so
+    // Food B is the only occupied cell left afterward. Their deck is
+    // empty at this point, so the eaten card becomes their entire draw
+    // pile.
+    fireEvent.click(screen.getAllByRole('gridcell')[foodA]);
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' })); // refills hand with the Food card -> Player 2
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' })); // Player 2 passes -> Player 1 turn 3
+
+    const hand = screen.getByRole('list', { name: 'Your hand' });
+    const handButtons = within(hand).getAllByRole('button');
+    expect(handButtons).toHaveLength(1);
+    expect(handButtons[0].textContent).toContain('Crumb A');
+
+    cells = screen.getAllByRole('gridcell');
+    const destination = neighbors(foodB).find((i) => !isFilled(cells[i]));
+
+    fireEvent.click(handButtons[0]);
+    fireEvent.click(screen.getAllByRole('gridcell')[destination]);
+
+    expect(
+      within(screen.getByRole('list', { name: 'Your hand' })).queryAllByRole(
+        'button',
+      ),
+    ).toHaveLength(0);
+    // Playing the Food card cost nothing and granted an extra action.
+    expect(screen.getByText('Actions: 2/1')).toBeDefined();
+    cells = screen.getAllByRole('gridcell');
+    expect(cardNameOf(cells[destination])).toBe('Crumb A');
   });
 
   it('cancels the eat-selection if you tap somewhere else instead of a bird', () => {

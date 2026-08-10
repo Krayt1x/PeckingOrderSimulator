@@ -234,6 +234,34 @@ body {
   text-align: center;
 }
 
+.game-over-banner {
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.game-over-banner h2 {
+  margin: 0 0 0.35rem;
+}
+
+.game-over-banner p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.score-board {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
 .hand-header {
   display: flex;
   flex-wrap: wrap;
