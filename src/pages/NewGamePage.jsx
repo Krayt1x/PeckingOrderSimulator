@@ -42,6 +42,29 @@ export const PLAYER_COLOR_PALETTE = [
   '#581c87',
 ];
 
+// Which food shapes are pre-selected for a given player count — keeps
+// smaller games shorter (fewer Food tiles to eat) and scales up with more
+// players competing for them.
+const FOOD_DEFAULTS_BY_PLAYER_COUNT = {
+  2: ['potato-cake', 'chip'],
+  3: ['burger', 'potato-cake'],
+  4: ['burger', 'potato-cake', 'chip'],
+};
+
+export const FOOD_DEFAULTS_TOOLTIP =
+  'Default food by player count — 2 players: Potato Cake + Chip. ' +
+  '3 players: Burger + Potato Cake. ' +
+  '4 players: Burger + Potato Cake + Chip.';
+
+function defaultFoodShapeIds(playerCount, food) {
+  const preferred = FOOD_DEFAULTS_BY_PLAYER_COUNT[playerCount];
+  const allIds = food.shapes.map((s) => s.id);
+  if (!preferred) return allIds;
+  const available = new Set(allIds);
+  const ids = preferred.filter((id) => available.has(id));
+  return ids.length > 0 ? ids : allIds;
+}
+
 function defaultPlayer(index, decks) {
   return {
     id: `player-${index}`,
@@ -57,7 +80,7 @@ export default function NewGamePage({ decks, food, onStart }) {
     Array.from({ length: 2 }, (_, i) => defaultPlayer(i, decks)),
   );
   const [selectedFoodShapeIds, setSelectedFoodShapeIds] = useState(() =>
-    food.shapes.map((s) => s.id),
+    defaultFoodShapeIds(2, food),
   );
   const [wizardStep, setWizardStep] = useState('players');
   const [colorPickerPlayerIndex, setColorPickerPlayerIndex] = useState(null);
@@ -78,6 +101,7 @@ export default function NewGamePage({ decks, food, onStart }) {
       }
       return next;
     });
+    setSelectedFoodShapeIds(defaultFoodShapeIds(clamped, food));
     advanceWizardStep('rosters');
   }
 
@@ -155,65 +179,52 @@ export default function NewGamePage({ decks, food, onStart }) {
     return (
       <>
         <p className="stage-label">Who&rsquo;s playing, and with which deck?</p>
-        <table className="manage-cards new-game-players">
-          <thead>
-            <tr>
-              <th>Player</th>
-              <th>CPU</th>
-              <th>Deck</th>
-              <th>Color</th>
-            </tr>
-          </thead>
-          <tbody>
-            {players.map((player, i) => (
-              <tr key={player.id}>
-                <td>
-                  <input
-                    type="text"
-                    value={player.name}
-                    onChange={(event) =>
-                      updatePlayer(i, { name: event.target.value })
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    type="checkbox"
-                    checked={player.isCPU}
-                    aria-label={`${player.name} is CPU`}
-                    onChange={(event) =>
-                      updatePlayer(i, { isCPU: event.target.checked })
-                    }
-                  />
-                </td>
-                <td>
-                  <select
-                    value={player.deckId}
-                    aria-label={`${player.name} deck`}
-                    onChange={(event) =>
-                      updatePlayer(i, { deckId: event.target.value })
-                    }
-                  >
-                    {decks.map((deck) => (
-                      <option key={deck.id} value={deck.id}>
-                        {deck.name}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className="color-cube"
-                    style={{ '--swatch-color': player.color }}
-                    aria-label={`${player.name} color`}
-                    onClick={() => setColorPickerPlayerIndex(i)}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="manage-cards-list new-game-players">
+          {players.map((player, i) => (
+            <div key={player.id} className="manage-card-row">
+              <input
+                type="text"
+                className="manage-card-name-input"
+                aria-label="Player name"
+                value={player.name}
+                onChange={(event) =>
+                  updatePlayer(i, { name: event.target.value })
+                }
+              />
+              <label className="manage-side-field">
+                CPU
+                <input
+                  type="checkbox"
+                  checked={player.isCPU}
+                  aria-label={`${player.name} is CPU`}
+                  onChange={(event) =>
+                    updatePlayer(i, { isCPU: event.target.checked })
+                  }
+                />
+              </label>
+              <select
+                value={player.deckId}
+                aria-label={`${player.name} deck`}
+                onChange={(event) =>
+                  updatePlayer(i, { deckId: event.target.value })
+                }
+              >
+                {decks.map((deck) => (
+                  <option key={deck.id} value={deck.id}>
+                    {deck.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="color-cube"
+                style={{ '--swatch-color': player.color }}
+                aria-label={`${player.name} color`}
+                onClick={() => setColorPickerPlayerIndex(i)}
+              />
+            </div>
+          ))}
+        </div>
       </>
     );
   }
@@ -221,7 +232,17 @@ export default function NewGamePage({ decks, food, onStart }) {
   function renderFoodStep() {
     return (
       <>
-        <p className="stage-label">Which food is in play?</p>
+        <p className="stage-label">
+          Which food is in play?{' '}
+          <span
+            className="info-tooltip"
+            role="img"
+            aria-label="Default food by player count info"
+            title={FOOD_DEFAULTS_TOOLTIP}
+          >
+            &#9432;
+          </span>
+        </p>
         <p className="wizard-body-hint">
           Pick which food shapes will be placed on the board. Edit shapes in{' '}
           <a href="#manage">Manage</a>.

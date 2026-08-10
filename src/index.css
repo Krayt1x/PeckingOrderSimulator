@@ -299,13 +299,15 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   margin: 1rem 0;
 }
 
 .hand-row .hand {
   margin: 0;
   flex: 1 1 auto;
+  flex-wrap: nowrap;
 }
 
 .hand {
@@ -335,6 +337,7 @@ body {
   position: relative;
   width: 96px;
   height: 124px;
+  flex-shrink: 0;
   background: var(--card-bg);
   border: 2px solid var(--card-border);
   border-radius: 0.5rem;
@@ -726,6 +729,12 @@ body {
   text-decoration: none;
 }
 
+.home-version {
+  margin-top: 4rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 .new-game-players {
   max-width: 640px;
 }
@@ -743,6 +752,13 @@ body {
   font-size: 0.85rem;
   color: var(--text-secondary);
   margin: -0.5rem 0 0.75rem;
+}
+
+.info-tooltip {
+  cursor: help;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-muted);
 }
 
 .color-cube {

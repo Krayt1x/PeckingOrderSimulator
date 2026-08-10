@@ -46,7 +46,7 @@ describe('NewGamePage', () => {
     await waitFor(() =>
       expect(screen.getByText(/playing, and with which deck/)).toBeDefined(),
     );
-    expect(screen.getAllByRole('row')).toHaveLength(5); // header + 4 players
+    expect(screen.getAllByLabelText('Player name')).toHaveLength(4);
   });
 
   it('lets you mark a player as CPU and change their deck on the Rosters step', () => {
@@ -129,7 +129,7 @@ describe('NewGamePage', () => {
     expect(setup.players[1].color).toBe(PLAYER_COLOR_PALETTE[1]);
   });
 
-  it('shows every food shape as its own tile, all selected by default', () => {
+  it('defaults the food selection for 2 players to Potato Cake and Chip only', () => {
     render(
       <NewGamePage
         decks={DEFAULT_DECKS}
@@ -139,13 +139,22 @@ describe('NewGamePage', () => {
     );
     goToStep('Food');
 
-    DEFAULT_FOOD.shapes.forEach((shape) => {
-      const tile = screen.getByRole('switch', { name: new RegExp(shape.name) });
-      expect(tile.getAttribute('aria-checked')).toBe('true');
-    });
+    expect(
+      screen
+        .getByRole('switch', { name: /Potato Cake/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+    expect(
+      screen.getByRole('switch', { name: /Chip/ }).getAttribute('aria-checked'),
+    ).toBe('true');
+    expect(
+      screen
+        .getByRole('switch', { name: /Burger/ })
+        .getAttribute('aria-checked'),
+    ).toBe('false');
   });
 
-  it('lets you deselect a food shape', () => {
+  it('lets you toggle a food shape on and off', () => {
     render(
       <NewGamePage
         decks={DEFAULT_DECKS}
@@ -157,8 +166,11 @@ describe('NewGamePage', () => {
 
     const burgerTile = screen.getByRole('switch', { name: /Burger/ });
     fireEvent.click(burgerTile);
+    expect(burgerTile.getAttribute('aria-checked')).toBe('true');
 
-    expect(burgerTile.getAttribute('aria-checked')).toBe('false');
+    const chipTile = screen.getByRole('switch', { name: /Chip/ });
+    fireEvent.click(chipTile);
+    expect(chipTile.getAttribute('aria-checked')).toBe('false');
   });
 
   it('summarizes every step and calls onStart from the Review step', () => {
@@ -180,7 +192,7 @@ describe('NewGamePage', () => {
     const setup = onStart.mock.calls[0][0];
     expect(setup.players).toHaveLength(2);
     expect(setup.foodId).toBe(DEFAULT_FOOD.id);
-    expect(setup.foodShapeIds).toEqual(DEFAULT_FOOD.shapes.map((s) => s.id));
+    expect(setup.foodShapeIds).toEqual(['potato-cake', 'chip']);
   });
 
   it('excludes a deselected food shape from the final setup', () => {
@@ -200,5 +212,65 @@ describe('NewGamePage', () => {
     const setup = onStart.mock.calls[0][0];
     const chip = DEFAULT_FOOD.shapes.find((s) => s.name === 'Chip');
     expect(setup.foodShapeIds).not.toContain(chip.id);
+  });
+
+  it('defaults the food selection to Burger + Potato Cake for 3 players', () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '3' }));
+    goToStep('Food');
+
+    expect(
+      screen
+        .getByRole('switch', { name: /Burger/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+    expect(
+      screen
+        .getByRole('switch', { name: /Potato Cake/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+    expect(
+      screen.getByRole('switch', { name: /Chip/ }).getAttribute('aria-checked'),
+    ).toBe('false');
+  });
+
+  it('defaults the food selection to Burger + Potato Cake + Chip for 4 players', () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '4' }));
+    goToStep('Food');
+
+    ['Burger', 'Potato Cake', 'Chip'].forEach((name) => {
+      expect(
+        screen
+          .getByRole('switch', { name: new RegExp(name) })
+          .getAttribute('aria-checked'),
+      ).toBe('true');
+    });
+  });
+
+  it('shows a hover tooltip explaining the player-count food defaults', () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    goToStep('Food');
+
+    const info = screen.getByLabelText('Default food by player count info');
+    expect(info.getAttribute('title')).toMatch(/2 players.*Potato Cake.*Chip/);
   });
 });

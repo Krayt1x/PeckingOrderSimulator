@@ -1,3 +1,11 @@
+function formatReleaseDate(iso) {
+  if (!iso) return 'unknown';
+  return new Date(iso).toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+}
+
 export default function HomePage() {
   return (
     <main className="page home">
@@ -13,6 +21,10 @@ export default function HomePage() {
           Manage decks
         </a>
       </div>
+      <p className="home-version">
+        v{__APP_VERSION__} &middot; released{' '}
+        {formatReleaseDate(__COMMIT_DATE__)}
+      </p>
     </main>
   );
 }
