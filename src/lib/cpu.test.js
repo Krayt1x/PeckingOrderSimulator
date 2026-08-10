@@ -57,6 +57,62 @@ describe('pickCpuMove', () => {
 
     expect(pickCpuMove(hand, board, BOARD_SIZE, 'p1')).toBeNull();
   });
+
+  it('prefers a capturing placement when using the aggressive strategy', () => {
+    const strongCard = {
+      id: 'c1',
+      sides: { top: 9, right: 9, bottom: 9, left: 9 },
+    };
+    const board = Array(100).fill(null);
+    // Food's own neighbors (45, 54, 56, 65) never capture anything. A
+    // weak opponent bird at 57 adds its own neighbors (47, 56, 58, 67) as
+    // legal cells too, and placing the strong card on any of those
+    // captures it — 56 is the only cell in both sets.
+    board[55] = { type: 'food', sides: SIDES };
+    board[57] = {
+      type: 'bird',
+      ownerId: 'p2',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+
+    const move = pickCpuMove(
+      [strongCard],
+      board,
+      BOARD_SIZE,
+      'p1',
+      'aggressive',
+    );
+
+    expect([47, 56, 58, 67]).toContain(move.cellIndex);
+    expect([45, 54, 65]).not.toContain(move.cellIndex);
+  });
+
+  it('falls back to any legal option when aggressive has nothing to capture', () => {
+    const hand = [{ id: 'c1', sides: SIDES }];
+    const board = Array(100).fill(null);
+    board[55] = { type: 'food', sides: SIDES };
+
+    const move = pickCpuMove(hand, board, BOARD_SIZE, 'p1', 'aggressive');
+
+    expect([45, 54, 56, 65]).toContain(move.cellIndex);
+  });
+
+  it('prefers a Food-adjacent placement when using the defensive strategy', () => {
+    const card = { id: 'c1', sides: SIDES };
+    const board = Array(100).fill(null);
+    board[55] = { type: 'food', sides: SIDES }; // legal cells: 45, 54, 56, 65
+    // A separate opponent bird far from Food opens up unrelated legal
+    // cells (10, 19, 21, 30) that aren't adjacent to Food.
+    board[20] = {
+      type: 'bird',
+      ownerId: 'p2',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+
+    const move = pickCpuMove([card], board, BOARD_SIZE, 'p1', 'defensive');
+
+    expect([45, 54, 56, 65]).toContain(move.cellIndex);
+  });
 });
 
 describe('pickCpuEat', () => {

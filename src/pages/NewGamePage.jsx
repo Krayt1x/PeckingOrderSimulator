@@ -104,6 +104,7 @@ function defaultPlayer(index, decks, usedColors = []) {
     id: `player-${index}`,
     name: `Player ${index + 1}`,
     isCPU: false,
+    cpuStrategy: 'aggressive',
     deckId: decks[index % decks.length]?.id,
     color: randomPlayerColor(usedColors),
   };
@@ -281,6 +282,18 @@ export default function NewGamePage({ decks, food, onStart }) {
                   </option>
                 ))}
               </select>
+              {player.isCPU ? (
+                <select
+                  value={player.cpuStrategy || 'aggressive'}
+                  aria-label={`${player.name} CPU strategy`}
+                  onChange={(event) =>
+                    updatePlayer(i, { cpuStrategy: event.target.value })
+                  }
+                >
+                  <option value="aggressive">Aggressive</option>
+                  <option value="defensive">Defensive</option>
+                </select>
+              ) : null}
               <button
                 type="button"
                 className="color-cube"

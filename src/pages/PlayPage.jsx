@@ -398,6 +398,7 @@ export default function PlayPage({
         workingBoard,
         BOARD_SIZE,
         activePlayer.id,
+        activePlayer.cpuStrategy,
       );
       if (!move) break;
       const card = workingHand.find((c) => c.id === move.cardId);

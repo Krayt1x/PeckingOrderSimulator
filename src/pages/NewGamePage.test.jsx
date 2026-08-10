@@ -70,6 +70,36 @@ describe('NewGamePage', () => {
     );
   });
 
+  it('shows a CPU strategy picker only once a player is marked as CPU, defaulting to Aggressive', () => {
+    const onStart = vi.fn();
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={onStart}
+      />,
+    );
+    goToStep('Rosters');
+
+    expect(screen.queryByLabelText('Player 2 CPU strategy')).toBeNull();
+
+    fireEvent.click(screen.getByLabelText('Player 2 is CPU'));
+
+    expect(screen.getByLabelText('Player 2 CPU strategy').value).toBe(
+      'aggressive',
+    );
+
+    fireEvent.change(screen.getByLabelText('Player 2 CPU strategy'), {
+      target: { value: 'defensive' },
+    });
+
+    goToStep('Review');
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
+
+    const setup = onStart.mock.calls[0][0];
+    expect(setup.players[1].cpuStrategy).toBe('defensive');
+  });
+
   it('gives each default player a distinct border color shown as a cube', () => {
     render(
       <NewGamePage
