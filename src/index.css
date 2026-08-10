@@ -323,6 +323,12 @@ body {
   overflow: hidden;
 }
 
+/* Draw/discard pile tiles run 25% smaller than hand cards. */
+.hand-row .card-back {
+  max-width: 72px;
+  height: 93px;
+}
+
 .hand {
   display: flex;
   flex-wrap: wrap;
