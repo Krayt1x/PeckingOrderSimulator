@@ -4,7 +4,7 @@ export const DEFAULT_DECKS = [
   {
     id: 'deck-chickens',
     name: 'City',
-    color: '#e2e2df',
+    color: '#27272a',
     cardTypes: [
       {
         id: 'sparrow',
@@ -43,7 +43,7 @@ export const DEFAULT_DECKS = [
   {
     id: 'deck-ducks',
     name: 'Beach',
-    color: '#f6e7c1',
+    color: '#1e3a5f',
     cardTypes: [
       {
         id: 'sparrow',
@@ -82,7 +82,7 @@ export const DEFAULT_DECKS = [
   {
     id: 'deck-birds-of-prey',
     name: 'Park',
-    color: '#dbead9',
+    color: '#14432b',
     cardTypes: [
       {
         id: 'sparrow',
