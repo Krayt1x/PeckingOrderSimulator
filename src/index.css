@@ -1781,4 +1781,19 @@ body {
     font-size: 0.45rem;
     padding: 0.1rem 0.3rem;
   }
+
+  /* The pixel-art sprite is a fixed 40px canvas that doesn't shrink with
+     the card — on a mobile-sized hand card that overflows the card's
+     content box, clipping the name below it. Shrinking the sprite and
+     tightening the gap gives the name room to sit fully below the
+     artwork instead of running past the card's edge. */
+  [data-skin='alpha-pixel-art'] .hand-row .hand .card-pixel-sprite {
+    width: 26px !important;
+    height: 26px !important;
+    image-rendering: pixelated;
+  }
+
+  [data-skin='alpha-pixel-art'] .hand-row .hand .card-face {
+    gap: 0.15rem;
+  }
 }
