@@ -1181,10 +1181,6 @@ body {
   color: var(--text-primary);
 }
 
-.ruleset-option .wizard-body-hint {
-  margin: 0.15rem 0 0;
-}
-
 .ruleset-skin-select {
   display: block;
   margin-top: 0.5rem;

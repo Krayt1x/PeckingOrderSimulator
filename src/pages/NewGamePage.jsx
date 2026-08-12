@@ -463,8 +463,17 @@ export default function NewGamePage({ decks, food, onStart }) {
                 onChange={() => toggleRuleset(option.key)}
               />
               <span>
-                <span className="ruleset-option-label">{option.label}</span>
-                <span className="wizard-body-hint">{option.description}</span>
+                <span className="ruleset-option-label">
+                  {option.label}{' '}
+                  <span
+                    className="info-tooltip"
+                    role="img"
+                    aria-label={`${option.label} info`}
+                    title={option.description}
+                  >
+                    &#9432;
+                  </span>
+                </span>
               </span>
             </label>
           ))}
@@ -476,9 +485,16 @@ export default function NewGamePage({ decks, food, onStart }) {
               onChange={() => toggleRuleset('allowCustomSkins')}
             />
             <span>
-              <span className="ruleset-option-label">Custom Skins</span>
-              <span className="wizard-body-hint">
-                Choose a visual skin for the game.
+              <span className="ruleset-option-label">
+                Custom Skins{' '}
+                <span
+                  className="info-tooltip"
+                  role="img"
+                  aria-label="Custom Skins info"
+                  title="Choose a visual skin for the game."
+                >
+                  &#9432;
+                </span>
               </span>
               {ruleset.allowCustomSkins ? (
                 <select

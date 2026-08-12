@@ -486,6 +486,21 @@ describe('NewGamePage', () => {
     expect(info.getAttribute('title')).toMatch(/2 players.*Potato Cake.*Chip/);
   });
 
+  it('moves each ruleset option’s description to an info tooltip, not inline text (#89)', () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    goToStep('Ruleset');
+
+    const info = screen.getByLabelText('Allow Moving info');
+    expect(info.getAttribute('title')).toMatch(/Costs 1 action/);
+    expect(screen.queryByText(/Costs 1 action/)).toBeNull();
+  });
+
   it('defaults every ruleset option off on the Ruleset step', () => {
     render(
       <NewGamePage
