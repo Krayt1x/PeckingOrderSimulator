@@ -36,10 +36,10 @@ export const SKIN_OPTIONS = [
 ];
 
 export const DEFAULT_RULESET = {
-  allowMoving: false,
-  allowReturnToHand: false,
-  allowCardRotation: false,
-  allowEqualValuePlay: false,
-  allowCustomSkins: false,
-  skin: 'alpha',
+  allowMoving: true,
+  allowReturnToHand: true,
+  allowCardRotation: true,
+  allowEqualValuePlay: true,
+  allowCustomSkins: true,
+  skin: 'alpha-pixel-art',
 };

@@ -81,7 +81,14 @@ describe('StatusTray', () => {
         players={players}
         food={DEFAULT_FOOD}
         foodShapeIds={foodShapeIds}
-        ruleset={DEFAULT_RULESET}
+        ruleset={{
+          allowMoving: false,
+          allowReturnToHand: false,
+          allowCardRotation: false,
+          allowEqualValuePlay: false,
+          allowCustomSkins: false,
+          skin: 'alpha',
+        }}
         actionLog={[]}
       />,
     );

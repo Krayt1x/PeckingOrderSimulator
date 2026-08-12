@@ -547,7 +547,7 @@ describe('NewGamePage', () => {
     expect(screen.queryByText(/Costs 1 action/)).toBeNull();
   });
 
-  it('defaults every ruleset option off on the Ruleset step', () => {
+  it('defaults every ruleset option on on the Ruleset step', () => {
     render(
       <NewGamePage
         decks={DEFAULT_DECKS}
@@ -558,11 +558,21 @@ describe('NewGamePage', () => {
     goToStep('Ruleset');
 
     expect(screen.getByRole('checkbox', { name: 'Allow Moving' }).checked).toBe(
-      false,
+      true,
     );
     expect(
       screen.getByRole('checkbox', { name: 'Allow Return to Hand' }).checked,
-    ).toBe(false);
+    ).toBe(true);
+    expect(
+      screen.getByRole('checkbox', { name: 'Allow Card Rotation' }).checked,
+    ).toBe(true);
+    expect(
+      screen.getByRole('checkbox', { name: 'Equal Value Playable' }).checked,
+    ).toBe(true);
+    expect(screen.getByRole('checkbox', { name: 'Custom Skins' }).checked).toBe(
+      true,
+    );
+    expect(screen.getByLabelText('Skin').value).toBe('alpha-pixel-art');
   });
 
   it('lets you toggle ruleset options and includes them in the final setup', () => {
@@ -576,6 +586,7 @@ describe('NewGamePage', () => {
     );
     goToStep('Ruleset');
 
+    // Both start checked by default — toggling clicks them off.
     fireEvent.click(screen.getByRole('checkbox', { name: 'Allow Moving' }));
     fireEvent.click(
       screen.getByRole('checkbox', { name: 'Allow Return to Hand' }),
@@ -586,12 +597,12 @@ describe('NewGamePage', () => {
 
     const setup = onStart.mock.calls[0][0];
     expect(setup.ruleset).toEqual({
-      allowMoving: true,
-      allowReturnToHand: true,
-      allowCardRotation: false,
-      allowEqualValuePlay: false,
-      allowCustomSkins: false,
-      skin: 'alpha',
+      allowMoving: false,
+      allowReturnToHand: false,
+      allowCardRotation: true,
+      allowEqualValuePlay: true,
+      allowCustomSkins: true,
+      skin: 'alpha-pixel-art',
     });
   });
 
@@ -609,16 +620,16 @@ describe('NewGamePage', () => {
 
     const setup = onStart.mock.calls[0][0];
     expect(setup.ruleset).toEqual({
-      allowMoving: false,
-      allowReturnToHand: false,
-      allowCardRotation: false,
-      allowEqualValuePlay: false,
-      allowCustomSkins: false,
-      skin: 'alpha',
+      allowMoving: true,
+      allowReturnToHand: true,
+      allowCardRotation: true,
+      allowEqualValuePlay: true,
+      allowCustomSkins: true,
+      skin: 'alpha-pixel-art',
     });
   });
 
-  it('shows the skin dropdown only once Custom Skins is enabled, and includes the chosen skin in the setup', () => {
+  it('shows the skin dropdown by default and hides it once Custom Skins is disabled', () => {
     const onStart = vi.fn();
     render(
       <NewGamePage
@@ -629,10 +640,15 @@ describe('NewGamePage', () => {
     );
     goToStep('Ruleset');
 
+    expect(screen.getByLabelText('Skin').value).toBe('alpha-pixel-art');
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Custom Skins' }));
     expect(screen.queryByLabelText('Skin')).toBeNull();
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Custom Skins' }));
-    expect(screen.getByLabelText('Skin').value).toBe('alpha');
+    fireEvent.change(screen.getByLabelText('Skin'), {
+      target: { value: 'alpha' },
+    });
 
     goToStep('Review');
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));

@@ -39,6 +39,17 @@ function isFilled(cell) {
   return cell.className.includes('board-cell-filled');
 }
 
+// A selected card's rotate arrows (shown when Allow Card Rotation is on,
+// the default) are role="button" spans nested inside the card's own
+// button — a plain getAllByRole('button') query over the hand would
+// double-count them once a card is selected. This narrows to just the
+// top-level card buttons.
+function handCardButtons(hand) {
+  return within(hand)
+    .getAllByRole('button')
+    .filter((el) => el.classList.contains('card'));
+}
+
 function cardNameOf(cell) {
   const nameEl = cell.querySelector('.card-name');
   if (nameEl) return nameEl.textContent;
@@ -245,16 +256,16 @@ describe('PlayPage', () => {
     const cells = screen.getAllByRole('gridcell');
     const foodIndex = findFoodIndex(cells);
 
-    fireEvent.click(within(hand).getAllByRole('button')[0]);
+    fireEvent.click(handCardButtons(hand)[0]);
     // Try a corner cell, guaranteed far from Food (which is placed near
     // the center) and not adjacent to anything.
     fireEvent.click(cells[0]);
-    expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE);
+    expect(handCardButtons(hand)).toHaveLength(HAND_SIZE);
 
     // Now a cell actually adjacent to Food should work.
     const adjacentIndex = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
     fireEvent.click(cells[adjacentIndex]);
-    expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE - 1);
+    expect(handCardButtons(hand)).toHaveLength(HAND_SIZE - 1);
     expect(isFilled(screen.getAllByRole('gridcell')[adjacentIndex])).toBe(true);
   });
 
@@ -309,11 +320,11 @@ describe('PlayPage', () => {
     expect(ownOnlySpot).toBeDefined();
 
     const hand = screen.getByRole('list', { name: 'Your hand' });
-    const handCountBefore = within(hand).getAllByRole('button').length;
-    fireEvent.click(within(hand).getAllByRole('button')[0]);
+    const handCountBefore = handCardButtons(hand).length;
+    fireEvent.click(handCardButtons(hand)[0]);
     fireEvent.click(screen.getAllByRole('gridcell')[ownOnlySpot]);
 
-    expect(within(hand).getAllByRole('button')).toHaveLength(handCountBefore);
+    expect(handCardButtons(hand)).toHaveLength(handCountBefore);
     expect(isFilled(screen.getAllByRole('gridcell')[ownOnlySpot])).toBe(false);
   });
 
@@ -474,7 +485,7 @@ describe('PlayPage', () => {
     ).toBeDefined();
   });
 
-  it('blocks a tied-value placement by default, but allows it with Equal Value Playable', () => {
+  it('blocks a tied-value placement without Equal Value Playable, but allows it with the ruleset enabled', () => {
     function tiedDecks() {
       return [
         {
@@ -517,6 +528,14 @@ describe('PlayPage', () => {
         decks={tiedDecks()}
         food={SINGLE_FOOD}
         foodShapeIds={['crumb']}
+        ruleset={{
+          allowMoving: false,
+          allowReturnToHand: false,
+          allowCardRotation: false,
+          allowEqualValuePlay: false,
+          allowCustomSkins: false,
+          skin: 'alpha',
+        }}
       />,
     );
 
@@ -532,7 +551,7 @@ describe('PlayPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
 
     // Player 2's card is a 1-1-1-1 tie against Player 1's card on every
-    // shared edge — blocked by default.
+    // shared edge — blocked without the ruleset.
     cells = screen.getAllByRole('gridcell');
     const p2Spot = neighbors(p1Spot).find((i) => !isFilled(cells[i]));
     fireEvent.click(
@@ -655,13 +674,13 @@ describe('PlayPage', () => {
       (i) => i !== foodIndex && !isFilled(cells[i]),
     );
     const hand = screen.getByRole('list', { name: 'Your hand' });
-    const handSizeBefore = within(hand).getAllByRole('button').length;
-    fireEvent.click(within(hand).getAllByRole('button')[0]);
+    const handSizeBefore = handCardButtons(hand).length;
+    fireEvent.click(handCardButtons(hand)[0]);
     fireEvent.click(screen.getAllByRole('gridcell')[blockedSpot]);
 
     cells = screen.getAllByRole('gridcell');
     expect(isFilled(cells[blockedSpot])).toBe(false);
-    expect(within(hand).getAllByRole('button')).toHaveLength(handSizeBefore);
+    expect(handCardButtons(hand)).toHaveLength(handSizeBefore);
     expect(screen.getByText('Actions: 1/1')).toBeDefined();
   });
 
@@ -760,6 +779,44 @@ describe('PlayPage', () => {
     ).toBeDefined();
   });
 
+  it('lets you return a card to the discard pile with zero actions remaining', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+        ruleset={{ allowMoving: true, allowReturnToHand: true }}
+      />,
+    );
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const firstSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[firstSpot]);
+    expect(screen.getByText('Actions: 0/1')).toBeDefined();
+
+    const discardTile = screen.getByRole('button', {
+      name: /Discard pile: \d+ cards/,
+    });
+
+    fireEvent.dragStart(screen.getAllByRole('gridcell')[firstSpot]);
+    fireEvent.drop(discardTile);
+
+    cells = screen.getAllByRole('gridcell');
+    expect(isFilled(cells[firstSpot])).toBe(false);
+    // Still free — returning to discard doesn't touch the action count.
+    expect(screen.getByText('Actions: 0/1')).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: 'Discard pile: 1 cards' }),
+    ).toBeDefined();
+  });
+
   it('does not return a card to the discard pile when Allow Return to Hand is disabled', () => {
     render(
       <PlayPage
@@ -796,6 +853,7 @@ describe('PlayPage', () => {
         players={twoPlayers()}
         decks={DEFAULT_DECKS}
         food={DEFAULT_FOOD}
+        ruleset={{ allowCardRotation: false }}
       />,
     );
     const hand = screen.getByRole('list', { name: 'Your hand' });
@@ -1907,6 +1965,14 @@ describe('PlayPage', () => {
         players={twoPlayers()}
         decks={DEFAULT_DECKS}
         food={DEFAULT_FOOD}
+        ruleset={{
+          allowMoving: false,
+          allowReturnToHand: false,
+          allowCardRotation: false,
+          allowEqualValuePlay: false,
+          allowCustomSkins: false,
+          skin: 'alpha',
+        }}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Game settings' }));

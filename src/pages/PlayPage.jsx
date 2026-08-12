@@ -144,6 +144,10 @@ export default function PlayPage({
   // Using a Food-derived card is always free and grants a bonus action,
   // so it stays available even with zero actions remaining.
   const canUseFood = !activePlayer.isCPU && !gameOver;
+  // Returning a card to the discard pile is always free, same as Use
+  // Food, so it stays available even with zero actions remaining.
+  const canReturnToDiscard =
+    !activePlayer.isCPU && !gameOver && ruleset.allowReturnToHand;
 
   function clearSelections() {
     setSelectedCardId(null);
@@ -444,7 +448,7 @@ export default function PlayPage({
   }
 
   function handleCardDragStart(index) {
-    if (!canAct) return;
+    if (!(canAct && ruleset.allowMoving) && !canReturnToDiscard) return;
     const card = board[index];
     if (!card || card.type === 'food' || card.ownerId !== activePlayer.id) {
       return;
@@ -486,7 +490,7 @@ export default function PlayPage({
   function handleReturnToDiscard() {
     const source = dragSourceIndex;
     setDragSourceIndex(null);
-    if (source === null || !canAct || !ruleset.allowReturnToHand) return;
+    if (source === null || !canReturnToDiscard) return;
 
     const card = board[source];
     if (!card || card.type === 'food' || card.ownerId !== activePlayer.id) {
@@ -742,7 +746,7 @@ export default function PlayPage({
   const playerColors = Object.fromEntries(players.map((p) => [p.id, p.color]));
 
   const draggableIndices = new Set();
-  if (canAct && (ruleset.allowMoving || ruleset.allowReturnToHand)) {
+  if ((canAct && ruleset.allowMoving) || canReturnToDiscard) {
     board.forEach((cell, i) => {
       if (cell && cell.type !== 'food' && cell.ownerId === activePlayer.id) {
         draggableIndices.add(i);
