@@ -504,6 +504,32 @@ body {
   background: var(--accent-hover);
 }
 
+.turn-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.undo-move-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  padding: 0.4rem 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.undo-move-btn:hover:not(:disabled) {
+  background: var(--bg-card);
+}
+
+.undo-move-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* Draw pile / hand / discard pile always share a single row — instead of
    scrolling on narrow screens, every card shrinks (via flex-basis 0 and
    min-width 0) to whatever width keeps all of them on-screen at once. The
@@ -902,6 +928,7 @@ body {
 [data-skin='alpha-pixel-art'] .board-recenter,
 [data-skin='alpha-pixel-art'] .board-zoom-btn,
 [data-skin='alpha-pixel-art'] .end-turn-btn,
+[data-skin='alpha-pixel-art'] .undo-move-btn,
 [data-skin='alpha-pixel-art'] .status-tray-info-btn {
   background: var(--pixel-ink);
   color: #1c1917;
@@ -918,9 +945,14 @@ body {
 [data-skin='alpha-pixel-art'] .board-recenter:hover,
 [data-skin='alpha-pixel-art'] .board-zoom-btn:hover:not(:disabled),
 [data-skin='alpha-pixel-art'] .end-turn-btn:hover,
+[data-skin='alpha-pixel-art'] .undo-move-btn:hover:not(:disabled),
 [data-skin='alpha-pixel-art'] .status-tray-info-btn:hover {
   background: #ffd94d;
   color: #1c1917;
+}
+
+[data-skin='alpha-pixel-art'] .undo-move-btn:disabled {
+  box-shadow: none;
 }
 
 [data-skin='alpha-pixel-art'] .status-tray,

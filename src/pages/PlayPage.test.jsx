@@ -337,6 +337,73 @@ describe('PlayPage', () => {
     expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
   });
 
+  it('undoes a play, restoring the hand, board, and action count', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Undo' }).disabled).toBe(true);
+
+    const hand = screen.getByRole('list', { name: 'Your hand' });
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const adjacentIndex = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+    const handCountBefore = within(hand).getAllByRole('button').length;
+    const playedCardName = within(hand)
+      .getAllByRole('button')[0]
+      .querySelector('.card-name').textContent;
+
+    fireEvent.click(within(hand).getAllByRole('button')[0]);
+    fireEvent.click(screen.getAllByRole('gridcell')[adjacentIndex]);
+
+    expect(screen.getByText('Actions: 0/1')).toBeDefined();
+    expect(isFilled(screen.getAllByRole('gridcell')[adjacentIndex])).toBe(true);
+    expect(within(hand).getAllByRole('button')).toHaveLength(
+      handCountBefore - 1,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+
+    expect(screen.getByText('Actions: 1/1')).toBeDefined();
+    expect(isFilled(screen.getAllByRole('gridcell')[adjacentIndex])).toBe(
+      false,
+    );
+    const handAfterUndo = within(hand).getAllByRole('button');
+    expect(handAfterUndo).toHaveLength(handCountBefore);
+    expect(
+      handAfterUndo.some(
+        (btn) => btn.querySelector('.card-name').textContent === playedCardName,
+      ),
+    ).toBe(true);
+    expect(screen.getByRole('button', { name: 'Undo' }).disabled).toBe(true);
+  });
+
+  it('clears the undo history once the turn ends', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+      />,
+    );
+    const hand = screen.getByRole('list', { name: 'Your hand' });
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const adjacentIndex = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    fireEvent.click(within(hand).getAllByRole('button')[0]);
+    fireEvent.click(screen.getAllByRole('gridcell')[adjacentIndex]);
+    expect(screen.getByRole('button', { name: 'Undo' }).disabled).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    expect(screen.getByText(/Player 2.*turn/)).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Undo' }).disabled).toBe(true);
+  });
+
   it('ending the turn refills the hand and passes to the next player', () => {
     render(
       <PlayPage

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import GameBoard, { BOARD_SIZE } from '../components/GameBoard.jsx';
 import Hand from '../components/Hand.jsx';
 import StatusTray from '../components/StatusTray.jsx';
@@ -127,6 +127,13 @@ export default function PlayPage({
   const [actionLog, setActionLog] = useState([]);
   const [hoveredPlayerId, setHoveredPlayerId] = useState(null);
   const [gameOverDismissed, setGameOverDismissed] = useState(false);
+  // Snapshots taken before each move this turn, most recent last — cleared
+  // whenever the turn advances, so undo never reaches into a prior turn.
+  const [moveHistory, setMoveHistory] = useState([]);
+  // Tracks the pending delayed board update from commitBoardAfterCapture so
+  // an undo can cancel it — otherwise a capture's removal would still land
+  // after the undo restored the pre-capture board.
+  const pendingCaptureRemoval = useRef(null);
 
   const activePlayer = players[activeIndex];
   const activeState = playerStates[activeIndex];
@@ -164,6 +171,31 @@ export default function PlayPage({
     setActiveIndex((current) => (current + 1) % players.length);
     setActionsRemaining(ACTIONS_PER_TURN);
     clearSelections();
+    setMoveHistory([]);
+  }
+
+  // Captures everything a move can change so handleUndo can restore it.
+  function snapshotState() {
+    return { board, playerStates, actionsRemaining, actionLog };
+  }
+
+  function recordMove() {
+    setMoveHistory((prev) => [...prev, snapshotState()]);
+  }
+
+  function handleUndo() {
+    if (moveHistory.length === 0) return;
+    if (pendingCaptureRemoval.current) {
+      clearTimeout(pendingCaptureRemoval.current);
+      pendingCaptureRemoval.current = null;
+    }
+    const previous = moveHistory[moveHistory.length - 1];
+    setBoard(previous.board);
+    setPlayerStates(previous.playerStates);
+    setActionsRemaining(previous.actionsRemaining);
+    setActionLog(previous.actionLog);
+    setMoveHistory((prev) => prev.slice(0, -1));
+    clearSelections();
   }
 
   function applyOwnerCaptureBookkeeping(states, capturedList) {
@@ -189,7 +221,10 @@ export default function PlayPage({
   ) {
     setBoard(preCaptureBoard);
     if (captured.length > 0) {
-      setTimeout(() => setBoard(postCaptureBoard), CAPTURE_REMOVAL_DELAY_MS);
+      pendingCaptureRemoval.current = setTimeout(() => {
+        setBoard(postCaptureBoard);
+        pendingCaptureRemoval.current = null;
+      }, CAPTURE_REMOVAL_DELAY_MS);
     }
   }
 
@@ -211,6 +246,7 @@ export default function PlayPage({
     const card = activeState.hand.find((c) => c.id === cardId && c.fromFood);
     if (!card) return;
 
+    recordMove();
     setPlayerStates(
       playerStates.map((state, i) =>
         i === activeIndex
@@ -270,6 +306,7 @@ export default function PlayPage({
     if (!card) return;
     const placedCard = { ...card, ownerId: activePlayer.id };
 
+    recordMove();
     const withCard = [...board];
     withCard[cellIndex] = placedCard;
     const { board: nextBoard, captured } = resolveCaptures(
@@ -299,6 +336,7 @@ export default function PlayPage({
     const card = board[sourceIndex];
     if (!card) return;
 
+    recordMove();
     const withMove = [...board];
     withMove[sourceIndex] = null;
     withMove[cellIndex] = card;
@@ -328,6 +366,7 @@ export default function PlayPage({
     const eatenFood = board[eatFoodIndex];
     if (!eatenBird || !eatenFood) return;
 
+    recordMove();
     const nextBoard = [...board];
     nextBoard[eatFoodIndex] = null;
     nextBoard[birdIndex] = null;
@@ -454,6 +493,7 @@ export default function PlayPage({
       return;
     }
 
+    recordMove();
     const nextBoard = [...board];
     nextBoard[source] = null;
 
@@ -809,13 +849,23 @@ export default function PlayPage({
             CPU is playing&hellip;
           </span>
         ) : (
-          <button
-            type="button"
-            className="end-turn-btn end-turn-spacer"
-            onClick={handleEndTurn}
-          >
-            End Turn
-          </button>
+          <div className="end-turn-spacer turn-controls">
+            <button
+              type="button"
+              className="undo-move-btn"
+              onClick={handleUndo}
+              disabled={moveHistory.length === 0}
+            >
+              Undo
+            </button>
+            <button
+              type="button"
+              className="end-turn-btn"
+              onClick={handleEndTurn}
+            >
+              End Turn
+            </button>
+          </div>
         )}
       </div>
       <div className="hand-row">
