@@ -414,9 +414,19 @@ body {
   color: #fff;
   padding: 0.3rem 0.5rem 0.3rem 0.7rem;
   border-radius: 999px;
+  border: 3px solid transparent;
   flex: 1 1 0;
   min-width: 0;
   cursor: default;
+}
+
+/* Whoever's turn it is now reads from this bright ring around their pill
+   instead of a separate "Player 1's turn" heading (#101). */
+.score-entry-active {
+  border-color: #fff;
+  box-shadow:
+    0 0 0 2px var(--player-color),
+    0 0 8px rgba(255, 255, 255, 0.6);
 }
 
 .score-name {
@@ -455,14 +465,28 @@ body {
   margin-top: 1.5rem;
 }
 
-.hand-header h2 {
-  margin: 0;
-  margin-right: auto;
+/* Visually hidden but still announced to assistive tech — used where a
+   purely visual indicator (like the active player's bright pill border)
+   replaces text for sighted users (#101). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .draw-pile-count {
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+.end-turn-spacer {
+  margin-left: auto;
 }
 
 .end-turn-btn {
@@ -928,6 +952,15 @@ body {
   box-shadow:
     inset 2px 2px 0 color-mix(in srgb, var(--player-color) 55%, white),
     inset -2px -2px 0 color-mix(in srgb, var(--player-color) 55%, black);
+}
+
+[data-skin='alpha-pixel-art'] .score-entry-active {
+  border-color: #fff;
+  box-shadow:
+    inset 2px 2px 0 color-mix(in srgb, var(--player-color) 55%, white),
+    inset -2px -2px 0 color-mix(in srgb, var(--player-color) 55%, black),
+    0 0 0 2px #000,
+    0 0 8px rgba(255, 255, 255, 0.7);
 }
 
 [data-skin='alpha-pixel-art'] .score-value {
@@ -1681,5 +1714,39 @@ body {
 
   .home-tile-grid.two-col-mobile-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Below the desktop breakpoint, hand cards need to stay legible far
+     more than the pile tiles do — the piles get a small, mostly-fixed
+     width instead of splitting the row evenly, and the hand grows to
+     fill whatever's left (#101). */
+  .hand-row .hand {
+    flex: 1 1 0;
+  }
+
+  .hand-row > .card {
+    flex: 0 1 60px;
+  }
+
+  .discard-stack {
+    flex: 0 1 60px;
+  }
+
+  .hand-row .card-back {
+    max-width: 60px;
+  }
+
+  .hand-row .card-back.removed-pile {
+    height: 22px;
+  }
+
+  .hand-row .card-back-label {
+    font-size: 0.48rem;
+    line-height: 1.1;
+  }
+
+  .hand-row .card-back-deck {
+    font-size: 0.45rem;
+    padding: 0.1rem 0.3rem;
   }
 }

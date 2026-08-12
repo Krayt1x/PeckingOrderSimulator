@@ -1089,6 +1089,32 @@ describe('PlayPage', () => {
     expect(scoreEntryText('Player 2 (D)')).toBe('Player 2 (D): 0');
   });
 
+  it('marks the active player’s score pill instead of showing a "Player N’s turn" heading (#101)', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
+
+    const entries = Array.from(document.querySelectorAll('.score-entry'));
+    const player1Entry = entries.find(
+      (li) => li.querySelector('.score-name')?.textContent === 'Player 1',
+    );
+    const player2Entry = entries.find(
+      (li) => li.querySelector('.score-name')?.textContent === 'Player 2',
+    );
+    expect(player1Entry.classList.contains('score-entry-active')).toBe(true);
+    expect(player2Entry.classList.contains('score-entry-active')).toBe(false);
+
+    // The turn announcement still exists for assistive tech, just visually
+    // hidden — not removed from the accessibility tree entirely.
+    expect(
+      screen.getByText(/Player 1.*turn/).classList.contains('sr-only'),
+    ).toBe(true);
+  });
+
   it('lets the CPU eat Food once it has majority control, not just play cards', async () => {
     render(
       <PlayPage

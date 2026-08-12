@@ -773,7 +773,7 @@ export default function PlayPage({
           return (
             <li
               key={p.id}
-              className="score-entry"
+              className={`score-entry${p.id === activePlayer.id ? ' score-entry-active' : ''}`}
               style={{ '--player-color': p.color }}
               onMouseEnter={() => setHoveredPlayerId(p.id)}
               onMouseLeave={() =>
@@ -792,7 +792,10 @@ export default function PlayPage({
       </ul>
 
       <div className="hand-header">
-        <h2>
+        {/* Whose turn it is now reads from the bright border on their
+            score pill above (#101) — kept here only for assistive tech,
+            since a border alone isn't perceivable non-visually. */}
+        <h2 className="sr-only">
           {displayName(activePlayer)}&rsquo;s turn
           {activePlayer.isCPU ? ' (CPU)' : ''}
         </h2>
@@ -802,11 +805,13 @@ export default function PlayPage({
           </span>
         ) : null}
         {gameOver ? null : activePlayer.isCPU ? (
-          <span className="draw-pile-count">CPU is playing&hellip;</span>
+          <span className="draw-pile-count end-turn-spacer">
+            CPU is playing&hellip;
+          </span>
         ) : (
           <button
             type="button"
-            className="end-turn-btn"
+            className="end-turn-btn end-turn-spacer"
             onClick={handleEndTurn}
           >
             End Turn
