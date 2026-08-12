@@ -290,6 +290,35 @@ export default function GameBoard({
         onPointerLeave={endDrag}
       >
         <div
+          className="board-zoom-overlay"
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <div className="board-zoom">
+            <button
+              type="button"
+              className="board-zoom-btn"
+              onClick={() => zoomTo(cellSize - ZOOM_STEP)}
+              disabled={cellSize <= MIN_CELL_SIZE}
+              aria-label="Zoom out"
+            >
+              −
+            </button>
+            <span className="board-zoom-level">{zoomPercent}%</span>
+            <button
+              type="button"
+              className="board-zoom-btn"
+              onClick={() => zoomTo(cellSize + ZOOM_STEP)}
+              disabled={cellSize >= MAX_CELL_SIZE}
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+          </div>
+          <button type="button" className="board-recenter" onClick={recenter}>
+            Recenter
+          </button>
+        </div>
+        <div
           className="board"
           role="grid"
           aria-label="Game board"
@@ -375,36 +404,6 @@ export default function GameBoard({
             );
           })}
         </div>
-      </div>
-      <div className="board-controls">
-        <p className="board-hint">
-          Click and drag to look around the {BOARD_SIZE}x{BOARD_SIZE} board.
-          Scroll, pinch, or use the buttons to zoom.
-        </p>
-        <div className="board-zoom">
-          <button
-            type="button"
-            className="board-zoom-btn"
-            onClick={() => zoomTo(cellSize - ZOOM_STEP)}
-            disabled={cellSize <= MIN_CELL_SIZE}
-            aria-label="Zoom out"
-          >
-            −
-          </button>
-          <span className="board-zoom-level">{zoomPercent}%</span>
-          <button
-            type="button"
-            className="board-zoom-btn"
-            onClick={() => zoomTo(cellSize + ZOOM_STEP)}
-            disabled={cellSize >= MAX_CELL_SIZE}
-            aria-label="Zoom in"
-          >
-            +
-          </button>
-        </div>
-        <button type="button" className="board-recenter" onClick={recenter}>
-          Recenter
-        </button>
       </div>
     </div>
   );
