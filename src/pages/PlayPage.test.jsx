@@ -1032,6 +1032,46 @@ describe('PlayPage', () => {
     expect(scoreLeaderClass('Player 2')).not.toContain('score-leader');
   });
 
+  it("hovering a player's score pill highlights their cards on the board, not an opponent's (#93)", () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const spot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[spot]);
+
+    const placedCard = () =>
+      screen.getAllByRole('gridcell')[spot].querySelector('.card');
+    expect(placedCard().className).not.toContain('card-owner-highlighted');
+
+    const player1Pill = Array.from(
+      document.querySelectorAll('.score-entry'),
+    ).find((li) => li.querySelector('.score-name')?.textContent === 'Player 1');
+    const player2Pill = Array.from(
+      document.querySelectorAll('.score-entry'),
+    ).find((li) => li.querySelector('.score-name')?.textContent === 'Player 2');
+
+    fireEvent.mouseEnter(player1Pill);
+    expect(placedCard().className).toContain('card-owner-highlighted');
+
+    fireEvent.mouseLeave(player1Pill);
+    expect(placedCard().className).not.toContain('card-owner-highlighted');
+
+    fireEvent.mouseEnter(player2Pill);
+    expect(placedCard().className).not.toContain('card-owner-highlighted');
+  });
+
   it('shows an (A)/(D) suffix on CPU player names based on their strategy', () => {
     render(
       <PlayPage

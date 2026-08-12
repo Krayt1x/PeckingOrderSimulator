@@ -213,6 +213,14 @@ body {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
+/* Hovering a player's score pill highlights every one of their cards
+   currently on the board (#93). */
+.card-owner-highlighted {
+  box-shadow: 0 0 0 3px var(--card-border);
+  filter: brightness(1.2);
+  z-index: 1;
+}
+
 .board-cell-draggable {
   cursor: grab;
 }
@@ -409,6 +417,7 @@ body {
   border-radius: 999px;
   flex: 1 1 0;
   min-width: 0;
+  cursor: default;
 }
 
 .score-name {

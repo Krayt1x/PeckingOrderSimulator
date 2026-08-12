@@ -118,6 +118,7 @@ export default function GameBoard({
   onCardDragStart,
   onCardDragEnd,
   onCardDrop,
+  hoveredOwnerId,
 }) {
   const [cellSize, setCellSize] = useState(
     () => computeFitView(cells).cellSize,
@@ -338,6 +339,10 @@ export default function GameBoard({
 
             const isDraggable = Boolean(draggableIndices?.has(index));
             const isClaimable = Boolean(claimableIndices?.has(index));
+            const isOwnerHighlighted =
+              hoveredOwnerId != null &&
+              card?.type !== 'food' &&
+              card?.ownerId === hoveredOwnerId;
             const rotationDeg = card?.rotation ?? 0;
             const faceSides = cardHasSides
               ? baseSides(card.sides, rotationDeg)
@@ -366,7 +371,7 @@ export default function GameBoard({
               >
                 {card ? (
                   <span
-                    className={`card card-on-board${card.type === 'food' ? ' card-food' : ''}${isClaimable ? ' card-claimable' : ''}`}
+                    className={`card card-on-board${card.type === 'food' ? ' card-food' : ''}${isClaimable ? ' card-claimable' : ''}${isOwnerHighlighted ? ' card-owner-highlighted' : ''}`}
                     style={
                       card.type === 'food'
                         ? {

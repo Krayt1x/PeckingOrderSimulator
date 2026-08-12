@@ -129,6 +129,7 @@ export default function PlayPage({
   const [dragSourceIndex, setDragSourceIndex] = useState(null);
   const [pileModal, setPileModal] = useState(null);
   const [actionLog, setActionLog] = useState([]);
+  const [hoveredPlayerId, setHoveredPlayerId] = useState(null);
 
   const activePlayer = players[activeIndex];
   const activeState = playerStates[activeIndex];
@@ -831,6 +832,7 @@ export default function PlayPage({
         onCardDragStart={handleCardDragStart}
         onCardDragEnd={handleCardDragEnd}
         onCardDrop={handleCardDrop}
+        hoveredOwnerId={hoveredPlayerId}
       />
 
       <StatusTray
@@ -850,6 +852,12 @@ export default function PlayPage({
               key={p.id}
               className="score-entry"
               style={{ '--player-color': p.color }}
+              onMouseEnter={() => setHoveredPlayerId(p.id)}
+              onMouseLeave={() =>
+                setHoveredPlayerId((current) =>
+                  current === p.id ? null : current,
+                )
+              }
             >
               <span className="score-name">{displayName(p)}</span>:{' '}
               <span className={`score-value${isLeader ? ' score-leader' : ''}`}>
