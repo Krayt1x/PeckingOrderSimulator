@@ -15,6 +15,7 @@ import {
 import { resolveCaptures, canPlaceCard } from '../lib/combat.js';
 import { pickCpuMove, pickCpuEat } from '../lib/cpu.js';
 import { rotateSides } from '../lib/rotation.js';
+import { playActionTick, playFoodCrunch } from '../lib/sound.js';
 
 const ACTIONS_PER_TURN = 1;
 
@@ -274,6 +275,7 @@ export default function PlayPage({
     commitBoardAfterCapture(withCard, nextBoard, captured);
     setPlayerStates(nextPlayerStates);
     spendAction();
+    playActionTick();
   }
 
   function handleMoveCard(sourceIndex, cellIndex) {
@@ -293,6 +295,7 @@ export default function PlayPage({
     commitBoardAfterCapture(withMove, nextBoard, captured);
     setPlayerStates(applyOwnerCaptureBookkeeping(playerStates, captured));
     spendAction();
+    playActionTick();
   }
 
   function handleEatBird(birdIndex) {
@@ -323,6 +326,7 @@ export default function PlayPage({
     setBoard(nextBoard);
     setPlayerStates(nextPlayerStates);
     spendAction();
+    playFoodCrunch();
   }
 
   function handleCellClick(index) {
@@ -472,6 +476,7 @@ export default function PlayPage({
         ];
         eatenFoodCards = [...eatenFoodCards, foodToCard(eatenFood)];
         remaining -= 1;
+        playFoodCrunch();
         continue;
       }
 
@@ -511,6 +516,7 @@ export default function PlayPage({
       workingHand = workingHand.filter((c) => c.id !== move.cardId);
       capturedList = [...capturedList, ...captured];
       remaining -= 1;
+      playActionTick();
     }
 
     let nextPlayerStates = playerStates.map((state, i) =>

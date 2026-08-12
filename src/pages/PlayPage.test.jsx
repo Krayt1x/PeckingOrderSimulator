@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   render,
   screen,
@@ -10,10 +10,19 @@ import {
 import PlayPage from './PlayPage.jsx';
 import { DEFAULT_DECKS, HAND_SIZE } from '../lib/decks.js';
 import { DEFAULT_FOOD } from '../lib/food.js';
+import { playActionTick, playFoodCrunch } from '../lib/sound.js';
+
+vi.mock('../lib/sound.js', () => ({
+  playActionTick: vi.fn(),
+  playFoodCrunch: vi.fn(),
+}));
 
 const BOARD_SIZE = 16;
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
 
 function neighbors(index) {
   const row = Math.floor(index / BOARD_SIZE);
@@ -244,6 +253,27 @@ describe('PlayPage', () => {
     fireEvent.click(cells[adjacentIndex]);
     expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE - 1);
     expect(isFilled(screen.getAllByRole('gridcell')[adjacentIndex])).toBe(true);
+  });
+
+  it('plays a tick sound when a card is played, using an action (#74)', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
+    const hand = screen.getByRole('list', { name: 'Your hand' });
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const adjacentIndex = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    expect(playActionTick).not.toHaveBeenCalled();
+    fireEvent.click(within(hand).getAllByRole('button')[0]);
+    fireEvent.click(cells[adjacentIndex]);
+
+    expect(playActionTick).toHaveBeenCalledTimes(1);
+    expect(playFoodCrunch).not.toHaveBeenCalled();
   });
 
   it('does not let you play a card whose only adjacency is your own card', () => {
@@ -881,6 +911,29 @@ describe('PlayPage', () => {
     // gained 1 back as the eaten Food's card — net unchanged.
     const drawPileAfter = pileCount('draw');
     expect(drawPileAfter).toBe(drawPileBefore);
+  });
+
+  it('plays a crunch sound, not a tick, when Food is claimed (#74)', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={TWO_FOOD}
+        foodShapeIds={['crumb-a', 'crumb-b']}
+      />,
+    );
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const birdSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    playThenCycleBackToPlayer1(birdSpot);
+    vi.clearAllMocks();
+
+    fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+
+    expect(playFoodCrunch).toHaveBeenCalledTimes(1);
+    expect(playActionTick).not.toHaveBeenCalled();
   });
 
   it('ends the game and announces a winner when the last Food is eaten', () => {
