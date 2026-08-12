@@ -66,6 +66,14 @@ export default function App() {
     setRoute('play');
   }
 
+  // The active game's chosen skin themes the nav bar too, not just the
+  // board and cards — but only while actually on the play screen (#99),
+  // never on Home/New Game/Manage.
+  const activeSkin =
+    route === 'play' && gameSetup?.ruleset?.allowCustomSkins
+      ? gameSetup.ruleset.skin
+      : 'alpha';
+
   function renderRoute() {
     if (route === 'manage') {
       return (
@@ -95,7 +103,7 @@ export default function App() {
   }
 
   return (
-    <div>
+    <div data-skin={activeSkin}>
       <header className="topnav">
         <div className="topnav-left">
           <a href="#" className="topnav-brand">

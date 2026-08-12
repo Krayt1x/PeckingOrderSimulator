@@ -821,14 +821,128 @@ body {
   border-radius: 999px;
 }
 
-/* Alpha Pixel Art skin (#50) — SNES-era pixel art border treatment.
-   Player border color and deck background color stay exactly as chosen
-   (--card-border / --card-bg already carry those); this skin only swaps
-   the rounded card chrome for a blocky NES-style bevel and restricts its
-   own accent colors (gold text, forest-green board) to a small
-   Zelda-inspired palette. */
+/* Alpha Pixel Art skin (#50, revised #99) — an NES-style dialog-box
+   treatment applied to the whole screen (nav, board, panels, pills,
+   buttons), not just the cards: thick black borders with a light/dark
+   inset bevel, a tiled two-tone board instead of a flat fill, and bold
+   uppercase monospace throughout. Player border color and deck background
+   color stay exactly as chosen (--card-border / --card-bg / --player-color
+   already carry those) — this skin only restyles the chrome around them.
+   The bird sprites on cards (#97) are untouched by any of this. */
+[data-skin='alpha-pixel-art'] {
+  --pixel-panel-bg: #0d1b2a;
+  --pixel-ink: #f0c419;
+  --pixel-ink-dim: #d4c68a;
+}
+
+[data-skin='alpha-pixel-art'] .topnav {
+  background: var(--pixel-panel-bg);
+  border-bottom: 4px solid #000;
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+[data-skin='alpha-pixel-art'] .topnav-links a.active {
+  color: var(--pixel-ink);
+  border-bottom-color: var(--pixel-ink);
+}
+
+[data-skin='alpha-pixel-art'] .topnav button {
+  color: var(--pixel-ink);
+}
+
 [data-skin='alpha-pixel-art'] .board-viewport {
-  background: #026012;
+  border: 4px solid #000;
+  border-radius: 0;
+  background-color: #1e6b1e;
+  background-image: conic-gradient(
+    #1e6b1e 90deg,
+    #195c19 90deg 180deg,
+    #1e6b1e 180deg 270deg,
+    #195c19 270deg
+  );
+  background-size: 32px 32px;
+}
+
+[data-skin='alpha-pixel-art'] .board-zoom-overlay {
+  background: var(--pixel-panel-bg);
+  border: 3px solid #000;
+  border-radius: 0;
+}
+
+[data-skin='alpha-pixel-art'] .board-zoom-level {
+  color: var(--pixel-ink);
+}
+
+[data-skin='alpha-pixel-art'] .board-recenter,
+[data-skin='alpha-pixel-art'] .board-zoom-btn,
+[data-skin='alpha-pixel-art'] .end-turn-btn,
+[data-skin='alpha-pixel-art'] .status-tray-info-btn {
+  background: var(--pixel-ink);
+  color: #1c1917;
+  border: 2px solid #000;
+  border-radius: 0;
+  box-shadow:
+    inset 2px 2px 0 #fff6c9,
+    inset -2px -2px 0 #8a6b00;
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+[data-skin='alpha-pixel-art'] .board-recenter:hover,
+[data-skin='alpha-pixel-art'] .board-zoom-btn:hover:not(:disabled),
+[data-skin='alpha-pixel-art'] .end-turn-btn:hover,
+[data-skin='alpha-pixel-art'] .status-tray-info-btn:hover {
+  background: #ffd94d;
+  color: #1c1917;
+}
+
+[data-skin='alpha-pixel-art'] .status-tray,
+[data-skin='alpha-pixel-art'] .game-over-banner {
+  background: var(--pixel-panel-bg);
+  border: 3px solid #000;
+  border-radius: 0;
+  box-shadow:
+    inset 2px 2px 0 rgba(255, 255, 255, 0.12),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.5);
+}
+
+[data-skin='alpha-pixel-art'] .status-tray-heading,
+[data-skin='alpha-pixel-art'] .status-tray-actions,
+[data-skin='alpha-pixel-art'] .status-tray-empty,
+[data-skin='alpha-pixel-art'] .status-tray-setting dd,
+[data-skin='alpha-pixel-art'] .game-over-banner h2 {
+  color: var(--pixel-ink);
+}
+
+[data-skin='alpha-pixel-art'] .status-tray-setting dt,
+[data-skin='alpha-pixel-art'] .game-over-banner p {
+  color: var(--pixel-ink-dim);
+}
+
+[data-skin='alpha-pixel-art'] .score-entry {
+  border-radius: 0;
+  border: 3px solid #000;
+  box-shadow:
+    inset 2px 2px 0 color-mix(in srgb, var(--player-color) 55%, white),
+    inset -2px -2px 0 color-mix(in srgb, var(--player-color) 55%, black);
+}
+
+[data-skin='alpha-pixel-art'] .score-value {
+  border-radius: 0;
+  border: 2px solid #000;
+}
+
+[data-skin='alpha-pixel-art'] .hand-header,
+[data-skin='alpha-pixel-art'] .status-tray-heading,
+[data-skin='alpha-pixel-art'] .score-board,
+[data-skin='alpha-pixel-art'] .status-tray-actions,
+[data-skin='alpha-pixel-art'] .status-tray-setting {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 800;
 }
 
 /* Empty board cells go transparent (showing the green board-viewport
