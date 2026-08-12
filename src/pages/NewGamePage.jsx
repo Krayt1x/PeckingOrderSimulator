@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-const MIN_PLAYERS = 1;
+const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 4;
-const PLAYER_COUNT_OPTIONS = [1, 2, 3, 4];
+const PLAYER_COUNT_OPTIONS = [2, 3, 4];
 
 const WIZARD_STEPS = [
   { key: 'players', label: 'Players' },

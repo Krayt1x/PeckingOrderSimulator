@@ -32,6 +32,17 @@ describe('NewGamePage', () => {
     );
   });
 
+  it('does not offer a 1-player option — the game needs an opponent', () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: '1' })).toBeNull();
+  });
+
   it('picking a player count advances to the Rosters step with that many rows', async () => {
     render(
       <NewGamePage
