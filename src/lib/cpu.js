@@ -59,6 +59,36 @@ function wouldWinFoodMajority(board, boardSize, ownerId, cellIndex) {
   });
 }
 
+// Whether placing the CPU's bird at cellIndex would break an opponent's
+// current strict majority lead on an adjacent Food tile — the crux of
+// actually contesting Food rather than just camping near uncontested
+// tiles (#91).
+function contestsFoodMajority(board, boardSize, ownerId, cellIndex) {
+  const neighbors = getNeighbors(cellIndex, boardSize);
+  return Object.values(neighbors).some((foodIndex) => {
+    if (foodIndex === null || board[foodIndex]?.type !== 'food') return false;
+
+    const counts = {};
+    Object.values(getNeighbors(foodIndex, boardSize)).forEach((birdIndex) => {
+      if (birdIndex === null || birdIndex === cellIndex) return;
+      const bird = board[birdIndex];
+      if (!bird || bird.type === 'food') return;
+      counts[bird.ownerId] = (counts[bird.ownerId] ?? 0) + 1;
+    });
+
+    const mineBefore = counts[ownerId] ?? 0;
+    const maxOpponent = Object.entries(counts).reduce(
+      (max, [owner, count]) => (owner === ownerId ? max : Math.max(max, count)),
+      0,
+    );
+    return (
+      maxOpponent > 0 &&
+      mineBefore < maxOpponent &&
+      mineBefore + 1 >= maxOpponent
+    );
+  });
+}
+
 // Narrows the legal options down to whichever subset best fits the CPU's
 // strategy, falling back to the full set if that subset is empty:
 //  - aggressive: always makes whatever progress toward Food is available
@@ -67,8 +97,12 @@ function wouldWinFoodMajority(board, boardSize, ownerId, cellIndex) {
 //    uses a capture as a tiebreaker among the closest options, since
 //    winning still comes from eating Food and a fight that goes nowhere
 //    isn't good enough on its own.
-//  - defensive: prefers a placement next to Food, claiming ground that
-//    denies opponents majority control of it.
+//  - defensive: above all else, contests a Food tile an opponent
+//    currently leads on — a placement that breaks their strict majority,
+//    with a capture as tiebreaker. Short of that it closes the distance
+//    to Food like aggressive does, preferring a capture that denies an
+//    opponent's vote among the closest options, instead of stalling out
+//    fully random the moment no cell is immediately Food-adjacent.
 //  - ruthless: the sharpest of the three. Above all else it takes a
 //    placement that immediately wins majority control of a Food tile —
 //    the actual win condition, worth more than any single fight — then
@@ -84,8 +118,15 @@ function narrowByStrategy(options, strategy) {
     return closestCapturing.length > 0 ? closestCapturing : closest;
   }
   if (strategy === 'defensive') {
-    const foodAdjacent = options.filter((o) => o.adjacentToFood);
-    if (foodAdjacent.length > 0) return foodAdjacent;
+    const contesting = options.filter((o) => o.contestsFood);
+    if (contesting.length > 0) {
+      const contestingCapturing = contesting.filter((o) => o.captures);
+      return contestingCapturing.length > 0 ? contestingCapturing : contesting;
+    }
+    const minDistance = Math.min(...options.map((o) => o.distanceToFood));
+    const closest = options.filter((o) => o.distanceToFood === minDistance);
+    const denying = closest.filter((o) => o.deniesFoodVote);
+    return denying.length > 0 ? denying : closest;
   }
   if (strategy === 'ruthless') {
     const winning = options.filter((o) => o.winsFoodMajority);
@@ -155,6 +196,12 @@ export function pickCpuMove(
         ),
         deniesFoodVote: captured.some((c) =>
           isAdjacentToFood(board, c.index, boardSize),
+        ),
+        contestsFood: contestsFoodMajority(
+          board,
+          boardSize,
+          ownerId,
+          cellIndex,
         ),
       });
     });

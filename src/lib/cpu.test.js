@@ -233,6 +233,62 @@ describe('pickCpuMove', () => {
 
     expect([45, 54, 56, 65]).toContain(move.cellIndex);
   });
+
+  it('contests an opponent’s sole Food lead over anything else, when defensive (#91)', () => {
+    const card = { id: 'c1', sides: SIDES };
+    const board = Array(100).fill(null);
+    board[55] = { type: 'food', sides: SIDES }; // legal: 54, 56, 65 (45 taken)
+    board[45] = {
+      type: 'bird',
+      ownerId: 'p2',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+    // A distant, unrelated opponent bird opens far-away legal cells too.
+    board[20] = {
+      type: 'bird',
+      ownerId: 'p2',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+
+    const move = pickCpuMove([card], board, BOARD_SIZE, 'p1', 'defensive');
+
+    // 54, 56, and 65 each tie the vote 1-1, breaking p2's sole lead —
+    // the far cells opened by the distant bird don't contest anything.
+    expect([54, 56, 65]).toContain(move.cellIndex);
+    expect([10, 19, 21, 30]).not.toContain(move.cellIndex);
+  });
+
+  it('closes distance to Food instead of going fully random, when defensive and nothing is adjacent', () => {
+    // Strong enough to legally play against the weak opponent birds below
+    // (the default ruleset requires strictly beating an adjacent card).
+    const card = { id: 'c1', sides: { top: 9, right: 9, bottom: 9, left: 9 } };
+    const board = Array(100).fill(null);
+    board[55] = { type: 'food', sides: SIDES };
+    // Food's own neighbors are all taken (by the CPU's own birds), so no
+    // directly-adjacent cell is playable.
+    board[45] = { type: 'bird', ownerId: 'p1', sides: SIDES };
+    board[54] = { type: 'bird', ownerId: 'p1', sides: SIDES };
+    board[56] = { type: 'bird', ownerId: 'p1', sides: SIDES };
+    board[65] = { type: 'bird', ownerId: 'p1', sides: SIDES };
+    // A weak opponent bird two steps from Food opens closer legal cells...
+    board[35] = {
+      type: 'bird',
+      ownerId: 'p2',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+    // ...and a second, far weaker opponent bird opens only much farther
+    // legal cells.
+    board[90] = {
+      type: 'bird',
+      ownerId: 'p2',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+
+    const move = pickCpuMove([card], board, BOARD_SIZE, 'p1', 'defensive');
+
+    expect([34, 36]).toContain(move.cellIndex);
+    expect([25, 80, 91]).not.toContain(move.cellIndex);
+  });
 });
 
 describe('pickCpuEat', () => {
