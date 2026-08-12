@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { baseSides } from '../lib/rotation.js';
 
 const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 
@@ -337,6 +338,10 @@ export default function GameBoard({
 
             const isDraggable = Boolean(draggableIndices?.has(index));
             const isClaimable = Boolean(claimableIndices?.has(index));
+            const rotationDeg = card?.rotation ?? 0;
+            const faceSides = cardHasSides
+              ? baseSides(card.sides, rotationDeg)
+              : null;
 
             return (
               <button
@@ -377,27 +382,36 @@ export default function GameBoard({
                     }
                     title={card.name}
                   >
-                    {cardHasSides ? (
-                      <span className="card-sides">
-                        {SIDE_KEYS.map((side) => (
-                          <span
-                            key={side}
-                            className={`card-side card-side-${side}`}
-                            style={{ fontSize: sideSize }}
-                          >
-                            {card.sides[side]}
-                          </span>
-                        ))}
-                      </span>
-                    ) : null}
-                    {cardShowsName ? (
-                      <span
-                        className="card-name"
-                        style={{ fontSize: nameSize }}
-                      >
-                        {card.name}
-                      </span>
-                    ) : null}
+                    <span
+                      className="card-face"
+                      style={
+                        rotationDeg
+                          ? { transform: `rotate(${rotationDeg}deg)` }
+                          : undefined
+                      }
+                    >
+                      {cardHasSides ? (
+                        <span className="card-sides">
+                          {SIDE_KEYS.map((side) => (
+                            <span
+                              key={side}
+                              className={`card-side card-side-${side}`}
+                              style={{ fontSize: sideSize }}
+                            >
+                              {faceSides[side]}
+                            </span>
+                          ))}
+                        </span>
+                      ) : null}
+                      {cardShowsName ? (
+                        <span
+                          className="card-name"
+                          style={{ fontSize: nameSize }}
+                        >
+                          {card.name}
+                        </span>
+                      ) : null}
+                    </span>
                   </span>
                 ) : null}
               </button>

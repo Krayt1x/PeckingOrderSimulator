@@ -823,7 +823,7 @@ describe('PlayPage', () => {
     expect(face.style.transform).toBe('rotate(90deg)');
   });
 
-  it('plays a rotated card onto the board with its side values actually spun', () => {
+  it('carries a rotated card’s visual spin onto the board once played (#92)', () => {
     render(
       <PlayPage
         players={twoPlayers()}
@@ -855,17 +855,17 @@ describe('PlayPage', () => {
     fireEvent.click(screen.getAllByRole('gridcell')[adjacentIndex]);
 
     const placedCell = screen.getAllByRole('gridcell')[adjacentIndex];
+    const placedFace = placedCell.querySelector('.card-face');
+    expect(placedFace.style.transform).toBe('rotate(90deg)');
+    // The printed numbers stay at their fixed (rotation-0) slots on the
+    // board too — the CSS transform is what turns the whole face, not a
+    // second data-level shuffle stacked on top of it.
     expect({
       top: placedCell.querySelector('.card-side-top').textContent,
       right: placedCell.querySelector('.card-side-right').textContent,
       bottom: placedCell.querySelector('.card-side-bottom').textContent,
       left: placedCell.querySelector('.card-side-left').textContent,
-    }).toEqual({
-      top: before.left,
-      right: before.top,
-      bottom: before.right,
-      left: before.bottom,
-    });
+    }).toEqual(before);
   });
 
   it('does not move a card dropped on a non-adjacent or occupied cell', () => {
