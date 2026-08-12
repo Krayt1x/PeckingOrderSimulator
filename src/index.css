@@ -384,9 +384,12 @@ body {
   color: var(--text-muted);
 }
 
+/* Every player fits on one row regardless of count or screen width (#88)
+   — pills shrink evenly rather than wrapping, and each player's name
+   truncates before the pill would. */
 .score-board {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.6rem;
   list-style: none;
   margin: 0.75rem 0 0;
@@ -404,10 +407,16 @@ body {
   color: #fff;
   padding: 0.3rem 0.5rem 0.3rem 0.7rem;
   border-radius: 999px;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .score-name {
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .score-value {
@@ -419,6 +428,7 @@ body {
   padding: 0 0.35rem;
   border-radius: 999px;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 /* Whoever currently has the highest score gets a gold circle behind
