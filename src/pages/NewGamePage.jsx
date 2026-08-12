@@ -126,10 +126,29 @@ function defaultPlayer(index, decks, usedColors = []) {
     id: `player-${index}`,
     name: `Player ${index + 1}`,
     isCPU: false,
-    cpuStrategy: 'aggressive',
-    deckId: decks[index % decks.length]?.id,
+    cpuStrategy: 'random',
+    deckId: 'random',
     color: randomPlayerColor(usedColors),
   };
+}
+
+// Resolves any "random" deck/CPU-strategy picks to a concrete choice once,
+// right before the game starts — not re-rolled every render, and not left
+// as a literal "random" value the rest of the app would have to special-case.
+function resolveRandomPlayerSettings(playerList, decks) {
+  return playerList.map((p) => ({
+    ...p,
+    deckId:
+      p.deckId === 'random'
+        ? decks[Math.floor(Math.random() * decks.length)]?.id
+        : p.deckId,
+    cpuStrategy:
+      p.isCPU && p.cpuStrategy === 'random'
+        ? Math.random() < 0.5
+          ? 'aggressive'
+          : 'defensive'
+        : p.cpuStrategy,
+  }));
 }
 
 export default function NewGamePage({ decks, food, onStart }) {
@@ -227,7 +246,7 @@ export default function NewGamePage({ decks, food, onStart }) {
 
   function handleStart() {
     onStart({
-      players: orderedPlayers(),
+      players: resolveRandomPlayerSettings(orderedPlayers(), decks),
       foodId: food.id,
       foodShapeIds: selectedFoodShapeIds,
       ruleset,
@@ -352,6 +371,7 @@ export default function NewGamePage({ decks, food, onStart }) {
                   updatePlayer(i, { deckId: event.target.value })
                 }
               >
+                <option value="random">Random</option>
                 {decks.map((deck) => (
                   <option key={deck.id} value={deck.id}>
                     {deck.name}
@@ -360,12 +380,13 @@ export default function NewGamePage({ decks, food, onStart }) {
               </select>
               {player.isCPU ? (
                 <select
-                  value={player.cpuStrategy || 'aggressive'}
+                  value={player.cpuStrategy || 'random'}
                   aria-label={`${player.name} CPU strategy`}
                   onChange={(event) =>
                     updatePlayer(i, { cpuStrategy: event.target.value })
                   }
                 >
+                  <option value="random">Random</option>
                   <option value="aggressive">Aggressive</option>
                   <option value="defensive">Defensive</option>
                 </select>

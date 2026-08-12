@@ -70,7 +70,7 @@ describe('NewGamePage', () => {
     );
   });
 
-  it('shows a CPU strategy picker only once a player is marked as CPU, defaulting to Aggressive', () => {
+  it('shows a CPU strategy picker only once a player is marked as CPU, defaulting to Random', () => {
     const onStart = vi.fn();
     render(
       <NewGamePage
@@ -87,9 +87,7 @@ describe('NewGamePage', () => {
 
     fireEvent.click(screen.getByLabelText('Player 2 is CPU'));
 
-    expect(screen.getByLabelText('Player 2 CPU strategy').value).toBe(
-      'aggressive',
-    );
+    expect(screen.getByLabelText('Player 2 CPU strategy').value).toBe('random');
 
     fireEvent.change(screen.getByLabelText('Player 2 CPU strategy'), {
       target: { value: 'defensive' },
