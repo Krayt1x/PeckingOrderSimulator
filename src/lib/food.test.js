@@ -180,7 +180,7 @@ describe('getEligibleFoodIndices', () => {
     expect(getEligibleFoodIndices(board, BOARD_SIZE, 'p1')).toEqual([]);
   });
 
-  it('is eligible on a tie when the Equal Value Playable ruleset is on', () => {
+  it('stays ineligible on a tie regardless of any extra arguments passed', () => {
     const board = Array(100).fill(null);
     board[55] = {
       type: 'food',
@@ -189,10 +189,9 @@ describe('getEligibleFoodIndices', () => {
     board[45] = bird('p1');
     board[56] = bird('p2');
 
-    expect(getEligibleFoodIndices(board, BOARD_SIZE, 'p1', true)).toEqual([55]);
-    // A player with zero adjacent birds still never qualifies, even tied
-    // at zero.
-    expect(getEligibleFoodIndices(board, BOARD_SIZE, 'p3', true)).toEqual([]);
+    // The Equal Value Playable ruleset only relaxes card placement — it
+    // never affects Food-eating majority control (#82).
+    expect(getEligibleFoodIndices(board, BOARD_SIZE, 'p1', true)).toEqual([]);
   });
 
   it('evaluates each food tile of a multi-cell piece independently', () => {

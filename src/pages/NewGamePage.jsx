@@ -37,7 +37,7 @@ const RULESET_OPTIONS = [
     key: 'allowEqualValuePlay',
     label: 'Equal Value Playable',
     description:
-      'A card may be placed against an opponent card with the same facing value — normally you can only play into a matchup you would win outright. Also lets you eat Food on a tied bird count.',
+      'A card may be placed against an opponent card with the same facing value — normally you can only play into a matchup you would win outright. Eating Food still always requires strict majority control, tied count or not.',
   },
 ];
 

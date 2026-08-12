@@ -385,12 +385,7 @@ export default function PlayPage({
       return;
     }
 
-    const eligible = getEligibleFoodIndices(
-      board,
-      BOARD_SIZE,
-      activePlayer.id,
-      ruleset.allowEqualValuePlay,
-    );
+    const eligible = getEligibleFoodIndices(board, BOARD_SIZE, activePlayer.id);
     if (eligible.includes(index)) {
       setEatFoodIndex(index);
     }
@@ -479,12 +474,7 @@ export default function PlayPage({
     let remaining = actionsRemaining;
 
     while (remaining > 0) {
-      const eatChoice = pickCpuEat(
-        workingBoard,
-        BOARD_SIZE,
-        activePlayer.id,
-        ruleset.allowEqualValuePlay,
-      );
+      const eatChoice = pickCpuEat(workingBoard, BOARD_SIZE, activePlayer.id);
       if (eatChoice) {
         const eatenBird = workingBoard[eatChoice.birdIndex];
         const eatenFood = workingBoard[eatChoice.foodIndex];
@@ -648,12 +638,7 @@ export default function PlayPage({
 
     return {
       highlighted: new Set(
-        getEligibleFoodIndices(
-          board,
-          BOARD_SIZE,
-          activePlayer.id,
-          ruleset.allowEqualValuePlay,
-        ),
+        getEligibleFoodIndices(board, BOARD_SIZE, activePlayer.id),
       ),
       selected: null,
     };

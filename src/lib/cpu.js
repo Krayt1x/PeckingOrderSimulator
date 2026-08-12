@@ -93,13 +93,8 @@ export function pickCpuMove(
 // and which of its own adjacent birds to sacrifice for it — only the
 // CPU's own birds are ever legal choices. Returns null if the CPU isn't
 // eligible to eat any Food right now.
-export function pickCpuEat(board, boardSize, ownerId, allowEqual = false) {
-  const eligible = getEligibleFoodIndices(
-    board,
-    boardSize,
-    ownerId,
-    allowEqual,
-  );
+export function pickCpuEat(board, boardSize, ownerId) {
+  const eligible = getEligibleFoodIndices(board, boardSize, ownerId);
   if (eligible.length === 0) return null;
 
   const foodIndex = eligible[Math.floor(Math.random() * eligible.length)];
