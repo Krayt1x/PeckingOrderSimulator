@@ -668,6 +668,13 @@ body {
   word-break: normal;
 }
 
+/* A small procedurally-generated identicon, unique to each bird's name,
+   sitting above the printed name on both hand and board cards. */
+.pixel-art-icon {
+  flex-shrink: 0;
+  shape-rendering: crispEdges;
+}
+
 /* A food-derived card in hand can be discarded directly via this badge,
    instead of being played onto the board. */
 .use-food-badge {
