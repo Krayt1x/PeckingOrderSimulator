@@ -1,5 +1,11 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, cleanup, within } from '@testing-library/react';
+import {
+  render,
+  screen,
+  cleanup,
+  fireEvent,
+  within,
+} from '@testing-library/react';
 import StatusTray from './StatusTray.jsx';
 import { DEFAULT_FOOD } from '../lib/food.js';
 import { DEFAULT_RULESET } from '../lib/rulesets.js';
@@ -12,8 +18,12 @@ const players = [
 ];
 const foodShapeIds = DEFAULT_FOOD.shapes.map((s) => s.id);
 
+function openSettings() {
+  fireEvent.click(screen.getByRole('button', { name: 'Game settings' }));
+}
+
 describe('StatusTray', () => {
-  it('lists player names, marking CPU players', () => {
+  it('keeps the game settings hidden behind an info button until clicked (#87)', () => {
     render(
       <StatusTray
         players={players}
@@ -24,7 +34,30 @@ describe('StatusTray', () => {
       />,
     );
 
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByText('Ginger, Rocky (CPU)')).toBeNull();
+
+    openSettings();
+
+    expect(screen.getByRole('dialog', { name: 'Game Settings' })).toBeDefined();
     expect(screen.getByText('Ginger, Rocky (CPU)')).toBeDefined();
+  });
+
+  it('closes the settings modal via its Close button', () => {
+    render(
+      <StatusTray
+        players={players}
+        food={DEFAULT_FOOD}
+        foodShapeIds={foodShapeIds}
+        ruleset={DEFAULT_RULESET}
+        actionLog={[]}
+      />,
+    );
+
+    openSettings();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('shows the selected Food shapes by name', () => {
@@ -37,6 +70,7 @@ describe('StatusTray', () => {
         actionLog={[]}
       />,
     );
+    openSettings();
 
     expect(screen.getByText('Chip')).toBeDefined();
   });
@@ -51,6 +85,7 @@ describe('StatusTray', () => {
         actionLog={[]}
       />,
     );
+    openSettings();
 
     const rulesetRow = screen.getByText('Ruleset').closest('div');
     expect(within(rulesetRow).getByText('None')).toBeDefined();
@@ -71,6 +106,7 @@ describe('StatusTray', () => {
         actionLog={[]}
       />,
     );
+    openSettings();
 
     const rulesetRow = screen.getByText('Ruleset').closest('div');
     expect(within(rulesetRow).getByText(/Allow Moving/)).toBeDefined();

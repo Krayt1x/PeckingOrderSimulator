@@ -1719,7 +1719,7 @@ describe('PlayPage', () => {
     ).toBeDefined();
   });
 
-  it('shows the game settings summary in the status tray (#70)', () => {
+  it('shows the game settings summary behind the status tray’s info button (#70, #87)', () => {
     render(
       <PlayPage
         players={twoPlayers()}
@@ -1729,7 +1729,9 @@ describe('PlayPage', () => {
       />,
     );
 
-    expect(screen.getByText('Game Settings')).toBeDefined();
+    expect(screen.queryByText('Player 1, Player 2')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Game settings' }));
+
     expect(screen.getByText('Player 1, Player 2')).toBeDefined();
     expect(screen.getByText('Allow Moving')).toBeDefined();
   });
@@ -1742,6 +1744,7 @@ describe('PlayPage', () => {
         food={DEFAULT_FOOD}
       />,
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Game settings' }));
 
     const settingRow = screen.getByText('Ruleset').closest('div');
     expect(within(settingRow).getByText('None')).toBeDefined();

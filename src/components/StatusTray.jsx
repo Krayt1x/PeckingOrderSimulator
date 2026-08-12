@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { RULESET_OPTIONS, SKIN_OPTIONS } from '../lib/rulesets.js';
 
 // Summarizes the game's settings the same way the New Game wizard's
@@ -40,23 +41,23 @@ export default function StatusTray({
   ruleset,
   actionLog,
 }) {
+  const [showSettings, setShowSettings] = useState(false);
   const settings = summarizeSettings({ players, food, foodShapeIds, ruleset });
 
   return (
     <div className="status-tray">
       <div className="status-tray-section">
-        <h3 className="status-tray-heading">Game Settings</h3>
-        <dl className="status-tray-settings">
-          {settings.map(({ label, value }) => (
-            <div key={label} className="status-tray-setting">
-              <dt>{label}</dt>
-              <dd>{value}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-      <div className="status-tray-section">
-        <h3 className="status-tray-heading">Recent Actions</h3>
+        <div className="status-tray-header">
+          <h3 className="status-tray-heading">Recent Actions</h3>
+          <button
+            type="button"
+            className="status-tray-info-btn"
+            aria-label="Game settings"
+            onClick={() => setShowSettings(true)}
+          >
+            i
+          </button>
+        </div>
         {actionLog.length === 0 ? (
           <p className="status-tray-empty">No actions played yet.</p>
         ) : (
@@ -67,6 +68,37 @@ export default function StatusTray({
           </ol>
         )}
       </div>
+      {showSettings ? (
+        <div
+          className="color-modal-backdrop"
+          onClick={() => setShowSettings(false)}
+        >
+          <div
+            className="pile-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Game Settings"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3>Game Settings</h3>
+            <dl className="status-tray-settings">
+              {settings.map(({ label, value }) => (
+                <div key={label} className="status-tray-setting">
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+            <button
+              type="button"
+              className="board-recenter"
+              onClick={() => setShowSettings(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
