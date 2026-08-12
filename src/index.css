@@ -289,6 +289,73 @@ body {
   color: var(--text-secondary);
 }
 
+/* Sits directly under the board — the game's settings for reference, and
+   a running log of the last few actions played (#70). */
+.status-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-container);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.status-tray-section {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.status-tray-heading {
+  margin: 0 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.status-tray-settings {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.status-tray-setting {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.15rem 0;
+}
+
+.status-tray-setting dt {
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.status-tray-setting dd {
+  margin: 0;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.status-tray-actions {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.status-tray-actions li {
+  padding: 0.1rem 0;
+}
+
+.status-tray-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
 .score-board {
   display: flex;
   flex-wrap: wrap;

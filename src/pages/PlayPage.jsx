@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import GameBoard, { BOARD_SIZE } from '../components/GameBoard.jsx';
 import Hand from '../components/Hand.jsx';
+import StatusTray from '../components/StatusTray.jsx';
 import { HAND_SIZE, buildDrawPile, shuffle } from '../lib/decks.js';
 import {
   placeFoodShapes,
@@ -16,6 +17,7 @@ import { resolveCaptures, canPlaceCard } from '../lib/combat.js';
 import { pickCpuMove, pickCpuEat } from '../lib/cpu.js';
 import { rotateSides } from '../lib/rotation.js';
 import { playActionTick, playFoodCrunch } from '../lib/sound.js';
+import { DEFAULT_RULESET } from '../lib/rulesets.js';
 
 const ACTIONS_PER_TURN = 1;
 
@@ -26,17 +28,6 @@ const PILE_LABELS = {
 };
 const CAPTURE_REMOVAL_DELAY_MS = 250;
 
-// Matches NewGamePage's DEFAULT_RULESET — used when PlayPage is rendered
-// without an explicit ruleset (e.g. directly in tests).
-const DEFAULT_RULESET = {
-  allowMoving: false,
-  allowReturnToHand: false,
-  allowCardRotation: false,
-  allowEqualValuePlay: false,
-  allowCustomSkins: false,
-  skin: 'alpha',
-};
-
 // CPU players carry their strategy as a single-letter suffix wherever
 // their name is shown, so it's visible at a glance during play.
 const STRATEGY_SUFFIX = { defensive: 'D', ruthless: 'R', aggressive: 'A' };
@@ -46,6 +37,10 @@ function displayName(player) {
 }
 
 let nextFoodCardId = 1;
+let nextLogId = 1;
+
+// The last 3 entries shown in the status tray — most recent first.
+const ACTION_LOG_LIMIT = 3;
 
 // Food is the objective the game is anchored around, placed as close to
 // the board's center as the chosen shapes allow.
@@ -129,6 +124,7 @@ export default function PlayPage({
   const [eatFoodIndex, setEatFoodIndex] = useState(null);
   const [dragSourceIndex, setDragSourceIndex] = useState(null);
   const [pileModal, setPileModal] = useState(null);
+  const [actionLog, setActionLog] = useState([]);
 
   const activePlayer = players[activeIndex];
   const activeState = playerStates[activeIndex];
@@ -144,6 +140,14 @@ export default function PlayPage({
     setSelectedCardId(null);
     setEatFoodIndex(null);
     setDragSourceIndex(null);
+  }
+
+  // Records an entry in the status tray's action log, most recent first,
+  // keeping only the last ACTION_LOG_LIMIT.
+  function pushLog(text) {
+    setActionLog((prev) =>
+      [{ id: nextLogId++, text }, ...prev].slice(0, ACTION_LOG_LIMIT),
+    );
   }
 
   // `bonus` is true when the action came from playing a Food-derived
@@ -217,6 +221,9 @@ export default function PlayPage({
       ),
     );
     spendAction(true);
+    pushLog(
+      `${displayName(activePlayer)} used ${card.name} for a bonus action`,
+    );
   }
 
   // Spins a selected hand card's side values 90° clockwise or
@@ -276,6 +283,13 @@ export default function PlayPage({
     setPlayerStates(nextPlayerStates);
     spendAction();
     playActionTick();
+    pushLog(
+      `${displayName(activePlayer)} played ${card.name}${
+        captured.length > 0
+          ? `, capturing ${captured.length} card${captured.length === 1 ? '' : 's'}`
+          : ''
+      }`,
+    );
   }
 
   function handleMoveCard(sourceIndex, cellIndex) {
@@ -296,6 +310,13 @@ export default function PlayPage({
     setPlayerStates(applyOwnerCaptureBookkeeping(playerStates, captured));
     spendAction();
     playActionTick();
+    pushLog(
+      `${displayName(activePlayer)} moved ${card.name}${
+        captured.length > 0
+          ? `, capturing ${captured.length} card${captured.length === 1 ? '' : 's'}`
+          : ''
+      }`,
+    );
   }
 
   function handleEatBird(birdIndex) {
@@ -327,6 +348,7 @@ export default function PlayPage({
     setPlayerStates(nextPlayerStates);
     spendAction();
     playFoodCrunch();
+    pushLog(`${displayName(activePlayer)} claimed ${eatenFood.name}`);
   }
 
   function handleCellClick(index) {
@@ -440,6 +462,9 @@ export default function PlayPage({
       ),
     );
     clearSelections();
+    pushLog(
+      `${displayName(activePlayer)} returned ${card.name} to the discard pile`,
+    );
   }
 
   function handleEndTurn() {
@@ -459,6 +484,7 @@ export default function PlayPage({
     let eatenFoodCards = [];
     let usedFoodCards = [];
     let remaining = actionsRemaining;
+    const newLogEntries = [];
 
     while (remaining > 0) {
       const eatChoice = pickCpuEat(workingBoard, BOARD_SIZE, activePlayer.id);
@@ -477,6 +503,9 @@ export default function PlayPage({
         eatenFoodCards = [...eatenFoodCards, foodToCard(eatenFood)];
         remaining -= 1;
         playFoodCrunch();
+        newLogEntries.push(
+          `${displayName(activePlayer)} claimed ${eatenFood.name}`,
+        );
         continue;
       }
 
@@ -488,6 +517,9 @@ export default function PlayPage({
         workingHand = workingHand.filter((c) => c.id !== foodDerivedCard.id);
         usedFoodCards = [...usedFoodCards, foodDerivedCard];
         remaining += 1;
+        newLogEntries.push(
+          `${displayName(activePlayer)} used ${foodDerivedCard.name} for a bonus action`,
+        );
         continue;
       }
 
@@ -517,6 +549,22 @@ export default function PlayPage({
       capturedList = [...capturedList, ...captured];
       remaining -= 1;
       playActionTick();
+      newLogEntries.push(
+        `${displayName(activePlayer)} played ${card.name}${
+          captured.length > 0
+            ? `, capturing ${captured.length} card${captured.length === 1 ? '' : 's'}`
+            : ''
+        }`,
+      );
+    }
+
+    if (newLogEntries.length > 0) {
+      // newLogEntries is chronological (oldest first) — reverse so the
+      // most recent CPU action ends up first, ahead of the older ones.
+      const entries = [...newLogEntries]
+        .reverse()
+        .map((text) => ({ id: nextLogId++, text }));
+      setActionLog((prev) => [...entries, ...prev].slice(0, ACTION_LOG_LIMIT));
     }
 
     let nextPlayerStates = playerStates.map((state, i) =>
@@ -692,6 +740,14 @@ export default function PlayPage({
         onCardDragStart={handleCardDragStart}
         onCardDragEnd={handleCardDragEnd}
         onCardDrop={handleCardDrop}
+      />
+
+      <StatusTray
+        players={players}
+        food={food}
+        foodShapeIds={shapeIds}
+        ruleset={ruleset}
+        actionLog={actionLog}
       />
 
       <ul className="score-board">

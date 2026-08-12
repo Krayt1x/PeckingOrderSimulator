@@ -1,4 +1,11 @@
 import { useState } from 'react';
+import {
+  RULESET_OPTIONS,
+  SKIN_OPTIONS,
+  DEFAULT_RULESET,
+} from '../lib/rulesets.js';
+
+export { RULESET_OPTIONS, SKIN_OPTIONS, DEFAULT_RULESET };
 
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 4;
@@ -11,50 +18,6 @@ const WIZARD_STEPS = [
   { key: 'ruleset', label: 'Ruleset' },
   { key: 'review', label: 'Review' },
 ];
-
-// Each entry becomes a checkbox on the Ruleset step — add new rules here
-// rather than hand-rolling more JSX.
-const RULESET_OPTIONS = [
-  {
-    key: 'allowMoving',
-    label: 'Allow Moving',
-    description:
-      'A player may move a bird of theirs to another space during their turn. Costs 1 action.',
-  },
-  {
-    key: 'allowReturnToHand',
-    label: 'Allow Return to Hand',
-    description:
-      'A player may move a bird of theirs to their discard pile during their turn. Costs 0 actions.',
-  },
-  {
-    key: 'allowCardRotation',
-    label: 'Allow Card Rotation',
-    description:
-      'Selecting a card in hand shows rotate arrows — spin its sides clockwise or anti-clockwise before playing it.',
-  },
-  {
-    key: 'allowEqualValuePlay',
-    label: 'Equal Value Playable',
-    description:
-      'A card may be placed against an opponent card with the same facing value — normally you can only play into a matchup you would win outright. Eating Food still always requires strict majority control, tied count or not.',
-  },
-];
-
-// Every available visual skin — add new ones here as they're built.
-export const SKIN_OPTIONS = [
-  { id: 'alpha', name: 'Alpha Skin' },
-  { id: 'alpha-pixel-art', name: 'Alpha Pixel Art' },
-];
-
-export const DEFAULT_RULESET = {
-  allowMoving: false,
-  allowReturnToHand: false,
-  allowCardRotation: false,
-  allowEqualValuePlay: false,
-  allowCustomSkins: false,
-  skin: 'alpha',
-};
 
 // A player's color borders their cards on the board, independent of which
 // deck (and therefore card background color) they're playing. Laid out as

@@ -1718,4 +1718,57 @@ describe('PlayPage', () => {
       screen.getByRole('button', { name: 'Discard pile: 0 cards' }),
     ).toBeDefined();
   });
+
+  it('shows the game settings summary in the status tray (#70)', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        ruleset={{ allowMoving: true, allowReturnToHand: false }}
+      />,
+    );
+
+    expect(screen.getByText('Game Settings')).toBeDefined();
+    expect(screen.getByText('Player 1, Player 2')).toBeDefined();
+    expect(screen.getByText('Allow Moving')).toBeDefined();
+  });
+
+  it('shows "None" for Ruleset when no rules are enabled', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
+
+    const settingRow = screen.getByText('Ruleset').closest('div');
+    expect(within(settingRow).getByText('None')).toBeDefined();
+  });
+
+  it('logs the last 3 actions played, most recent first (#70)', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
+
+    expect(screen.getByText('No actions played yet.')).toBeDefined();
+
+    const hand = screen.getByRole('list', { name: 'Your hand' });
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const adjacentIndex = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    fireEvent.click(within(hand).getAllByRole('button')[0]);
+    fireEvent.click(cells[adjacentIndex]);
+
+    const recentActions = screen.getByRole('list', { name: 'Recent actions' });
+    const entries = within(recentActions).getAllByRole('listitem');
+    expect(entries).toHaveLength(1);
+    expect(entries[0].textContent).toMatch(/^Player 1 played/);
+  });
 });
