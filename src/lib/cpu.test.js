@@ -4,6 +4,11 @@ import { pickCpuMove, pickCpuEat } from './cpu.js';
 const BOARD_SIZE = 10;
 
 const SIDES = { top: 1, right: 1, bottom: 1, left: 1 };
+// Food weaker than a plain SIDES card on every edge, so a SIDES-strength
+// card can always legally play next to it — Food now blocks placement the
+// same way an opponent card would (#98), and most of these tests aren't
+// about that value comparison.
+const FOOD_SIDES = { top: 0, right: 0, bottom: 0, left: 0 };
 
 describe('pickCpuMove', () => {
   it('returns null when the hand is empty', () => {
@@ -22,7 +27,7 @@ describe('pickCpuMove', () => {
       { id: 'c2', sides: SIDES },
     ];
     const board = Array(100).fill(null);
-    board[55] = { type: 'food', sides: SIDES }; // row 5, col 5
+    board[55] = { type: 'food', sides: FOOD_SIDES }; // row 5, col 5
 
     const move = pickCpuMove(hand, board, BOARD_SIZE, 'p1');
 
@@ -35,7 +40,7 @@ describe('pickCpuMove', () => {
   it('never offers a Food-derived card as a move — those are only discarded via Use Food', () => {
     const hand = [{ id: 'c1', sides: SIDES, fromFood: true }];
     const board = Array(100).fill(null);
-    board[55] = { type: 'food', sides: SIDES };
+    board[55] = { type: 'food', sides: FOOD_SIDES };
 
     expect(pickCpuMove(hand, board, BOARD_SIZE, 'p1')).toBeNull();
   });
@@ -76,7 +81,7 @@ describe('pickCpuMove', () => {
     // weak opponent bird at 57 adds its own neighbors (47, 56, 58, 67) as
     // legal cells too, and placing the strong card on any of those
     // captures it — 56 is the only cell in both sets.
-    board[55] = { type: 'food', sides: SIDES };
+    board[55] = { type: 'food', sides: FOOD_SIDES };
     board[57] = {
       type: 'bird',
       ownerId: 'p2',
@@ -103,7 +108,7 @@ describe('pickCpuMove', () => {
     const board = Array(100).fill(null);
     // Food's neighbors: 45, 54, 56, 65. A weak opponent bird at 57 makes
     // 56 both a capture AND Food-adjacent.
-    board[55] = { type: 'food', sides: SIDES };
+    board[55] = { type: 'food', sides: FOOD_SIDES };
     board[57] = {
       type: 'bird',
       ownerId: 'p2',
@@ -133,7 +138,7 @@ describe('pickCpuMove', () => {
   it('falls back to any legal option when aggressive has nothing to capture', () => {
     const hand = [{ id: 'c1', sides: SIDES }];
     const board = Array(100).fill(null);
-    board[55] = { type: 'food', sides: SIDES };
+    board[55] = { type: 'food', sides: FOOD_SIDES };
 
     const move = pickCpuMove(hand, board, BOARD_SIZE, 'p1', 'aggressive');
 
@@ -149,7 +154,7 @@ describe('pickCpuMove', () => {
     // Food's own neighbors (45, 54, 56, 65) are legal but don't capture
     // anything. A weak opponent bird far away at 20 opens up capturing
     // options (10, 21, 30) that make zero progress toward Food.
-    board[55] = { type: 'food', sides: SIDES };
+    board[55] = { type: 'food', sides: FOOD_SIDES };
     board[20] = {
       type: 'bird',
       ownerId: 'p2',
@@ -176,7 +181,7 @@ describe('pickCpuMove', () => {
       sides: { top: 9, right: 9, bottom: 9, left: 9 },
     };
     const board = Array(100).fill(null);
-    board[55] = { type: 'food', sides: SIDES };
+    board[55] = { type: 'food', sides: FOOD_SIDES };
     board[45] = { type: 'bird', ownerId: 'p1', sides: SIDES }; // p1 already has 1 vote
     board[54] = { type: 'bird', ownerId: 'p2', sides: SIDES }; // tied 1-1, not eatable yet
     // A free capture far from Food that wins nothing toward the actual
@@ -201,7 +206,7 @@ describe('pickCpuMove', () => {
       sides: { top: 9, right: 9, bottom: 9, left: 9 },
     };
     const board = Array(100).fill(null);
-    board[55] = { type: 'food', sides: SIDES };
+    board[55] = { type: 'food', sides: FOOD_SIDES };
     // A weak opponent bird sits right on Food's own edge, casting a vote.
     board[56] = {
       type: 'bird',
@@ -220,7 +225,7 @@ describe('pickCpuMove', () => {
   it('prefers a Food-adjacent placement when using the defensive strategy', () => {
     const card = { id: 'c1', sides: SIDES };
     const board = Array(100).fill(null);
-    board[55] = { type: 'food', sides: SIDES }; // legal cells: 45, 54, 56, 65
+    board[55] = { type: 'food', sides: FOOD_SIDES }; // legal cells: 45, 54, 56, 65
     // A separate opponent bird far from Food opens up unrelated legal
     // cells (10, 19, 21, 30) that aren't adjacent to Food.
     board[20] = {
@@ -237,7 +242,7 @@ describe('pickCpuMove', () => {
   it('contests an opponent’s sole Food lead over anything else, when defensive (#91)', () => {
     const card = { id: 'c1', sides: SIDES };
     const board = Array(100).fill(null);
-    board[55] = { type: 'food', sides: SIDES }; // legal: 54, 56, 65 (45 taken)
+    board[55] = { type: 'food', sides: FOOD_SIDES }; // legal: 54, 56, 65 (45 taken)
     board[45] = {
       type: 'bird',
       ownerId: 'p2',
@@ -263,7 +268,7 @@ describe('pickCpuMove', () => {
     // (the default ruleset requires strictly beating an adjacent card).
     const card = { id: 'c1', sides: { top: 9, right: 9, bottom: 9, left: 9 } };
     const board = Array(100).fill(null);
-    board[55] = { type: 'food', sides: SIDES };
+    board[55] = { type: 'food', sides: FOOD_SIDES };
     // Food's own neighbors are all taken (by the CPU's own birds), so no
     // directly-adjacent cell is playable.
     board[45] = { type: 'bird', ownerId: 'p1', sides: SIDES };
@@ -298,7 +303,7 @@ describe('pickCpuEat', () => {
 
   it('returns null when the CPU has no Food it is eligible to eat', () => {
     const board = Array(100).fill(null);
-    board[55] = { type: 'food', sides: SIDES };
+    board[55] = { type: 'food', sides: FOOD_SIDES };
     board[45] = bird('p2');
 
     expect(pickCpuEat(board, BOARD_SIZE, 'p1')).toBeNull();
@@ -306,7 +311,7 @@ describe('pickCpuEat', () => {
 
   it('picks an eligible Food tile and only ever nominates its own bird, never an opponent’s', () => {
     const board = Array(100).fill(null);
-    board[55] = { type: 'food', sides: SIDES };
+    board[55] = { type: 'food', sides: FOOD_SIDES };
     board[45] = bird('p1'); // top
     board[54] = bird('p1'); // left
     board[56] = bird('p2'); // right — p1 has majority (2 vs 1)
@@ -319,7 +324,7 @@ describe('pickCpuEat', () => {
 
   it('eats its own bird when that is the only adjacent one', () => {
     const board = Array(100).fill(null);
-    board[55] = { type: 'food', sides: SIDES };
+    board[55] = { type: 'food', sides: FOOD_SIDES };
     board[45] = bird('p1');
 
     const choice = pickCpuEat(board, BOARD_SIZE, 'p1');

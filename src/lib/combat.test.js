@@ -106,16 +106,30 @@ describe('canPlaceCard', () => {
     expect(canPlaceCard(board, 55, tie, BOARD_SIZE, true)).toBe(true);
   });
 
-  it('ignores the owner’s own cards and Food when checking legality', () => {
+  it('ignores the owner’s own cards when checking legality', () => {
     const board = Array(100).fill(null);
     board[56] = makeCard('p1', { top: 1, right: 1, bottom: 1, left: 9 });
-    board[45] = {
-      type: 'food',
-      sides: { top: 1, right: 1, bottom: 1, left: 1 },
-    };
 
     const card = makeCard('p1', { top: 1, right: 1, bottom: 1, left: 1 });
     expect(canPlaceCard(board, 55, card, BOARD_SIZE)).toBe(true);
+  });
+
+  it('blocks placement next to Food the same way it would an opponent card (#98)', () => {
+    const board = Array(100).fill(null);
+    board[56] = {
+      type: 'food',
+      sides: { top: 1, right: 1, bottom: 1, left: 5 },
+    };
+
+    const tooWeak = makeCard('p1', { top: 1, right: 3, bottom: 1, left: 1 });
+    expect(canPlaceCard(board, 55, tooWeak, BOARD_SIZE)).toBe(false);
+
+    const tie = makeCard('p1', { top: 1, right: 5, bottom: 1, left: 1 });
+    expect(canPlaceCard(board, 55, tie, BOARD_SIZE)).toBe(false);
+    expect(canPlaceCard(board, 55, tie, BOARD_SIZE, true)).toBe(true);
+
+    const winner = makeCard('p1', { top: 1, right: 9, bottom: 1, left: 1 });
+    expect(canPlaceCard(board, 55, winner, BOARD_SIZE)).toBe(true);
   });
 
   it('blocks placement if any single edge would lose, even if others win', () => {

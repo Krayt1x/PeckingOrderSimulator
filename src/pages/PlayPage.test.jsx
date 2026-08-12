@@ -91,7 +91,10 @@ function pileCount(type) {
 }
 
 // A single, isolated 1x1 food piece — used by tests that need a
-// deterministic, easy-to-reason-about board.
+// deterministic, easy-to-reason-about board. Zero-valued on every side (like
+// the real Chip shape) so any card can always legally play next to it —
+// Food now blocks a too-weak placement the same way an opponent card would
+// (#98), and most of these tests aren't about that value comparison.
 const SINGLE_FOOD = {
   id: 'food',
   name: 'Test Food',
@@ -102,8 +105,8 @@ const SINGLE_FOOD = {
       emoji: 'CR',
       color: '#57534e',
       cells: [{ row: 0, col: 0 }],
-      outsideValue: 1,
-      insideValue: 1,
+      outsideValue: 0,
+      insideValue: 0,
     },
   ],
 };
@@ -121,8 +124,8 @@ const TWO_FOOD = {
       emoji: 'CA',
       color: '#57534e',
       cells: [{ row: 0, col: 0 }],
-      outsideValue: 1,
-      insideValue: 1,
+      outsideValue: 0,
+      insideValue: 0,
     },
     {
       id: 'crumb-b',
@@ -130,8 +133,8 @@ const TWO_FOOD = {
       emoji: 'CB',
       color: '#57534e',
       cells: [{ row: 0, col: 0 }],
-      outsideValue: 1,
-      insideValue: 1,
+      outsideValue: 0,
+      insideValue: 0,
     },
   ],
 };
@@ -235,7 +238,7 @@ describe('PlayPage', () => {
       <PlayPage
         players={twoPlayers()}
         decks={DEFAULT_DECKS}
-        food={DEFAULT_FOOD}
+        food={SINGLE_FOOD}
       />,
     );
     const hand = screen.getByRole('list', { name: 'Your hand' });
@@ -260,7 +263,7 @@ describe('PlayPage', () => {
       <PlayPage
         players={twoPlayers()}
         decks={DEFAULT_DECKS}
-        food={DEFAULT_FOOD}
+        food={SINGLE_FOOD}
       />,
     );
     const hand = screen.getByRole('list', { name: 'Your hand' });
@@ -281,7 +284,7 @@ describe('PlayPage', () => {
       <PlayPage
         players={twoPlayers()}
         decks={DEFAULT_DECKS}
-        food={DEFAULT_FOOD}
+        food={SINGLE_FOOD}
       />,
     );
     let cells = screen.getAllByRole('gridcell');
@@ -319,7 +322,7 @@ describe('PlayPage', () => {
       <PlayPage
         players={twoPlayers()}
         decks={DEFAULT_DECKS}
-        food={DEFAULT_FOOD}
+        food={SINGLE_FOOD}
       />,
     );
     const hand = screen.getByRole('list', { name: 'Your hand' });
@@ -788,7 +791,7 @@ describe('PlayPage', () => {
       <PlayPage
         players={twoPlayers()}
         decks={DEFAULT_DECKS}
-        food={DEFAULT_FOOD}
+        food={SINGLE_FOOD}
         ruleset={{
           allowMoving: true,
           allowReturnToHand: false,
@@ -997,7 +1000,7 @@ describe('PlayPage', () => {
       <PlayPage
         players={twoPlayers()}
         decks={DEFAULT_DECKS}
-        food={DEFAULT_FOOD}
+        food={SINGLE_FOOD}
       />,
     );
     const cells = screen.getAllByRole('gridcell');
@@ -1795,7 +1798,7 @@ describe('PlayPage', () => {
       <PlayPage
         players={twoPlayers()}
         decks={DEFAULT_DECKS}
-        food={DEFAULT_FOOD}
+        food={SINGLE_FOOD}
       />,
     );
 

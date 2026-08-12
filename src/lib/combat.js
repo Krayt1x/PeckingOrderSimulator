@@ -35,11 +35,11 @@ export function resolveCaptures(board, index, card, boardSize) {
 }
 
 // A card may not be placed or moved onto a cell where its facing side is
-// lower than or equal to an adjacent opponent card's facing side on that
-// same edge — you can only play into a matchup you'd win outright, never
-// one you'd lose or tie. Food and the owner's own cards never block a
-// placement. Passing allowEqual (the "Equal Value Playable" ruleset)
-// relaxes a tie back into a legal placement.
+// lower than or equal to an adjacent card's facing side on that same edge —
+// you can only play into a matchup you'd win outright, never one you'd lose
+// or tie. Food follows the exact same rule as an opponent card (#98); only
+// the owner's own cards never block a placement. Passing allowEqual (the
+// "Equal Value Playable" ruleset) relaxes a tie back into a legal placement.
 export function canPlaceCard(
   board,
   index,
@@ -51,8 +51,10 @@ export function canPlaceCard(
   return Object.entries(neighbors).every(([direction, neighborIndex]) => {
     if (neighborIndex === null) return true;
     const target = board[neighborIndex];
-    if (!target || target.type === 'food') return true;
-    if (target.ownerId === card.ownerId) return true;
+    if (!target) return true;
+    if (target.type !== 'food' && target.ownerId === card.ownerId) {
+      return true;
+    }
 
     const attackValue = card.sides[direction];
     const defendValue = target.sides[OPPOSITE_SIDE[direction]];
