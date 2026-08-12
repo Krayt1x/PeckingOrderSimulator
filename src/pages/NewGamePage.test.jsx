@@ -100,6 +100,30 @@ describe('NewGamePage', () => {
     expect(setup.players[1].cpuStrategy).toBe('defensive');
   });
 
+  it('offers Ruthless as a selectable CPU strategy', () => {
+    const onStart = vi.fn();
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={onStart}
+      />,
+    );
+    goToStep('Rosters');
+    fireEvent.click(screen.getByLabelText('Random First Player'));
+    fireEvent.click(screen.getByLabelText('Player 2 is CPU'));
+
+    fireEvent.change(screen.getByLabelText('Player 2 CPU strategy'), {
+      target: { value: 'ruthless' },
+    });
+
+    goToStep('Review');
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
+
+    const setup = onStart.mock.calls[0][0];
+    expect(setup.players[1].cpuStrategy).toBe('ruthless');
+  });
+
   it('lets you mark a player as First and starts them first', () => {
     const onStart = vi.fn();
     render(

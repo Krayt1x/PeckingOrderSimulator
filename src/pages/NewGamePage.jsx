@@ -132,6 +132,8 @@ function defaultPlayer(index, decks, usedColors = []) {
   };
 }
 
+const CPU_STRATEGIES = ['aggressive', 'defensive', 'ruthless'];
+
 // Resolves any "random" deck/CPU-strategy picks to a concrete choice once,
 // right before the game starts — not re-rolled every render, and not left
 // as a literal "random" value the rest of the app would have to special-case.
@@ -144,9 +146,7 @@ function resolveRandomPlayerSettings(playerList, decks) {
         : p.deckId,
     cpuStrategy:
       p.isCPU && p.cpuStrategy === 'random'
-        ? Math.random() < 0.5
-          ? 'aggressive'
-          : 'defensive'
+        ? CPU_STRATEGIES[Math.floor(Math.random() * CPU_STRATEGIES.length)]
         : p.cpuStrategy,
   }));
 }
@@ -389,6 +389,7 @@ export default function NewGamePage({ decks, food, onStart }) {
                   <option value="random">Random</option>
                   <option value="aggressive">Aggressive</option>
                   <option value="defensive">Defensive</option>
+                  <option value="ruthless">Ruthless</option>
                 </select>
               ) : null}
               <button

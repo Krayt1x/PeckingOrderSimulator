@@ -34,6 +34,31 @@ function distanceToNearestFood(positions, index, boardSize) {
   );
 }
 
+// Whether placing the CPU's bird at cellIndex would give it strict
+// majority control (and so eating eligibility) over an adjacent Food
+// tile it doesn't already control — simulates the vote the new bird adds
+// without needing the placement to have actually happened yet.
+function wouldWinFoodMajority(board, boardSize, ownerId, cellIndex) {
+  const neighbors = getNeighbors(cellIndex, boardSize);
+  return Object.values(neighbors).some((foodIndex) => {
+    if (foodIndex === null || board[foodIndex]?.type !== 'food') return false;
+
+    const counts = {};
+    Object.values(getNeighbors(foodIndex, boardSize)).forEach((birdIndex) => {
+      if (birdIndex === null || birdIndex === cellIndex) return;
+      const bird = board[birdIndex];
+      if (!bird || bird.type === 'food') return;
+      counts[bird.ownerId] = (counts[bird.ownerId] ?? 0) + 1;
+    });
+    const mine = (counts[ownerId] ?? 0) + 1;
+    const others = Object.entries(counts).reduce(
+      (sum, [owner, count]) => (owner === ownerId ? sum : sum + count),
+      0,
+    );
+    return mine > others;
+  });
+}
+
 // Narrows the legal options down to whichever subset best fits the CPU's
 // strategy, falling back to the full set if that subset is empty:
 //  - aggressive: always makes whatever progress toward Food is available
@@ -44,6 +69,12 @@ function distanceToNearestFood(positions, index, boardSize) {
 //    isn't good enough on its own.
 //  - defensive: prefers a placement next to Food, claiming ground that
 //    denies opponents majority control of it.
+//  - ruthless: the sharpest of the three. Above all else it takes a
+//    placement that immediately wins majority control of a Food tile —
+//    the actual win condition, worth more than any single fight — then
+//    falls back to aggressive's closest-to-Food-first logic, breaking
+//    ties by capturing an opponent bird that was itself voting on Food,
+//    denying their claim rather than just winning a fight.
 //  - anything else (or unset): no preference, purely random.
 function narrowByStrategy(options, strategy) {
   if (strategy === 'aggressive') {
@@ -55,6 +86,19 @@ function narrowByStrategy(options, strategy) {
   if (strategy === 'defensive') {
     const foodAdjacent = options.filter((o) => o.adjacentToFood);
     if (foodAdjacent.length > 0) return foodAdjacent;
+  }
+  if (strategy === 'ruthless') {
+    const winning = options.filter((o) => o.winsFoodMajority);
+    if (winning.length > 0) {
+      const winningCapturing = winning.filter((o) => o.captures);
+      return winningCapturing.length > 0 ? winningCapturing : winning;
+    }
+    const minDistance = Math.min(...options.map((o) => o.distanceToFood));
+    const closest = options.filter((o) => o.distanceToFood === minDistance);
+    const denying = closest.filter((o) => o.deniesFoodVote);
+    if (denying.length > 0) return denying;
+    const closestCapturing = closest.filter((o) => o.captures);
+    return closestCapturing.length > 0 ? closestCapturing : closest;
   }
   return options;
 }
@@ -103,6 +147,15 @@ export function pickCpuMove(
         captures: captured.length > 0,
         adjacentToFood: isAdjacentToFood(board, cellIndex, boardSize),
         distanceToFood: distanceToNearestFood(positions, cellIndex, boardSize),
+        winsFoodMajority: wouldWinFoodMajority(
+          board,
+          boardSize,
+          ownerId,
+          cellIndex,
+        ),
+        deniesFoodVote: captured.some((c) =>
+          isAdjacentToFood(board, c.index, boardSize),
+        ),
       });
     });
   });

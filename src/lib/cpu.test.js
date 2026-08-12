@@ -170,6 +170,53 @@ describe('pickCpuMove', () => {
     expect([10, 21, 30]).not.toContain(move.cellIndex);
   });
 
+  it('prioritizes winning Food majority over any capture, when ruthless', () => {
+    const strongCard = {
+      id: 'c1',
+      sides: { top: 9, right: 9, bottom: 9, left: 9 },
+    };
+    const board = Array(100).fill(null);
+    board[55] = { type: 'food', sides: SIDES };
+    board[45] = { type: 'bird', ownerId: 'p1', sides: SIDES }; // p1 already has 1 vote
+    board[54] = { type: 'bird', ownerId: 'p2', sides: SIDES }; // tied 1-1, not eatable yet
+    // A free capture far from Food that wins nothing toward the actual
+    // objective.
+    board[20] = {
+      type: 'bird',
+      ownerId: 'p2',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+
+    const move = pickCpuMove([strongCard], board, BOARD_SIZE, 'p1', 'ruthless');
+
+    // Placing at either remaining Food neighbor (56 or 65) tips the vote
+    // to 2-1 in the CPU's favor — that beats fighting far away every time.
+    expect([56, 65]).toContain(move.cellIndex);
+    expect([10, 19, 21, 30]).not.toContain(move.cellIndex);
+  });
+
+  it('breaks ties by capturing an opponent bird that was voting on Food, when ruthless', () => {
+    const strongCard = {
+      id: 'c1',
+      sides: { top: 9, right: 9, bottom: 9, left: 9 },
+    };
+    const board = Array(100).fill(null);
+    board[55] = { type: 'food', sides: SIDES };
+    // A weak opponent bird sits right on Food's own edge, casting a vote.
+    board[56] = {
+      type: 'bird',
+      ownerId: 'p2',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+
+    const move = pickCpuMove([strongCard], board, BOARD_SIZE, 'p1', 'ruthless');
+
+    // 46 and 66 both capture the vote-casting bird at 56; 45, 54, and 65
+    // are equally close to Food but don't remove anyone's claim on it.
+    expect([46, 66]).toContain(move.cellIndex);
+    expect([45, 54, 65]).not.toContain(move.cellIndex);
+  });
+
   it('prefers a Food-adjacent placement when using the defensive strategy', () => {
     const card = { id: 'c1', sides: SIDES };
     const board = Array(100).fill(null);

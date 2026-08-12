@@ -36,11 +36,12 @@ const DEFAULT_RULESET = {
   skin: 'alpha',
 };
 
-// CPU players carry their strategy as a "(A)"/"(D)" suffix wherever their
-// name is shown, so it's visible at a glance during play.
+// CPU players carry their strategy as a single-letter suffix wherever
+// their name is shown, so it's visible at a glance during play.
+const STRATEGY_SUFFIX = { defensive: 'D', ruthless: 'R', aggressive: 'A' };
 function displayName(player) {
   if (!player.isCPU) return player.name;
-  return `${player.name} (${player.cpuStrategy === 'defensive' ? 'D' : 'A'})`;
+  return `${player.name} (${STRATEGY_SUFFIX[player.cpuStrategy] ?? 'A'})`;
 }
 
 let nextFoodCardId = 1;
