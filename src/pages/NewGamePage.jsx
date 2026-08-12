@@ -107,11 +107,14 @@ function randomChickenRunName(usedNames) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-function defaultPlayer(index, decks, usedColors = []) {
+// Player 1 defaults to human; every other seat defaults to CPU so a game
+// is playable solo the moment a player count is picked (#95).
+function defaultPlayer(index, decks, usedColors = [], usedNames = []) {
+  const isCPU = index > 0;
   return {
     id: `player-${index}`,
-    name: `Player ${index + 1}`,
-    isCPU: false,
+    name: isCPU ? randomChickenRunName(usedNames) : `Player ${index + 1}`,
+    isCPU,
     cpuStrategy: 'random',
     deckId: 'random',
     color: randomPlayerColor(usedColors),
@@ -146,6 +149,7 @@ export default function NewGamePage({ decks, food, onStart }) {
           i,
           decks,
           initial.map((p) => p.color),
+          initial.map((p) => p.name),
         ),
       );
     }
@@ -181,6 +185,7 @@ export default function NewGamePage({ decks, food, onStart }) {
             next.length,
             decks,
             next.map((p) => p.color),
+            next.map((p) => p.name),
           ),
         );
       }

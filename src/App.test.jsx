@@ -58,9 +58,10 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Review' }));
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
 
-    // Random First Player is on by default, so either player may go
-    // first — this just confirms the game actually started.
-    expect(screen.getByText(/Player [12].*turn/)).toBeDefined();
+    // Random First Player is on by default, and Player 2 defaults to a
+    // CPU with a Chicken Run character name (#95), so either player may
+    // go first under either name — this just confirms the game started.
+    expect(screen.getByText(/’s turn/)).toBeDefined();
     expect(
       within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
         'button',

@@ -21,11 +21,11 @@ function goToStep(label) {
 }
 
 // Marking a player as CPU (#79) renames them to a random Chicken Run
-// character, so aria-labels keyed off the player's name shift the moment
-// the checkbox is ticked — read the second player's current name back off
-// its name input rather than assuming it's still "Player 2".
-function secondPlayerName() {
-  return screen.getAllByLabelText('Player name')[1].value;
+// character — and every player but the first now defaults to CPU (#95) —
+// so aria-labels keyed off a player's name can't be assumed to still read
+// "Player 2"/"Player 3"/etc. Read the name back off its input instead.
+function playerName(index) {
+  return screen.getAllByLabelText('Player name')[index].value;
 }
 
 describe('NewGamePage', () => {
@@ -71,6 +71,42 @@ describe('NewGamePage', () => {
     expect(screen.getAllByLabelText('Player name')).toHaveLength(4);
   });
 
+  it('defaults every player but the first to CPU (#95)', () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    goToStep('Rosters');
+
+    expect(screen.getByLabelText('Player 1 is CPU').checked).toBe(false);
+    expect(screen.getByLabelText(`${playerName(1)} is CPU`).checked).toBe(true);
+  });
+
+  it('defaults every player but the first to CPU at every player count (#95)', async () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '4' }));
+
+    await waitFor(() =>
+      expect(screen.getAllByLabelText('Player name')).toHaveLength(4),
+    );
+
+    expect(screen.getByLabelText('Player 1 is CPU').checked).toBe(false);
+    [1, 2, 3].forEach((index) => {
+      expect(screen.getByLabelText(`${playerName(index)} is CPU`).checked).toBe(
+        true,
+      );
+    });
+  });
+
   it('lets you mark a player as CPU and change their deck on the Rosters step', () => {
     render(
       <NewGamePage
@@ -81,8 +117,10 @@ describe('NewGamePage', () => {
     );
     goToStep('Rosters');
 
-    fireEvent.click(screen.getByLabelText('Player 2 is CPU'));
-    const name = secondPlayerName();
+    // Player 1 is the only seat that defaults to human (#95) — a good
+    // target for exercising the "mark as CPU" toggle itself.
+    fireEvent.click(screen.getByLabelText('Player 1 is CPU'));
+    const name = playerName(0);
     fireEvent.change(screen.getByLabelText(`${name} deck`), {
       target: { value: DEFAULT_DECKS[2].id },
     });
@@ -103,9 +141,9 @@ describe('NewGamePage', () => {
     );
     goToStep('Rosters');
 
-    fireEvent.click(screen.getByLabelText('Player 2 is CPU'));
+    fireEvent.click(screen.getByLabelText('Player 1 is CPU'));
 
-    expect(CHICKEN_RUN_NAMES).toContain(secondPlayerName());
+    expect(CHICKEN_RUN_NAMES).toContain(playerName(0));
   });
 
   it('leaves the CPU-assigned name alone when the box is unchecked again', () => {
@@ -118,11 +156,11 @@ describe('NewGamePage', () => {
     );
     goToStep('Rosters');
 
-    fireEvent.click(screen.getByLabelText('Player 2 is CPU'));
-    const cpuName = secondPlayerName();
+    fireEvent.click(screen.getByLabelText('Player 1 is CPU'));
+    const cpuName = playerName(0);
     fireEvent.click(screen.getByLabelText(`${cpuName} is CPU`));
 
-    expect(secondPlayerName()).toBe(cpuName);
+    expect(playerName(0)).toBe(cpuName);
   });
 
   it('shows a CPU strategy picker only once a player is marked as CPU, defaulting to Random', () => {
@@ -135,13 +173,13 @@ describe('NewGamePage', () => {
       />,
     );
     goToStep('Rosters');
-    // Keep turn order deterministic for the players[1] index check below.
+    // Keep turn order deterministic for the players[0] index check below.
     fireEvent.click(screen.getByLabelText('Random First Player'));
 
-    expect(screen.queryByLabelText('Player 2 CPU strategy')).toBeNull();
+    expect(screen.queryByLabelText('Player 1 CPU strategy')).toBeNull();
 
-    fireEvent.click(screen.getByLabelText('Player 2 is CPU'));
-    const name = secondPlayerName();
+    fireEvent.click(screen.getByLabelText('Player 1 is CPU'));
+    const name = playerName(0);
 
     expect(screen.getByLabelText(`${name} CPU strategy`).value).toBe('random');
 
@@ -153,7 +191,7 @@ describe('NewGamePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
 
     const setup = onStart.mock.calls[0][0];
-    expect(setup.players[1].cpuStrategy).toBe('defensive');
+    expect(setup.players[0].cpuStrategy).toBe('defensive');
   });
 
   it('offers Ruthless as a selectable CPU strategy', () => {
@@ -167,8 +205,9 @@ describe('NewGamePage', () => {
     );
     goToStep('Rosters');
     fireEvent.click(screen.getByLabelText('Random First Player'));
-    fireEvent.click(screen.getByLabelText('Player 2 is CPU'));
-    const name = secondPlayerName();
+    // Player 2 already defaults to CPU (#95) — its strategy picker is
+    // already showing, no need to tick the CPU checkbox first.
+    const name = playerName(1);
 
     fireEvent.change(screen.getByLabelText(`${name} CPU strategy`), {
       target: { value: 'ruthless' },
@@ -191,15 +230,16 @@ describe('NewGamePage', () => {
       />,
     );
     goToStep('Rosters');
+    const player2Name = playerName(1);
 
     // Random First Player is on by default — turn it off to pick manually.
     fireEvent.click(screen.getByLabelText('Random First Player'));
     expect(screen.getByLabelText('Player 1 first').checked).toBe(false);
-    fireEvent.click(screen.getByLabelText('Player 2 first'));
-    expect(screen.getByLabelText('Player 2 first').checked).toBe(true);
+    fireEvent.click(screen.getByLabelText(`${player2Name} first`));
+    expect(screen.getByLabelText(`${player2Name} first`).checked).toBe(true);
     // Only one player can be first at a time.
     fireEvent.click(screen.getByLabelText('Player 1 first'));
-    expect(screen.getByLabelText('Player 2 first').checked).toBe(false);
+    expect(screen.getByLabelText(`${player2Name} first`).checked).toBe(false);
     expect(screen.getByLabelText('Player 1 first').checked).toBe(true);
 
     goToStep('Review');
@@ -221,6 +261,7 @@ describe('NewGamePage', () => {
       />,
     );
     goToStep('Rosters');
+    const player2Name = playerName(1);
 
     // Random First Player is on by default, disabling the individual
     // per-player checkboxes.
@@ -232,7 +273,7 @@ describe('NewGamePage', () => {
 
     const setup = onStart.mock.calls[0][0];
     // Math.random mocked to 0.99 -> last player in a 2-player list.
-    expect(setup.players[0].name).toBe('Player 2');
+    expect(setup.players[0].name).toBe(player2Name);
     randomSpy.mockRestore();
   });
 
@@ -245,9 +286,12 @@ describe('NewGamePage', () => {
       />,
     );
     goToStep('Rosters');
+    const player2Name = playerName(1);
 
     const player1Cube = screen.getByRole('button', { name: 'Player 1 color' });
-    const player2Cube = screen.getByRole('button', { name: 'Player 2 color' });
+    const player2Cube = screen.getByRole('button', {
+      name: `${player2Name} color`,
+    });
     const color1 = player1Cube.style.getPropertyValue('--swatch-color');
     const color2 = player2Cube.style.getPropertyValue('--swatch-color');
 
@@ -269,9 +313,10 @@ describe('NewGamePage', () => {
     goToStep('Rosters');
     // Keep turn order deterministic for the players[0]/[1] index checks.
     fireEvent.click(screen.getByLabelText('Random First Player'));
+    const player2Name = playerName(1);
 
     const player2ColorBefore = screen
-      .getByRole('button', { name: 'Player 2 color' })
+      .getByRole('button', { name: `${player2Name} color` })
       .style.getPropertyValue('--swatch-color');
     // A color distinct from Player 2's, so the duplicate-color guard
     // (#76) never blocks the pick.
@@ -314,9 +359,10 @@ describe('NewGamePage', () => {
       />,
     );
     goToStep('Rosters');
+    const player2Name = playerName(1);
 
     const player2Color = screen
-      .getByRole('button', { name: 'Player 2 color' })
+      .getByRole('button', { name: `${player2Name} color` })
       .style.getPropertyValue('--swatch-color');
     const player1ColorBefore = screen
       .getByRole('button', { name: 'Player 1 color' })
