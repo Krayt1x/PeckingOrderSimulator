@@ -10,25 +10,47 @@ function isAdjacentToFood(board, index, boardSize) {
   );
 }
 
+function foodPositions(board, boardSize) {
+  const positions = [];
+  board.forEach((cell, index) => {
+    if (cell?.type !== 'food') return;
+    positions.push({
+      row: Math.floor(index / boardSize),
+      col: index % boardSize,
+    });
+  });
+  return positions;
+}
+
+// Chebyshev (chessboard) distance from a cell to the nearest Food tile —
+// Infinity if there's no Food left on the board at all.
+function distanceToNearestFood(positions, index, boardSize) {
+  const row = Math.floor(index / boardSize);
+  const col = index % boardSize;
+  return positions.reduce(
+    (min, { row: foodRow, col: foodCol }) =>
+      Math.min(min, Math.max(Math.abs(row - foodRow), Math.abs(col - foodCol))),
+    Infinity,
+  );
+}
+
 // Narrows the legal options down to whichever subset best fits the CPU's
 // strategy, falling back to the full set if that subset is empty:
-//  - aggressive: prefers a capturing placement, and among those prefers
-//    ones that also progress toward Food (winning still comes from
-//    eating Food, so a capture that goes nowhere isn't good enough on
-//    its own) — falls back to any Food-adjacent placement, then anything,
-//    if no capture is available at all.
+//  - aggressive: always makes whatever progress toward Food is available
+//    this turn — never picks a placement farther from Food than the best
+//    one on offer, even to snag a capture elsewhere on the board — and
+//    uses a capture as a tiebreaker among the closest options, since
+//    winning still comes from eating Food and a fight that goes nowhere
+//    isn't good enough on its own.
 //  - defensive: prefers a placement next to Food, claiming ground that
 //    denies opponents majority control of it.
 //  - anything else (or unset): no preference, purely random.
 function narrowByStrategy(options, strategy) {
   if (strategy === 'aggressive') {
-    const capturing = options.filter((o) => o.captures);
-    if (capturing.length > 0) {
-      const capturingNearFood = capturing.filter((o) => o.adjacentToFood);
-      return capturingNearFood.length > 0 ? capturingNearFood : capturing;
-    }
-    const foodAdjacent = options.filter((o) => o.adjacentToFood);
-    if (foodAdjacent.length > 0) return foodAdjacent;
+    const minDistance = Math.min(...options.map((o) => o.distanceToFood));
+    const closest = options.filter((o) => o.distanceToFood === minDistance);
+    const closestCapturing = closest.filter((o) => o.captures);
+    return closestCapturing.length > 0 ? closestCapturing : closest;
   }
   if (strategy === 'defensive') {
     const foodAdjacent = options.filter((o) => o.adjacentToFood);
@@ -55,6 +77,7 @@ export function pickCpuMove(
   const playableIndexes = getPlayableIndices(board, boardSize, ownerId);
   if (playableIndexes.length === 0) return null;
 
+  const positions = foodPositions(board, boardSize);
   const options = [];
   hand.forEach((card) => {
     // A Food-derived card can only be discarded via Use Food, never
@@ -79,6 +102,7 @@ export function pickCpuMove(
         cellIndex,
         captures: captured.length > 0,
         adjacentToFood: isAdjacentToFood(board, cellIndex, boardSize),
+        distanceToFood: distanceToNearestFood(positions, cellIndex, boardSize),
       });
     });
   });

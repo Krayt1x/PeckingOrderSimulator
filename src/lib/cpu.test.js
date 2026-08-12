@@ -140,6 +140,36 @@ describe('pickCpuMove', () => {
     expect([45, 54, 56, 65]).toContain(move.cellIndex);
   });
 
+  it('prefers advancing on Food over a distant capture, when aggressive', () => {
+    const strongCard = {
+      id: 'c1',
+      sides: { top: 9, right: 9, bottom: 9, left: 9 },
+    };
+    const board = Array(100).fill(null);
+    // Food's own neighbors (45, 54, 56, 65) are legal but don't capture
+    // anything. A weak opponent bird far away at 20 opens up capturing
+    // options (10, 21, 30) that make zero progress toward Food.
+    board[55] = { type: 'food', sides: SIDES };
+    board[20] = {
+      type: 'bird',
+      ownerId: 'p2',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+
+    const move = pickCpuMove(
+      [strongCard],
+      board,
+      BOARD_SIZE,
+      'p1',
+      'aggressive',
+    );
+
+    // Getting closer to Food always wins out over fighting far from it —
+    // even when the distant fight is a free capture (#83).
+    expect([45, 54, 56, 65]).toContain(move.cellIndex);
+    expect([10, 21, 30]).not.toContain(move.cellIndex);
+  });
+
   it('prefers a Food-adjacent placement when using the defensive strategy', () => {
     const card = { id: 'c1', sides: SIDES };
     const board = Array(100).fill(null);
