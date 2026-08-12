@@ -7,7 +7,10 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import NewGamePage, { PLAYER_COLOR_PALETTE } from './NewGamePage.jsx';
+import NewGamePage, {
+  PLAYER_COLOR_PALETTE,
+  CHICKEN_RUN_NAMES,
+} from './NewGamePage.jsx';
 import { DEFAULT_DECKS } from '../lib/decks.js';
 import { DEFAULT_FOOD } from '../lib/food.js';
 
@@ -15,6 +18,14 @@ afterEach(() => cleanup());
 
 function goToStep(label) {
   fireEvent.click(screen.getByRole('button', { name: label }));
+}
+
+// Marking a player as CPU (#79) renames them to a random Chicken Run
+// character, so aria-labels keyed off the player's name shift the moment
+// the checkbox is ticked — read the second player's current name back off
+// its name input rather than assuming it's still "Player 2".
+function secondPlayerName() {
+  return screen.getAllByLabelText('Player name')[1].value;
 }
 
 describe('NewGamePage', () => {
@@ -71,14 +82,47 @@ describe('NewGamePage', () => {
     goToStep('Rosters');
 
     fireEvent.click(screen.getByLabelText('Player 2 is CPU'));
-    fireEvent.change(screen.getByLabelText('Player 2 deck'), {
+    const name = secondPlayerName();
+    fireEvent.change(screen.getByLabelText(`${name} deck`), {
       target: { value: DEFAULT_DECKS[2].id },
     });
 
-    expect(screen.getByLabelText('Player 2 is CPU').checked).toBe(true);
-    expect(screen.getByLabelText('Player 2 deck').value).toBe(
+    expect(screen.getByLabelText(`${name} is CPU`).checked).toBe(true);
+    expect(screen.getByLabelText(`${name} deck`).value).toBe(
       DEFAULT_DECKS[2].id,
     );
+  });
+
+  it('renames a player to a random Chicken Run character when marked as CPU', () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    goToStep('Rosters');
+
+    fireEvent.click(screen.getByLabelText('Player 2 is CPU'));
+
+    expect(CHICKEN_RUN_NAMES).toContain(secondPlayerName());
+  });
+
+  it('leaves the CPU-assigned name alone when the box is unchecked again', () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    goToStep('Rosters');
+
+    fireEvent.click(screen.getByLabelText('Player 2 is CPU'));
+    const cpuName = secondPlayerName();
+    fireEvent.click(screen.getByLabelText(`${cpuName} is CPU`));
+
+    expect(secondPlayerName()).toBe(cpuName);
   });
 
   it('shows a CPU strategy picker only once a player is marked as CPU, defaulting to Random', () => {
@@ -97,10 +141,11 @@ describe('NewGamePage', () => {
     expect(screen.queryByLabelText('Player 2 CPU strategy')).toBeNull();
 
     fireEvent.click(screen.getByLabelText('Player 2 is CPU'));
+    const name = secondPlayerName();
 
-    expect(screen.getByLabelText('Player 2 CPU strategy').value).toBe('random');
+    expect(screen.getByLabelText(`${name} CPU strategy`).value).toBe('random');
 
-    fireEvent.change(screen.getByLabelText('Player 2 CPU strategy'), {
+    fireEvent.change(screen.getByLabelText(`${name} CPU strategy`), {
       target: { value: 'defensive' },
     });
 
@@ -123,8 +168,9 @@ describe('NewGamePage', () => {
     goToStep('Rosters');
     fireEvent.click(screen.getByLabelText('Random First Player'));
     fireEvent.click(screen.getByLabelText('Player 2 is CPU'));
+    const name = secondPlayerName();
 
-    fireEvent.change(screen.getByLabelText('Player 2 CPU strategy'), {
+    fireEvent.change(screen.getByLabelText(`${name} CPU strategy`), {
       target: { value: 'ruthless' },
     });
 

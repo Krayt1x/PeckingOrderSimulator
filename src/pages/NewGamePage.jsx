@@ -121,6 +121,29 @@ function randomPlayerColor(usedColors) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+// Named characters from the movie Chicken Run — a CPU player's flavor
+// name once the "is CPU" box is ticked.
+export const CHICKEN_RUN_NAMES = [
+  'Ginger',
+  'Rocky',
+  'Bunty',
+  'Babs',
+  'Mac',
+  'Fowler',
+  'Mrs. Tweedy',
+  'Mr. Tweedy',
+  'Nick',
+  'Fetcher',
+];
+
+function randomChickenRunName(usedNames) {
+  const available = CHICKEN_RUN_NAMES.filter(
+    (name) => !usedNames.includes(name),
+  );
+  const pool = available.length > 0 ? available : CHICKEN_RUN_NAMES;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 function defaultPlayer(index, decks, usedColors = []) {
   return {
     id: `player-${index}`,
@@ -359,9 +382,21 @@ export default function NewGamePage({ decks, food, onStart }) {
                   type="checkbox"
                   checked={player.isCPU}
                   aria-label={`${player.name} is CPU`}
-                  onChange={(event) =>
-                    updatePlayer(i, { isCPU: event.target.checked })
-                  }
+                  onChange={(event) => {
+                    const isCPU = event.target.checked;
+                    updatePlayer(i, {
+                      isCPU,
+                      ...(isCPU
+                        ? {
+                            name: randomChickenRunName(
+                              players
+                                .filter((_, pi) => pi !== i)
+                                .map((p) => p.name),
+                            ),
+                          }
+                        : {}),
+                    });
+                  }}
                 />
               </label>
               <select
