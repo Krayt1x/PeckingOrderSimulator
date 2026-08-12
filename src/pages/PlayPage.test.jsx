@@ -709,7 +709,7 @@ describe('PlayPage', () => {
     ).toBeNull();
   });
 
-  it('rotates a selected card’s side values via the rotate arrows when enabled', () => {
+  it('spins the whole card face visually without re-shuffling its printed numbers', () => {
     render(
       <PlayPage
         players={twoPlayers()}
@@ -727,6 +727,7 @@ describe('PlayPage', () => {
 
     const selectedCard = document.querySelector('.hand .card-selected');
     expect(selectedCard).not.toBeNull();
+    const face = selectedCard.querySelector('.card-face');
     const readSides = () => ({
       top: selectedCard.querySelector('.card-side-top').textContent,
       right: selectedCard.querySelector('.card-side-right').textContent,
@@ -734,21 +735,67 @@ describe('PlayPage', () => {
       left: selectedCard.querySelector('.card-side-left').textContent,
     });
     const before = readSides();
+    expect(face.style.transform).toBe('');
 
     fireEvent.click(screen.getByRole('button', { name: 'Rotate clockwise' }));
-    const afterCw = readSides();
-    expect(afterCw).toEqual({
+    // The printed numbers stay put in their fixed slots — it's the whole
+    // face (name + numbers together) that visually turns via transform,
+    // not a second data-level shuffle on top of the first.
+    expect(readSides()).toEqual(before);
+    expect(face.style.transform).toBe('rotate(90deg)');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rotate clockwise' }));
+    expect(face.style.transform).toBe('rotate(180deg)');
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Rotate anti-clockwise' }),
+    );
+    expect(face.style.transform).toBe('rotate(90deg)');
+  });
+
+  it('plays a rotated card onto the board with its side values actually spun', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        ruleset={{
+          allowMoving: true,
+          allowReturnToHand: false,
+          allowCardRotation: true,
+        }}
+      />,
+    );
+    const hand = screen.getByRole('list', { name: 'Your hand' });
+    fireEvent.click(within(hand).getAllByRole('button')[0]);
+
+    const selectedCard = document.querySelector('.hand .card-selected');
+    const before = {
+      top: selectedCard.querySelector('.card-side-top').textContent,
+      right: selectedCard.querySelector('.card-side-right').textContent,
+      bottom: selectedCard.querySelector('.card-side-bottom').textContent,
+      left: selectedCard.querySelector('.card-side-left').textContent,
+    };
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rotate clockwise' }));
+
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const adjacentIndex = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+    fireEvent.click(screen.getAllByRole('gridcell')[adjacentIndex]);
+
+    const placedCell = screen.getAllByRole('gridcell')[adjacentIndex];
+    expect({
+      top: placedCell.querySelector('.card-side-top').textContent,
+      right: placedCell.querySelector('.card-side-right').textContent,
+      bottom: placedCell.querySelector('.card-side-bottom').textContent,
+      left: placedCell.querySelector('.card-side-left').textContent,
+    }).toEqual({
       top: before.left,
       right: before.top,
       bottom: before.right,
       left: before.bottom,
     });
-
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Rotate anti-clockwise' }),
-    );
-    const afterCcw = readSides();
-    expect(afterCcw).toEqual(before);
   });
 
   it('does not move a card dropped on a non-adjacent or occupied cell', () => {

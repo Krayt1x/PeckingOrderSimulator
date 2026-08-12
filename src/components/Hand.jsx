@@ -1,3 +1,5 @@
+import { baseSides } from '../lib/rotation.js';
+
 const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 
 export default function Hand({
@@ -22,6 +24,14 @@ export default function Hand({
         // the rest of the hand is disabled (e.g. no actions left) — using
         // it is always free, so the card itself isn't fully disabled.
         const cardDisabled = disabled && !(card.fromFood && !useFoodDisabled);
+        const rotationDeg = card.rotation ?? 0;
+        // The face renders the card's original (rotation-0) side values in
+        // fixed slots and lets a single CSS transform turn the whole face —
+        // name and numbers together — rather than re-shuffling the numbers
+        // between slots a second time on top of the data rotation.
+        const faceSides = card.sides
+          ? baseSides(card.sides, rotationDeg)
+          : null;
         return (
           <button
             key={card.id}
@@ -34,16 +44,25 @@ export default function Hand({
             }}
             onClick={() => onSelectCard(card.id)}
           >
-            {card.sides ? (
-              <span className="card-sides">
-                {SIDE_KEYS.map((side) => (
-                  <span key={side} className={`card-side card-side-${side}`}>
-                    {card.sides[side]}
-                  </span>
-                ))}
-              </span>
-            ) : null}
-            <span className="card-name">{card.name}</span>
+            <span
+              className="card-face"
+              style={
+                rotationDeg
+                  ? { transform: `rotate(${rotationDeg}deg)` }
+                  : undefined
+              }
+            >
+              {faceSides ? (
+                <span className="card-sides">
+                  {SIDE_KEYS.map((side) => (
+                    <span key={side} className={`card-side card-side-${side}`}>
+                      {faceSides[side]}
+                    </span>
+                  ))}
+                </span>
+              ) : null}
+              <span className="card-name">{card.name}</span>
+            </span>
             {card.fromFood ? (
               <span
                 role="button"
@@ -69,24 +88,6 @@ export default function Hand({
                   role="button"
                   tabIndex={0}
                   className="rotate-arrow rotate-arrow-left"
-                  aria-label="Rotate clockwise"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    if (!disabled) onRotateCard(card.id, 'cw');
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key !== 'Enter' && event.key !== ' ') return;
-                    event.preventDefault();
-                    event.stopPropagation();
-                    if (!disabled) onRotateCard(card.id, 'cw');
-                  }}
-                >
-                  &#8635;
-                </span>
-                <span
-                  role="button"
-                  tabIndex={0}
-                  className="rotate-arrow rotate-arrow-right"
                   aria-label="Rotate anti-clockwise"
                   onClick={(event) => {
                     event.stopPropagation();
@@ -100,6 +101,24 @@ export default function Hand({
                   }}
                 >
                   &#8634;
+                </span>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  className="rotate-arrow rotate-arrow-right"
+                  aria-label="Rotate clockwise"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (!disabled) onRotateCard(card.id, 'cw');
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (!disabled) onRotateCard(card.id, 'cw');
+                  }}
+                >
+                  &#8635;
                 </span>
               </>
             ) : null}

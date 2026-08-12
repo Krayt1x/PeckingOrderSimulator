@@ -14,6 +14,7 @@ import {
 } from '../lib/board.js';
 import { resolveCaptures, canPlaceCard } from '../lib/combat.js';
 import { pickCpuMove, pickCpuEat } from '../lib/cpu.js';
+import { rotateSides } from '../lib/rotation.js';
 
 const ACTIONS_PER_TURN = 1;
 
@@ -34,25 +35,6 @@ const DEFAULT_RULESET = {
   allowCustomSkins: false,
   skin: 'alpha',
 };
-
-// Rotating a card 90° spins which edge each side value faces — physically
-// equivalent to turning the card itself.
-function rotateSides(sides, direction) {
-  if (direction === 'cw') {
-    return {
-      top: sides.left,
-      right: sides.top,
-      bottom: sides.right,
-      left: sides.bottom,
-    };
-  }
-  return {
-    top: sides.right,
-    right: sides.bottom,
-    bottom: sides.left,
-    left: sides.top,
-  };
-}
 
 // CPU players carry their strategy as a "(A)"/"(D)" suffix wherever their
 // name is shown, so it's visible at a glance during play.
