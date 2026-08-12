@@ -797,7 +797,6 @@ export default function PlayPage({
                       '--card-bg': card.deckColor,
                     }}
                   >
-                    <span className="card-emoji">{card.emoji}</span>
                     <span>{card.name}</span>
                   </li>
                 ))}

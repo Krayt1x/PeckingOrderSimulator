@@ -272,7 +272,6 @@ export default function GameBoard({
 
   const showCardNames = cellSize >= 40;
   const showSides = cellSize >= 48;
-  const emojiSize = Math.max(10, Math.round(cellSize * 0.22));
   const nameSize = Math.max(8, Math.round(cellSize * 0.14));
   const sideSize = Math.max(8, Math.round(cellSize * 0.16));
   const zoomPercent = Math.round((cellSize / DEFAULT_CELL_SIZE) * 100);
@@ -300,10 +299,8 @@ export default function GameBoard({
           {cells.map((card, index) => {
             // Every card shows its name in the center once zoomed in
             // enough for that not to collide, at a lower zoom threshold
-            // than the edge stats (like a Triple Triad-style card) that
-            // birds — and Food, which also carries an emoji above its
-            // name — show once zoomed in further still.
-            const isFoodCard = card?.type === 'food';
+            // than the edge stats (like a Triple Triad-style card) show
+            // once zoomed in further still.
             const cardHasSides = Boolean(card?.sides) && showSides;
             const cardShowsName = showCardNames;
 
@@ -354,14 +351,6 @@ export default function GameBoard({
                             {card.sides[side]}
                           </span>
                         ))}
-                      </span>
-                    ) : null}
-                    {isFoodCard ? (
-                      <span
-                        className="card-emoji"
-                        style={{ fontSize: emojiSize }}
-                      >
-                        {card.emoji}
                       </span>
                     ) : null}
                     {cardShowsName ? (
