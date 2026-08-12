@@ -1,5 +1,4 @@
 import { baseSides } from '../lib/rotation.js';
-import PixelArtIcon from './PixelArtIcon.jsx';
 
 const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 
@@ -62,7 +61,6 @@ export default function Hand({
                   ))}
                 </span>
               ) : null}
-              {faceSides ? <PixelArtIcon name={card.name} size={24} /> : null}
               <span className="card-name">{card.name}</span>
             </span>
             {card.fromFood ? (

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { baseSides } from '../lib/rotation.js';
-import PixelArtIcon from './PixelArtIcon.jsx';
 
 const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 
@@ -279,7 +278,6 @@ export default function GameBoard({
   const showSides = cellSize >= 48;
   const nameSize = Math.max(8, Math.round(cellSize * 0.14));
   const sideSize = Math.max(8, Math.round(cellSize * 0.16));
-  const iconSize = Math.max(12, Math.round(cellSize * 0.3));
   const zoomPercent = Math.round((cellSize / DEFAULT_CELL_SIZE) * 100);
 
   return (
@@ -409,9 +407,6 @@ export default function GameBoard({
                             </span>
                           ))}
                         </span>
-                      ) : null}
-                      {cardHasSides && card.type !== 'food' ? (
-                        <PixelArtIcon name={card.name} size={iconSize} />
                       ) : null}
                       {cardShowsName ? (
                         <span
