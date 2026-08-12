@@ -668,6 +668,14 @@ body {
   word-break: normal;
 }
 
+/* A hand-placed pixel sprite of the bird itself, swapped in for the
+   printed name text under the Alpha Pixel Art skin only (#97) — hidden by
+   default so every other skin keeps showing plain text. */
+.card-pixel-sprite {
+  display: none;
+  flex-shrink: 0;
+}
+
 /* A food-derived card in hand can be discarded directly via this badge,
    instead of being played onto the board. */
 .use-food-badge {
@@ -887,6 +895,16 @@ body {
 
 [data-skin='alpha-pixel-art'] .card-name {
   color: #f0c419;
+}
+
+/* The bird's name text is replaced by its pixel sprite under this skin
+   (#97) — Food cards have no sprite, so they keep showing their name. */
+[data-skin='alpha-pixel-art'] .card:not(.card-food) .card-name {
+  display: none;
+}
+
+[data-skin='alpha-pixel-art'] .card-pixel-sprite {
+  display: block;
 }
 
 [data-skin='alpha-pixel-art'] .card-back-deck {

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { baseSides } from '../lib/rotation.js';
+import PixelBirdSprite from './PixelBirdSprite.jsx';
 
 const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 
@@ -278,6 +279,7 @@ export default function GameBoard({
   const showSides = cellSize >= 48;
   const nameSize = Math.max(8, Math.round(cellSize * 0.14));
   const sideSize = Math.max(8, Math.round(cellSize * 0.16));
+  const spriteSize = Math.max(16, Math.round(cellSize * 0.4));
   const zoomPercent = Math.round((cellSize / DEFAULT_CELL_SIZE) * 100);
 
   return (
@@ -407,6 +409,13 @@ export default function GameBoard({
                             </span>
                           ))}
                         </span>
+                      ) : null}
+                      {cardHasSides && card.type !== 'food' ? (
+                        <PixelBirdSprite
+                          typeId={card.typeId}
+                          name={card.name}
+                          size={spriteSize}
+                        />
                       ) : null}
                       {cardShowsName ? (
                         <span

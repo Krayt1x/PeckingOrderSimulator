@@ -1,4 +1,5 @@
 import { baseSides } from '../lib/rotation.js';
+import PixelBirdSprite from './PixelBirdSprite.jsx';
 
 const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 
@@ -60,6 +61,13 @@ export default function Hand({
                     </span>
                   ))}
                 </span>
+              ) : null}
+              {faceSides ? (
+                <PixelBirdSprite
+                  typeId={card.typeId}
+                  name={card.name}
+                  size={40}
+                />
               ) : null}
               <span className="card-name">{card.name}</span>
             </span>
