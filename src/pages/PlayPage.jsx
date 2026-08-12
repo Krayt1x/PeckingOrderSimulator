@@ -13,11 +13,7 @@ import {
   getPlayableIndices,
   getAdjacentEmptyIndices,
 } from '../lib/board.js';
-import {
-  resolveCaptures,
-  canPlaceCard,
-  resolveFoodCaptures,
-} from '../lib/combat.js';
+import { resolveCaptures, canPlaceCard } from '../lib/combat.js';
 import { pickCpuMove, pickCpuEat } from '../lib/cpu.js';
 import { rotateSides } from '../lib/rotation.js';
 import { playActionTick, playFoodCrunch } from '../lib/sound.js';
@@ -263,43 +259,9 @@ export default function PlayPage({
     );
   }
 
-  // Only relevant when Equal Value Playable is on: turns any Food tiles
-  // resolveFoodCaptures found adjacent to a just-placed/moved card into
-  // eaten Food cards (removed from the board, banked as a scored card in
-  // the active player's deck) — the same payoff as eating via majority
-  // control, just triggered by an exact value match instead (#90).
-  function applyEqualValueFoodCaptures(nextBoard, cellIndex, placedCard) {
-    if (!ruleset.allowEqualValuePlay) {
-      return { board: nextBoard, foodCaptures: [], eatenFoodCards: [] };
-    }
-    const foodCaptures = resolveFoodCaptures(
-      nextBoard,
-      cellIndex,
-      placedCard,
-      BOARD_SIZE,
-    );
-    if (foodCaptures.length === 0) {
-      return { board: nextBoard, foodCaptures, eatenFoodCards: [] };
-    }
-    const finalBoard = [...nextBoard];
-    const eatenFoodCards = foodCaptures.map(({ index: foodIndex, card }) => {
-      finalBoard[foodIndex] = null;
-      return foodToCard(card);
-    });
-    return { board: finalBoard, foodCaptures, eatenFoodCards };
-  }
-
-  function logCaptureSuffix(captured, eatenFoodCards) {
-    const parts = [];
-    if (captured.length > 0) {
-      parts.push(
-        `capturing ${captured.length} card${captured.length === 1 ? '' : 's'}`,
-      );
-    }
-    if (eatenFoodCards.length > 0) {
-      parts.push(`claiming ${eatenFoodCards.map((c) => c.name).join(', ')}`);
-    }
-    return parts.length === 0 ? '' : `, ${parts.join(' and ')}`;
+  function logCaptureSuffix(captured) {
+    if (captured.length === 0) return '';
+    return `, capturing ${captured.length} card${captured.length === 1 ? '' : 's'}`;
   }
 
   function handlePlayCard(cellIndex) {
@@ -315,11 +277,6 @@ export default function PlayPage({
       placedCard,
       BOARD_SIZE,
     );
-    const {
-      board: finalBoard,
-      foodCaptures,
-      eatenFoodCards,
-    } = applyEqualValueFoodCaptures(nextBoard, cellIndex, placedCard);
 
     let nextPlayerStates = playerStates.map((state, i) =>
       i === activeIndex
@@ -327,28 +284,13 @@ export default function PlayPage({
         : state,
     );
     nextPlayerStates = applyOwnerCaptureBookkeeping(nextPlayerStates, captured);
-    if (eatenFoodCards.length > 0) {
-      nextPlayerStates = nextPlayerStates.map((state, i) =>
-        i === activeIndex
-          ? {
-              ...state,
-              drawPile: shuffle([...state.drawPile, ...eatenFoodCards]),
-              score: state.score + eatenFoodCards.length,
-            }
-          : state,
-      );
-    }
 
-    commitBoardAfterCapture(withCard, finalBoard, [
-      ...captured,
-      ...foodCaptures,
-    ]);
+    commitBoardAfterCapture(withCard, nextBoard, captured);
     setPlayerStates(nextPlayerStates);
     spendAction();
     playActionTick();
-    if (eatenFoodCards.length > 0) playFoodCrunch();
     pushLog(
-      `${displayName(activePlayer)} played ${card.name}${logCaptureSuffix(captured, eatenFoodCards)}`,
+      `${displayName(activePlayer)} played ${card.name}${logCaptureSuffix(captured)}`,
     );
   }
 
@@ -365,35 +307,18 @@ export default function PlayPage({
       card,
       BOARD_SIZE,
     );
-    const {
-      board: finalBoard,
-      foodCaptures,
-      eatenFoodCards,
-    } = applyEqualValueFoodCaptures(nextBoard, cellIndex, card);
 
-    let nextPlayerStates = applyOwnerCaptureBookkeeping(playerStates, captured);
-    if (eatenFoodCards.length > 0) {
-      nextPlayerStates = nextPlayerStates.map((state, i) =>
-        i === activeIndex
-          ? {
-              ...state,
-              drawPile: shuffle([...state.drawPile, ...eatenFoodCards]),
-              score: state.score + eatenFoodCards.length,
-            }
-          : state,
-      );
-    }
+    const nextPlayerStates = applyOwnerCaptureBookkeeping(
+      playerStates,
+      captured,
+    );
 
-    commitBoardAfterCapture(withMove, finalBoard, [
-      ...captured,
-      ...foodCaptures,
-    ]);
+    commitBoardAfterCapture(withMove, nextBoard, captured);
     setPlayerStates(nextPlayerStates);
     spendAction();
     playActionTick();
-    if (eatenFoodCards.length > 0) playFoodCrunch();
     pushLog(
-      `${displayName(activePlayer)} moved ${card.name}${logCaptureSuffix(captured, eatenFoodCards)}`,
+      `${displayName(activePlayer)} moved ${card.name}${logCaptureSuffix(captured)}`,
     );
   }
 
@@ -622,31 +547,13 @@ export default function PlayPage({
         BOARD_SIZE,
       );
 
-      let equalValueFoodCards = [];
-      if (ruleset.allowEqualValuePlay) {
-        const foodCaptures = resolveFoodCaptures(
-          afterCaptures,
-          move.cellIndex,
-          placedCard,
-          BOARD_SIZE,
-        );
-        if (foodCaptures.length > 0) {
-          foodCaptures.forEach(({ index: foodIndex, card: foodCell }) => {
-            afterCaptures[foodIndex] = null;
-            equalValueFoodCards.push(foodToCard(foodCell));
-          });
-        }
-      }
-
       workingBoard = afterCaptures;
       workingHand = workingHand.filter((c) => c.id !== move.cardId);
       capturedList = [...capturedList, ...captured];
-      eatenFoodCards = [...eatenFoodCards, ...equalValueFoodCards];
       remaining -= 1;
       playActionTick();
-      if (equalValueFoodCards.length > 0) playFoodCrunch();
       newLogEntries.push(
-        `${displayName(activePlayer)} played ${card.name}${logCaptureSuffix(captured, equalValueFoodCards)}`,
+        `${displayName(activePlayer)} played ${card.name}${logCaptureSuffix(captured)}`,
       );
     }
 

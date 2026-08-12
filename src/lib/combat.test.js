@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  resolveCaptures,
-  canPlaceCard,
-  resolveFoodCaptures,
-} from './combat.js';
+import { resolveCaptures, canPlaceCard } from './combat.js';
 
 const BOARD_SIZE = 10;
 
@@ -76,62 +72,6 @@ describe('resolveCaptures', () => {
 
     const attacker = makeCard('p1', { top: 5, right: 5, bottom: 1, left: 1 });
     const { captured } = resolveCaptures(board, 55, attacker, BOARD_SIZE);
-
-    const indices = captured.map((c) => c.index).sort((a, b) => a - b);
-    expect(indices).toEqual([45, 56]);
-  });
-});
-
-describe('resolveFoodCaptures', () => {
-  it('captures Food when the facing value exactly matches (#90)', () => {
-    const board = Array(100).fill(null);
-    board[56] = {
-      type: 'food',
-      sides: { top: 1, right: 1, bottom: 1, left: 3 },
-    };
-
-    const card = makeCard('p1', { top: 1, right: 3, bottom: 1, left: 1 });
-    const captured = resolveFoodCaptures(board, 55, card, BOARD_SIZE);
-
-    expect(captured).toHaveLength(1);
-    expect(captured[0].index).toBe(56);
-  });
-
-  it('does not capture Food when the value is higher or lower, only exact', () => {
-    const board = Array(100).fill(null);
-    board[56] = {
-      type: 'food',
-      sides: { top: 1, right: 1, bottom: 1, left: 3 },
-    };
-
-    const higher = makeCard('p1', { top: 1, right: 9, bottom: 1, left: 1 });
-    expect(resolveFoodCaptures(board, 55, higher, BOARD_SIZE)).toHaveLength(0);
-
-    const lower = makeCard('p1', { top: 1, right: 1, bottom: 1, left: 1 });
-    expect(resolveFoodCaptures(board, 55, lower, BOARD_SIZE)).toHaveLength(0);
-  });
-
-  it('never captures an opponent bird, only Food', () => {
-    const board = Array(100).fill(null);
-    board[56] = makeCard('p2', { top: 1, right: 1, bottom: 1, left: 3 });
-
-    const card = makeCard('p1', { top: 1, right: 3, bottom: 1, left: 1 });
-    expect(resolveFoodCaptures(board, 55, card, BOARD_SIZE)).toHaveLength(0);
-  });
-
-  it('captures multiple matching Food neighbors at once', () => {
-    const board = Array(100).fill(null);
-    board[56] = {
-      type: 'food',
-      sides: { top: 1, right: 1, bottom: 1, left: 2 },
-    };
-    board[45] = {
-      type: 'food',
-      sides: { top: 1, right: 1, bottom: 2, left: 1 },
-    };
-
-    const card = makeCard('p1', { top: 2, right: 2, bottom: 1, left: 1 });
-    const captured = resolveFoodCaptures(board, 55, card, BOARD_SIZE);
 
     const indices = captured.map((c) => c.index).sort((a, b) => a - b);
     expect(indices).toEqual([45, 56]);
