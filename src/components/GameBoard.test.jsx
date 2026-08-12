@@ -3,7 +3,7 @@ import { computeFitView, BOARD_SIZE } from './GameBoard.jsx';
 import { placeFoodShapes, DEFAULT_FOOD } from '../lib/food.js';
 
 const CELL_GAP = 0;
-const DEFAULT_CELL_SIZE = 88;
+const DEFAULT_CELL_SIZE = 102;
 const VIEWPORT_PX = 5 * (DEFAULT_CELL_SIZE + CELL_GAP) - CELL_GAP;
 
 function buildCells(foodBoard) {

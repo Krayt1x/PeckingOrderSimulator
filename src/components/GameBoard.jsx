@@ -6,7 +6,7 @@ const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 
 export const BOARD_SIZE = 16;
 const VIEWPORT_SIZE = 5;
-const DEFAULT_CELL_SIZE = 88;
+const DEFAULT_CELL_SIZE = 102;
 const MIN_CELL_SIZE = 32;
 const MAX_CELL_SIZE = 144;
 const ZOOM_STEP = 16;
