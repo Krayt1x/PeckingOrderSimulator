@@ -34,6 +34,31 @@ export function resolveCaptures(board, index, card, boardSize) {
   return { board: next, captured };
 }
 
+// Only relevant when the "Equal Value Playable" ruleset is on: a card
+// whose facing side exactly matches an adjacent Food tile's facing value
+// captures that Food outright — an alternate way to claim it besides
+// winning majority control of its neighbors. Returns the list of
+// { index, card } Food cells captured this way; doesn't mutate the board
+// itself, same as resolveCaptures.
+export function resolveFoodCaptures(board, index, card, boardSize) {
+  const neighbors = getNeighbors(index, boardSize);
+  const captured = [];
+
+  Object.entries(neighbors).forEach(([direction, neighborIndex]) => {
+    if (neighborIndex === null) return;
+    const target = board[neighborIndex];
+    if (!target || target.type !== 'food') return;
+
+    const attackValue = card.sides[direction];
+    const defendValue = target.sides[OPPOSITE_SIDE[direction]];
+    if (attackValue === defendValue) {
+      captured.push({ index: neighborIndex, card: target });
+    }
+  });
+
+  return captured;
+}
+
 // A card may not be placed or moved onto a cell where its facing side is
 // lower than or equal to an adjacent opponent card's facing side on that
 // same edge — you can only play into a matchup you'd win outright, never

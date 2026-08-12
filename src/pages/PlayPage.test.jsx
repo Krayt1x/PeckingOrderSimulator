@@ -404,6 +404,46 @@ describe('PlayPage', () => {
     ).toBeDefined();
   });
 
+  it('captures Food outright on a matching value, when Equal Value Playable (#90)', async () => {
+    render(
+      <PlayPage
+        players={[
+          { id: 'p1', name: 'Player 1', isCPU: false, deckId: 'deck-weak' },
+          { id: 'p2', name: 'Player 2', isCPU: false, deckId: 'deck-strong' },
+        ]}
+        decks={strongVsWeakDecks()}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+        ruleset={{ allowEqualValuePlay: true }}
+      />,
+    );
+
+    // The "Weak" deck's cards are 1-1-1-1, exactly matching the Crumb
+    // Food's own 1-1-1-1 sides.
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const spot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[spot]);
+
+    await waitFor(
+      () =>
+        expect(isFilled(screen.getAllByRole('gridcell')[foodIndex])).toBe(
+          false,
+        ),
+      { timeout: 2000 },
+    );
+    expect(scoreEntryText('Player 1')).toBe('Player 1: 1');
+
+    const recentActions = screen.getByRole('list', { name: 'Recent actions' });
+    expect(within(recentActions).getByText(/claiming Crumb/)).toBeDefined();
+  });
+
   it('blocks a tied-value placement by default, but allows it with Equal Value Playable', () => {
     function tiedDecks() {
       return [
