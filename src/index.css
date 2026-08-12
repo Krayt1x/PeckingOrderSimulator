@@ -280,19 +280,18 @@ body {
   text-align: center;
 }
 
-.game-over-banner {
-  background: var(--bg-card);
-  border: 1px solid var(--accent);
-  border-radius: 0.5rem;
-  padding: 1rem 1.25rem;
-  margin-bottom: 1rem;
+/* Reuses .pile-modal's box/backdrop for its chrome (#100) — just needs its
+   own text alignment and spacing on top of that. */
+.game-over-modal {
+  text-align: center;
+  align-items: center;
 }
 
-.game-over-banner h2 {
-  margin: 0 0 0.35rem;
+.game-over-modal h2 {
+  margin: 0;
 }
 
-.game-over-banner p {
+.game-over-modal p {
   margin: 0;
   color: var(--text-secondary);
 }
@@ -854,7 +853,7 @@ body {
 }
 
 [data-skin='alpha-pixel-art'] .board-viewport {
-  border: 4px solid #000;
+  border: 4px solid rgba(0, 0, 0, 0.55);
   border-radius: 0;
   background-color: #1e6b1e;
   background-image: conic-gradient(
@@ -901,7 +900,7 @@ body {
 }
 
 [data-skin='alpha-pixel-art'] .status-tray,
-[data-skin='alpha-pixel-art'] .game-over-banner {
+[data-skin='alpha-pixel-art'] .game-over-modal {
   background: var(--pixel-panel-bg);
   border: 3px solid #000;
   border-radius: 0;
@@ -914,12 +913,12 @@ body {
 [data-skin='alpha-pixel-art'] .status-tray-actions,
 [data-skin='alpha-pixel-art'] .status-tray-empty,
 [data-skin='alpha-pixel-art'] .status-tray-setting dd,
-[data-skin='alpha-pixel-art'] .game-over-banner h2 {
+[data-skin='alpha-pixel-art'] .game-over-modal h2 {
   color: var(--pixel-ink);
 }
 
 [data-skin='alpha-pixel-art'] .status-tray-setting dt,
-[data-skin='alpha-pixel-art'] .game-over-banner p {
+[data-skin='alpha-pixel-art'] .game-over-modal p {
   color: var(--pixel-ink-dim);
 }
 
@@ -945,17 +944,21 @@ body {
   font-weight: 800;
 }
 
-/* Empty board cells go transparent (showing the green board-viewport
-   through) with a small pixel L-bracket tick at each corner instead of a
-   plain white tile — since cells sit flush, four neighboring ticks meet
-   at each interior intersection like a VTT grid overlay. */
+/* The bold monospace treatment reads noticeably larger than the default
+   sans-serif at the same font-size, so the actions list gets scaled back
+   down a step to stay compact (#100). */
+[data-skin='alpha-pixel-art'] .status-tray-actions,
+[data-skin='alpha-pixel-art'] .status-tray-empty {
+  font-size: 0.72rem;
+}
+
+/* Empty board cells go fully transparent, showing the tiled board-viewport
+   pattern straight through — no corner markers (#100). */
 [data-skin='alpha-pixel-art'] .board-cell {
   border-radius: 0;
   border-color: transparent;
   background-color: transparent;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23fef6d8' stroke='%230d3b1a' stroke-width='1'%3E%3Crect x='2' y='2' width='6' height='2'/%3E%3Crect x='2' y='2' width='2' height='6'/%3E%3Crect x='92' y='2' width='6' height='2'/%3E%3Crect x='96' y='2' width='2' height='6'/%3E%3Crect x='2' y='96' width='6' height='2'/%3E%3Crect x='2' y='92' width='2' height='6'/%3E%3Crect x='92' y='96' width='6' height='2'/%3E%3Crect x='96' y='92' width='2' height='6'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
+  background-image: none;
 }
 
 [data-skin='alpha-pixel-art'] .board-cell-droppable {
@@ -991,13 +994,23 @@ body {
 
 [data-skin='alpha-pixel-art'] .card-food {
   border-radius: 0;
+  border-width: 3px;
+  /* A flatter, more opaque fill than the default translucent tint reads
+     much better against the board's own busy tile pattern (#100). */
+  background: color-mix(in srgb, var(--card-color, var(--accent)) 55%, #000);
+}
+
+[data-skin='alpha-pixel-art'] .card-food .card-name {
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
 }
 
 [data-skin='alpha-pixel-art'] .card-side {
   border-radius: 0;
   border-width: 2px;
-  background: color-mix(in srgb, var(--card-border) 55%, black);
+  background: #000;
   color: #f0c419;
+  text-shadow: 1px 1px 0 #000;
 }
 
 [data-skin='alpha-pixel-art'] .card-side-top,
@@ -1011,14 +1024,14 @@ body {
   color: #f0c419;
 }
 
-/* The bird's name text is replaced by its pixel sprite under this skin
-   (#97) — Food cards have no sprite, so they keep showing their name. */
-[data-skin='alpha-pixel-art'] .card:not(.card-food) .card-name {
-  display: none;
-}
-
 [data-skin='alpha-pixel-art'] .card-pixel-sprite {
   display: block;
+  /* A light backing plate behind the sprite so a dark bird (the crow,
+     magpie, swan) still reads clearly against the card's own dark
+     background (#100). */
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+  padding: 2px;
 }
 
 [data-skin='alpha-pixel-art'] .card-back-deck {

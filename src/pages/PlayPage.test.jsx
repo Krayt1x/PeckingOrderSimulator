@@ -962,6 +962,32 @@ describe('PlayPage', () => {
     expect(screen.queryByRole('button', { name: 'End Turn' })).toBeNull();
   });
 
+  it('shows the game-over announcement as a modal in front of the board, dismissible via View Board (#100)', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const birdSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    playThenCycleBackToPlayer1(birdSpot);
+    fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+
+    expect(document.querySelector('.color-modal-backdrop')).not.toBeNull();
+    expect(
+      document.querySelector('.color-modal-backdrop .game-over-modal'),
+    ).not.toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'View Board' }));
+    expect(document.querySelector('.color-modal-backdrop')).toBeNull();
+  });
+
   it("puts a gold circle behind the current leader's score, not a tied/trailing one", () => {
     render(
       <PlayPage
@@ -1176,6 +1202,9 @@ describe('PlayPage', () => {
       b.textContent.includes('Crumb A'),
     );
     expect(foodCardButton).toBeDefined();
+    // A food-derived card is never a real bird — it shouldn't get a
+    // procedurally-generated bird sprite (#100).
+    expect(foodCardButton.querySelector('.card-pixel-sprite')).toBeNull();
 
     cells = screen.getAllByRole('gridcell');
     const destination = neighbors(foodB).find((i) => !isFilled(cells[i]));

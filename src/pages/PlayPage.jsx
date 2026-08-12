@@ -126,6 +126,7 @@ export default function PlayPage({
   const [pileModal, setPileModal] = useState(null);
   const [actionLog, setActionLog] = useState([]);
   const [hoveredPlayerId, setHoveredPlayerId] = useState(null);
+  const [gameOverDismissed, setGameOverDismissed] = useState(false);
 
   const activePlayer = players[activeIndex];
   const activeState = playerStates[activeIndex];
@@ -717,14 +718,29 @@ export default function PlayPage({
 
   return (
     <main className="page" data-skin={activeSkin}>
-      {gameOver ? (
-        <div className="game-over-banner">
-          <h2>Game Over</h2>
-          <p>
-            {winners.length === 1
-              ? `${displayName(winners[0])} wins with ${maxScore} point${maxScore === 1 ? '' : 's'}!`
-              : `It's a tie between ${winners.map(displayName).join(' and ')} at ${maxScore} points!`}
-          </p>
+      {gameOver && !gameOverDismissed ? (
+        <div
+          className="color-modal-backdrop"
+          onClick={() => setGameOverDismissed(true)}
+        >
+          <div
+            className="pile-modal game-over-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2>Game Over</h2>
+            <p>
+              {winners.length === 1
+                ? `${displayName(winners[0])} wins with ${maxScore} point${maxScore === 1 ? '' : 's'}!`
+                : `It's a tie between ${winners.map(displayName).join(' and ')} at ${maxScore} points!`}
+            </p>
+            <button
+              type="button"
+              className="board-recenter"
+              onClick={() => setGameOverDismissed(true)}
+            >
+              View Board
+            </button>
+          </div>
         </div>
       ) : null}
       <GameBoard

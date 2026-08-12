@@ -62,7 +62,7 @@ export default function Hand({
                   ))}
                 </span>
               ) : null}
-              {faceSides ? (
+              {faceSides && !card.fromFood ? (
                 <PixelBirdSprite
                   typeId={card.typeId}
                   name={card.name}
