@@ -826,6 +826,28 @@ describe('PlayPage', () => {
     expect(screen.getByText('Actions: 1/1')).toBeDefined();
   });
 
+  it('flashes a Food tile once it becomes claimable (#73)', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={TWO_FOOD}
+        foodShapeIds={['crumb-a', 'crumb-b']}
+      />,
+    );
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const birdSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    // Before anyone has a bird there, the tile isn't claimable by anyone.
+    expect(cells[foodIndex].querySelector('.card-claimable')).toBeNull();
+
+    playThenCycleBackToPlayer1(birdSpot);
+
+    cells = screen.getAllByRole('gridcell');
+    expect(cells[foodIndex].querySelector('.card-claimable')).not.toBeNull();
+  });
+
   it('lets you eat a Food piece you have majority control over by tapping it directly', () => {
     render(
       <PlayPage

@@ -108,6 +108,8 @@ function distanceBetween(a, b) {
 export default function GameBoard({
   cells,
   highlightedIndices,
+  claimableIndices,
+  claimColor,
   selectedIndex,
   onCellClick,
   playerColors = {},
@@ -305,6 +307,7 @@ export default function GameBoard({
             const cardShowsName = showCardNames;
 
             const isDraggable = Boolean(draggableIndices?.has(index));
+            const isClaimable = Boolean(claimableIndices?.has(index));
 
             return (
               <button
@@ -329,10 +332,15 @@ export default function GameBoard({
               >
                 {card ? (
                   <span
-                    className={`card card-on-board${card.type === 'food' ? ' card-food' : ''}`}
+                    className={`card card-on-board${card.type === 'food' ? ' card-food' : ''}${isClaimable ? ' card-claimable' : ''}`}
                     style={
                       card.type === 'food'
-                        ? { '--card-color': card.color }
+                        ? {
+                            '--card-color': card.color,
+                            ...(isClaimable
+                              ? { '--claim-color': claimColor }
+                              : null),
+                          }
                         : {
                             '--card-border': playerColors[card.ownerId],
                             '--card-bg': card.deckColor,

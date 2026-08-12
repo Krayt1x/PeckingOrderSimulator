@@ -565,7 +565,11 @@ export default function PlayPage({
   }
 
   function computeBoardHighlights() {
-    const none = { highlighted: new Set(), selected: null };
+    const none = {
+      highlighted: new Set(),
+      claimable: new Set(),
+      selected: null,
+    };
     if (!canAct) return none;
 
     if (selectedCardId) {
@@ -585,7 +589,11 @@ export default function PlayPage({
           ruleset.allowEqualValuePlay,
         ),
       );
-      return { highlighted: new Set(indices), selected: null };
+      return {
+        highlighted: new Set(indices),
+        claimable: new Set(),
+        selected: null,
+      };
     }
 
     if (eatFoodIndex !== null) {
@@ -598,6 +606,7 @@ export default function PlayPage({
             activePlayer.id,
           ),
         ),
+        claimable: new Set(),
         selected: eatFoodIndex,
       };
     }
@@ -616,18 +625,26 @@ export default function PlayPage({
               ),
           )
         : [];
-      return { highlighted: new Set(indices), selected: dragSourceIndex };
+      return {
+        highlighted: new Set(indices),
+        claimable: new Set(),
+        selected: dragSourceIndex,
+      };
     }
 
+    // Idle turn state — flash every Food tile the active player currently
+    // has majority control over in their own color, so it's obvious at a
+    // glance that it's ready to eat (#73).
     return {
-      highlighted: new Set(
+      highlighted: new Set(),
+      claimable: new Set(
         getEligibleFoodIndices(board, BOARD_SIZE, activePlayer.id),
       ),
       selected: null,
     };
   }
 
-  const { highlighted, selected } = computeBoardHighlights();
+  const { highlighted, claimable, selected } = computeBoardHighlights();
   const playerColors = Object.fromEntries(players.map((p) => [p.id, p.color]));
 
   const draggableIndices = new Set();
@@ -660,6 +677,8 @@ export default function PlayPage({
       <GameBoard
         cells={board}
         highlightedIndices={highlighted}
+        claimableIndices={claimable}
+        claimColor={activePlayer.color}
         selectedIndex={selected}
         onCellClick={handleCellClick}
         playerColors={playerColors}
