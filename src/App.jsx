@@ -109,6 +109,7 @@ export default function App() {
           food={food}
           foodShapeIds={gameSetup.foodShapeIds}
           ruleset={gameSetup.ruleset}
+          isTutorial={gameSetup.isTutorial}
           onPlayAgain={playAgain}
         />
       );

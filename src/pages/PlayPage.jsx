@@ -20,6 +20,7 @@ import { pickCpuMove, pickCpuEat } from '../lib/cpu.js';
 import { rotateSides, baseSides } from '../lib/rotation.js';
 import { playActionTick, playFoodCrunch } from '../lib/sound.js';
 import { DEFAULT_RULESET } from '../lib/rulesets.js';
+import { TUTORIAL_STEPS } from '../lib/tutorial.js';
 
 const ACTIONS_PER_TURN = 1;
 const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
@@ -166,6 +167,7 @@ export default function PlayPage({
   food,
   foodShapeIds,
   ruleset = DEFAULT_RULESET,
+  isTutorial = false,
   onPlayAgain,
 }) {
   const shapeIds = foodShapeIds ?? food.shapes.map((s) => s.id);
@@ -187,6 +189,8 @@ export default function PlayPage({
   const [hoveredPlayerId, setHoveredPlayerId] = useState(null);
   const [gameOverDismissed, setGameOverDismissed] = useState(false);
   const [gameOverVisible, setGameOverVisible] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [tutorialDismissed, setTutorialDismissed] = useState(false);
   // Snapshots taken before each move this turn, most recent last — cleared
   // whenever the turn advances, so undo never reaches into a prior turn.
   const [moveHistory, setMoveHistory] = useState([]);
@@ -1026,6 +1030,32 @@ export default function PlayPage({
           </div>
         )}
       </div>
+      {isTutorial && !tutorialDismissed && tutorialStep < TUTORIAL_STEPS.length ? (
+        <div className="tutorial-banner">
+          <div className="tutorial-banner-header">
+            <span>
+              Step {tutorialStep + 1} of {TUTORIAL_STEPS.length}
+            </span>
+            <button
+              type="button"
+              className="tutorial-banner-skip"
+              onClick={() => setTutorialDismissed(true)}
+            >
+              Skip Tutorial
+            </button>
+          </div>
+          <p className="tutorial-banner-body">{TUTORIAL_STEPS[tutorialStep]}</p>
+          <div className="tutorial-banner-actions">
+            <button
+              type="button"
+              className="end-turn-btn"
+              onClick={() => setTutorialStep((s) => s + 1)}
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      ) : null}
       <div className="hand-row">
         <button
           type="button"

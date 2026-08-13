@@ -10,6 +10,8 @@ import {
 import NewGamePage, {
   PLAYER_COLOR_PALETTE,
   CHICKEN_RUN_NAMES,
+  TUTORIAL_FOOD_SHAPE_IDS,
+  TUTORIAL_RULESET,
 } from './NewGamePage.jsx';
 import { DEFAULT_DECKS } from '../lib/decks.js';
 import { DEFAULT_FOOD } from '../lib/food.js';
@@ -29,7 +31,7 @@ function playerName(index) {
 }
 
 describe('NewGamePage', () => {
-  it('starts on the Players step with 2 players picked by default', () => {
+  it('starts on the Mode step, offering New Game and Tutorial (#102)', () => {
     render(
       <NewGamePage
         decks={DEFAULT_DECKS}
@@ -37,10 +39,47 @@ describe('NewGamePage', () => {
         onStart={() => {}}
       />,
     );
-    expect(screen.getByText('How many players?')).toBeDefined();
+    expect(screen.getByText('How do you want to play?')).toBeDefined();
+    expect(screen.getByRole('button', { name: /New Game/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Tutorial/ })).toBeDefined();
+  });
+
+  it('lands on the Players step with 2 players picked by default once New Game is chosen', async () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /New Game/ }));
+    await waitFor(() =>
+      expect(screen.getByText('How many players?')).toBeDefined(),
+    );
     expect(screen.getByRole('button', { name: '2' }).className).toContain(
       'selected',
     );
+  });
+
+  it('jumps straight into a fixed 2-player game when Tutorial is chosen (#102)', () => {
+    const onStart = vi.fn();
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={onStart}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Tutorial/ }));
+
+    expect(onStart).toHaveBeenCalledTimes(1);
+    const setup = onStart.mock.calls[0][0];
+    expect(setup.isTutorial).toBe(true);
+    expect(setup.players).toHaveLength(2);
+    expect(setup.players[0].isCPU).toBe(false);
+    expect(setup.players[1].isCPU).toBe(true);
+    expect(setup.foodShapeIds).toEqual(TUTORIAL_FOOD_SHAPE_IDS);
+    expect(setup.ruleset).toEqual(TUTORIAL_RULESET);
   });
 
   it('does not offer a 1-player option — the game needs an opponent', () => {
@@ -51,6 +90,7 @@ describe('NewGamePage', () => {
         onStart={() => {}}
       />,
     );
+    goToStep('Players');
     expect(screen.queryByRole('button', { name: '1' })).toBeNull();
   });
 
@@ -62,6 +102,7 @@ describe('NewGamePage', () => {
         onStart={() => {}}
       />,
     );
+    goToStep('Players');
 
     fireEvent.click(screen.getByRole('button', { name: '4' }));
 
@@ -93,6 +134,7 @@ describe('NewGamePage', () => {
         onStart={() => {}}
       />,
     );
+    goToStep('Players');
     fireEvent.click(screen.getByRole('button', { name: '4' }));
 
     await waitFor(() =>
@@ -480,6 +522,7 @@ describe('NewGamePage', () => {
         onStart={() => {}}
       />,
     );
+    goToStep('Players');
     fireEvent.click(screen.getByRole('button', { name: '3' }));
     goToStep('Food');
 
@@ -506,6 +549,7 @@ describe('NewGamePage', () => {
         onStart={() => {}}
       />,
     );
+    goToStep('Players');
     fireEvent.click(screen.getByRole('button', { name: '4' }));
     goToStep('Food');
 

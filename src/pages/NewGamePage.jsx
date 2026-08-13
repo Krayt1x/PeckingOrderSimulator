@@ -12,12 +12,27 @@ const MAX_PLAYERS = 4;
 const PLAYER_COUNT_OPTIONS = [2, 3, 4];
 
 const WIZARD_STEPS = [
+  { key: 'mode', label: 'Mode' },
   { key: 'players', label: 'Players' },
   { key: 'rosters', label: 'Rosters' },
   { key: 'food', label: 'Food' },
   { key: 'ruleset', label: 'Ruleset' },
   { key: 'review', label: 'Review' },
 ];
+
+// Picking Tutorial (#102) jumps straight into a fixed 2-player game rather
+// than continuing through the rest of the wizard.
+export const TUTORIAL_FOOD_SHAPE_IDS = ['chip', 'potato-cake'];
+
+export const TUTORIAL_RULESET = {
+  allowMoving: true,
+  allowReturnToHand: true,
+  allowCardRotation: true,
+  allowEqualValuePlay: true,
+  allowRandomTerrain: false,
+  allowCustomSkins: true,
+  skin: 'alpha-pixel-art',
+};
 
 // A player's color borders their cards on the board, independent of which
 // deck (and therefore card background color) they're playing. Laid out as
@@ -121,6 +136,24 @@ function defaultPlayer(index, decks, usedColors = [], usedNames = []) {
   };
 }
 
+// Builds a fresh roster of `count` default players (Player 1 human, the
+// rest CPU) — used both for the wizard's initial state and for jumping
+// straight into a Tutorial game (#102), so both stay in sync.
+function buildDefaultRoster(count, decks) {
+  const roster = [];
+  for (let i = 0; i < count; i++) {
+    roster.push(
+      defaultPlayer(
+        i,
+        decks,
+        roster.map((p) => p.color),
+        roster.map((p) => p.name),
+      ),
+    );
+  }
+  return roster;
+}
+
 const CPU_STRATEGIES = ['aggressive', 'defensive', 'ruthless'];
 
 // Resolves any "random" deck/CPU-strategy picks to a concrete choice once,
@@ -141,24 +174,11 @@ function resolveRandomPlayerSettings(playerList, decks) {
 }
 
 export default function NewGamePage({ decks, food, onStart }) {
-  const [players, setPlayers] = useState(() => {
-    const initial = [];
-    for (let i = 0; i < 2; i++) {
-      initial.push(
-        defaultPlayer(
-          i,
-          decks,
-          initial.map((p) => p.color),
-          initial.map((p) => p.name),
-        ),
-      );
-    }
-    return initial;
-  });
+  const [players, setPlayers] = useState(() => buildDefaultRoster(2, decks));
   const [selectedFoodShapeIds, setSelectedFoodShapeIds] = useState(() =>
     defaultFoodShapeIds(2, food),
   );
-  const [wizardStep, setWizardStep] = useState('players');
+  const [wizardStep, setWizardStep] = useState('mode');
   const [colorPickerPlayerIndex, setColorPickerPlayerIndex] = useState(null);
   const [ruleset, setRuleset] = useState(DEFAULT_RULESET);
   const [firstPlayerId, setFirstPlayerId] = useState(null);
@@ -244,6 +264,24 @@ export default function NewGamePage({ decks, food, onStart }) {
     });
   }
 
+  // Picking Tutorial (#102) skips the rest of the wizard entirely — a
+  // fixed 2-player roster (human always first, so the guided steps land on
+  // their turn), Chip + Potato Cake, and a fixed ruleset chosen to keep
+  // the board simple to learn on.
+  function startTutorial() {
+    const availableIds = new Set(food.shapes.map((s) => s.id));
+    const foodShapeIds = TUTORIAL_FOOD_SHAPE_IDS.filter((id) =>
+      availableIds.has(id),
+    );
+    onStart({
+      players: resolveRandomPlayerSettings(buildDefaultRoster(2, decks), decks),
+      foodId: food.id,
+      foodShapeIds: foodShapeIds.length > 0 ? foodShapeIds : [...availableIds],
+      ruleset: TUTORIAL_RULESET,
+      isTutorial: true,
+    });
+  }
+
   function stepSummary(key) {
     if (key === 'players') {
       return `${players.length} player${players.length === 1 ? '' : 's'}`;
@@ -282,6 +320,34 @@ export default function NewGamePage({ decks, food, onStart }) {
     const index = WIZARD_STEPS.findIndex((s) => s.key === key);
     const next = WIZARD_STEPS[index + 1];
     if (next) setWizardStep(next.key);
+  }
+
+  function renderModeStep() {
+    return (
+      <>
+        <p className="stage-label">How do you want to play?</p>
+        <div className="home-tile-grid two-col-mobile-grid">
+          <button
+            type="button"
+            className="home-tile"
+            onClick={() => advanceWizardStep('players')}
+          >
+            <span className="home-tile-icon">🎮</span>
+            <span className="home-tile-title">New Game</span>
+            <span className="home-tile-description">
+              Set up players, food, and rules yourself.
+            </span>
+          </button>
+          <button type="button" className="home-tile" onClick={startTutorial}>
+            <span className="home-tile-icon">🎓</span>
+            <span className="home-tile-title">Tutorial</span>
+            <span className="home-tile-description">
+              Jump into a guided 2-player game that teaches you the basics.
+            </span>
+          </button>
+        </div>
+      </>
+    );
   }
 
   function renderPlayersStep() {
@@ -556,6 +622,7 @@ export default function NewGamePage({ decks, food, onStart }) {
             ))}
           </div>
           <div className="wizard-body">
+            {wizardStep === 'mode' && renderModeStep()}
             {wizardStep === 'players' && renderPlayersStep()}
             {wizardStep === 'rosters' && renderRostersStep()}
             {wizardStep === 'food' && renderFoodStep()}
@@ -563,7 +630,9 @@ export default function NewGamePage({ decks, food, onStart }) {
             {wizardStep === 'review' && (
               <>
                 <p className="stage-label">Review &amp; start</p>
-                {WIZARD_STEPS.filter((s) => s.key !== 'review').map((s) => (
+                {WIZARD_STEPS.filter(
+                  (s) => s.key !== 'review' && s.key !== 'mode',
+                ).map((s) => (
                   <div key={s.key} className="wizard-review-line">
                     <span>{s.label}</span>
                     <span>{stepSummary(s.key) || '—'}</span>
@@ -580,7 +649,7 @@ export default function NewGamePage({ decks, food, onStart }) {
                 </div>
               </>
             )}
-            {wizardStep !== 'review' ? (
+            {wizardStep !== 'review' && wizardStep !== 'mode' ? (
               <div className="wizard-step-actions">
                 <button
                   type="button"

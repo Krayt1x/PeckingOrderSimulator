@@ -558,6 +558,52 @@ body {
   margin-top: 1.5rem;
 }
 
+/* The guided walkthrough shown during a Tutorial game (#102) — sits right
+   above the hand row it's usually talking about, styled like .status-tray
+   but with an accent border so it stands out as something to read. */
+.tutorial-banner {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  background: var(--bg-container);
+  border: 2px solid var(--accent);
+  border-radius: 0.5rem;
+}
+
+.tutorial-banner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.tutorial-banner-skip {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 600;
+}
+
+.tutorial-banner-body {
+  margin: 0 0 0.6rem;
+  font-size: 0.85rem;
+}
+
+.tutorial-banner-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* Visually hidden but still announced to assistive tech — used where a
    purely visual indicator (like the active player's bright pill border)
    replaces text for sighted users (#101). */

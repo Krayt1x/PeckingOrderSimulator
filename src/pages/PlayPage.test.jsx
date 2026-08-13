@@ -11,6 +11,7 @@ import PlayPage from './PlayPage.jsx';
 import { DEFAULT_DECKS, HAND_SIZE } from '../lib/decks.js';
 import { DEFAULT_FOOD } from '../lib/food.js';
 import { playActionTick, playFoodCrunch } from '../lib/sound.js';
+import { TUTORIAL_STEPS } from '../lib/tutorial.js';
 
 vi.mock('../lib/sound.js', () => ({
   playActionTick: vi.fn(),
@@ -2373,5 +2374,57 @@ describe('PlayPage', () => {
     const entries = within(recentActions).getAllByRole('listitem');
     expect(entries).toHaveLength(1);
     expect(entries[0].textContent).toMatch(/^Player 1 played/);
+  });
+});
+
+describe('Tutorial banner (#102)', () => {
+  it('is not shown outside of a Tutorial game', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        ruleset={{ allowRandomTerrain: false }}
+      />,
+    );
+    expect(screen.queryByText(/Step 1 of/)).toBeNull();
+  });
+
+  it('walks through each step and disappears once the last one is acknowledged', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        ruleset={{ allowRandomTerrain: false }}
+        isTutorial
+      />,
+    );
+
+    const totalSteps = TUTORIAL_STEPS.length;
+    for (let step = 1; step <= totalSteps; step++) {
+      expect(
+        screen.getByText(`Step ${step} of ${totalSteps}`),
+      ).toBeDefined();
+      fireEvent.click(screen.getByRole('button', { name: 'Got it' }));
+    }
+
+    expect(screen.queryByText(/Step \d+ of/)).toBeNull();
+  });
+
+  it('dismisses immediately when Skip Tutorial is clicked', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        ruleset={{ allowRandomTerrain: false }}
+        isTutorial
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Skip Tutorial' }));
+
+    expect(screen.queryByText(/Step \d+ of/)).toBeNull();
   });
 });
