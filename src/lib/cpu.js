@@ -39,7 +39,7 @@ function distanceToNearestFood(positions, index, boardSize) {
 // majority control (and so eating eligibility) over an adjacent Food
 // tile it doesn't already control — simulates the vote the new bird adds
 // without needing the placement to have actually happened yet.
-function wouldWinFoodMajority(board, boardSize, ownerId, cellIndex) {
+export function wouldWinFoodMajority(board, boardSize, ownerId, cellIndex) {
   const neighbors = getNeighbors(cellIndex, boardSize);
   return Object.values(neighbors).some((foodIndex) => {
     if (foodIndex === null || board[foodIndex]?.type !== 'food') return false;
@@ -48,7 +48,9 @@ function wouldWinFoodMajority(board, boardSize, ownerId, cellIndex) {
     Object.values(getNeighbors(foodIndex, boardSize)).forEach((birdIndex) => {
       if (birdIndex === null || birdIndex === cellIndex) return;
       const bird = board[birdIndex];
-      if (!bird || bird.type === 'food') return;
+      // Terrain has no ownerId — left uncounted here it would inflate
+      // "others" as a phantom opponent vote (#107 follow-up).
+      if (!bird || bird.type === 'food' || bird.type === 'terrain') return;
       counts[bird.ownerId] = (counts[bird.ownerId] ?? 0) + 1;
     });
     const mine = (counts[ownerId] ?? 0) + 1;
@@ -64,7 +66,7 @@ function wouldWinFoodMajority(board, boardSize, ownerId, cellIndex) {
 // current strict majority lead on an adjacent Food tile — the crux of
 // actually contesting Food rather than just camping near uncontested
 // tiles (#91).
-function contestsFoodMajority(board, boardSize, ownerId, cellIndex) {
+export function contestsFoodMajority(board, boardSize, ownerId, cellIndex) {
   const neighbors = getNeighbors(cellIndex, boardSize);
   return Object.values(neighbors).some((foodIndex) => {
     if (foodIndex === null || board[foodIndex]?.type !== 'food') return false;
@@ -73,7 +75,9 @@ function contestsFoodMajority(board, boardSize, ownerId, cellIndex) {
     Object.values(getNeighbors(foodIndex, boardSize)).forEach((birdIndex) => {
       if (birdIndex === null || birdIndex === cellIndex) return;
       const bird = board[birdIndex];
-      if (!bird || bird.type === 'food') return;
+      // Terrain has no ownerId — left uncounted here it would inflate
+      // maxOpponent as a phantom opponent vote (#107 follow-up).
+      if (!bird || bird.type === 'food' || bird.type === 'terrain') return;
       counts[bird.ownerId] = (counts[bird.ownerId] ?? 0) + 1;
     });
 

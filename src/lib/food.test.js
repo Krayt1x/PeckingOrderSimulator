@@ -240,6 +240,21 @@ describe('getEligibleFoodIndices', () => {
     expect(getEligibleFoodIndices(board, BOARD_SIZE, 'p1', true)).toEqual([]);
   });
 
+  it('ignores adjacent Terrain when computing majority control (#107 follow-up)', () => {
+    const board = Array(100).fill(null);
+    board[55] = {
+      type: 'food',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+    board[45] = bird('p1'); // top — p1's only neighbor
+    board[54] = { id: 'terrain-54', type: 'terrain', name: 'Rock' }; // left
+    board[56] = { id: 'terrain-56', type: 'terrain', name: 'Rock' }; // right
+
+    // Terrain has no ownerId — it must not count as opposing votes, or a
+    // single bird could never reach majority next to two rocks.
+    expect(getEligibleFoodIndices(board, BOARD_SIZE, 'p1')).toEqual([55]);
+  });
+
   it('evaluates each food tile of a multi-cell piece independently', () => {
     const board = Array(100).fill(null);
     // Two food cells side by side; p1 controls only the left one.

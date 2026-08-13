@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { pickCpuMove, pickCpuEat } from './cpu.js';
+import {
+  pickCpuMove,
+  pickCpuEat,
+  wouldWinFoodMajority,
+  contestsFoodMajority,
+} from './cpu.js';
 
 const BOARD_SIZE = 10;
 
@@ -339,6 +344,33 @@ describe('pickCpuMove', () => {
 
     expect([34, 36]).toContain(move.cellIndex);
     expect([25, 80, 91]).not.toContain(move.cellIndex);
+  });
+});
+
+describe('wouldWinFoodMajority / contestsFoodMajority ignore Terrain (#107 follow-up)', () => {
+  function terrain(index) {
+    return { id: `terrain-${index}`, type: 'terrain', name: 'Rock' };
+  }
+
+  it('still credits a majority win when the only other neighbors are Terrain', () => {
+    const board = Array(100).fill(null);
+    board[55] = { type: 'food', sides: FOOD_SIDES };
+    board[54] = terrain(54); // left of Food
+    board[56] = terrain(56); // right of Food
+
+    // Placing p1's bird at 45 (top of Food) should win majority — the two
+    // rocks have no ownerId and must not count as opposing votes.
+    expect(wouldWinFoodMajority(board, BOARD_SIZE, 'p1', 45)).toBe(true);
+  });
+
+  it('does not treat a lone Terrain neighbor as an opponent lead to contest', () => {
+    const board = Array(100).fill(null);
+    board[55] = { type: 'food', sides: FOOD_SIDES };
+    board[54] = terrain(54); // the only neighbor — no real opponent present
+
+    // With no owned birds nearby, there is no lead to contest — a rock
+    // must not be mistaken for one.
+    expect(contestsFoodMajority(board, BOARD_SIZE, 'p1', 56)).toBe(false);
   });
 });
 

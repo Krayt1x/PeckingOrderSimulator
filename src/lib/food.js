@@ -234,7 +234,12 @@ export function getEligibleFoodIndices(board, boardSize, activePlayerId) {
     Object.values(neighbors).forEach((neighborIndex) => {
       if (neighborIndex === null) return;
       const neighbor = board[neighborIndex];
-      if (!neighbor || neighbor.type === 'food') return;
+      // Terrain has no ownerId, so left uncounted here it would land in
+      // counts[undefined] and inflate "others" — an unowned rock acting
+      // as a phantom opponent vote against every player (#107 follow-up).
+      if (!neighbor || neighbor.type === 'food' || neighbor.type === 'terrain') {
+        return;
+      }
       counts[neighbor.ownerId] = (counts[neighbor.ownerId] ?? 0) + 1;
     });
 
