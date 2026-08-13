@@ -17,6 +17,18 @@ vi.mock('../lib/sound.js', () => ({
   playFoodCrunch: vi.fn(),
 }));
 
+// Random Terrain defaults on (#107), which makes any test that clicks a
+// specific board index flaky — a rock can land on the cell it expects to
+// be empty. Tests exercising Random Terrain itself still opt in via an
+// explicit `ruleset` prop, which overrides this default entirely.
+vi.mock('../lib/rulesets.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    DEFAULT_RULESET: { ...actual.DEFAULT_RULESET, allowRandomTerrain: false },
+  };
+});
+
 const BOARD_SIZE = 16;
 
 afterEach(() => {
@@ -231,12 +243,13 @@ describe('PlayPage', () => {
     );
   });
 
-  it('places no Terrain when Random Terrain is off (the default)', () => {
+  it('places no Terrain when Random Terrain is off', () => {
     render(
       <PlayPage
         players={twoPlayers()}
         decks={DEFAULT_DECKS}
         food={DEFAULT_FOOD}
+        ruleset={{ allowRandomTerrain: false }}
       />,
     );
 
@@ -1156,6 +1169,7 @@ describe('PlayPage', () => {
         decks={DEFAULT_DECKS}
         food={SINGLE_FOOD}
         foodShapeIds={['crumb']}
+        ruleset={{ allowRandomTerrain: false }}
       />,
     );
 
@@ -1419,6 +1433,7 @@ describe('PlayPage', () => {
         decks={DEFAULT_DECKS}
         food={TWO_FOOD}
         foodShapeIds={['crumb-a', 'crumb-b']}
+        ruleset={{ allowRandomTerrain: false }}
       />,
     );
     const scoreLeaderClass = (name) =>
@@ -1546,6 +1561,7 @@ describe('PlayPage', () => {
         decks={DEFAULT_DECKS}
         food={SINGLE_FOOD}
         foodShapeIds={['crumb']}
+        ruleset={{ allowRandomTerrain: false }}
       />,
     );
 
@@ -1610,6 +1626,7 @@ describe('PlayPage', () => {
         decks={tinyDecks()}
         food={TWO_FOOD}
         foodShapeIds={['crumb-a', 'crumb-b']}
+        ruleset={{ allowRandomTerrain: false }}
       />,
     );
 
@@ -1967,6 +1984,7 @@ describe('PlayPage', () => {
         players={twoPlayers({ cpuSecond: true })}
         decks={DEFAULT_DECKS}
         food={DEFAULT_FOOD}
+        ruleset={{ allowRandomTerrain: false }}
       />,
     );
 

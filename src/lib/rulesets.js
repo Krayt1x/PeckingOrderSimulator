@@ -46,6 +46,7 @@ export const DEFAULT_RULESET = {
   allowReturnToHand: true,
   allowCardRotation: true,
   allowEqualValuePlay: true,
+  allowRandomTerrain: true,
   allowCustomSkins: true,
   skin: 'alpha-pixel-art',
 };

@@ -601,6 +601,7 @@ describe('NewGamePage', () => {
       allowReturnToHand: false,
       allowCardRotation: true,
       allowEqualValuePlay: true,
+      allowRandomTerrain: true,
       allowCustomSkins: true,
       skin: 'alpha-pixel-art',
     });
@@ -624,6 +625,7 @@ describe('NewGamePage', () => {
       allowReturnToHand: true,
       allowCardRotation: true,
       allowEqualValuePlay: true,
+      allowRandomTerrain: true,
       allowCustomSkins: true,
       skin: 'alpha-pixel-art',
     });
