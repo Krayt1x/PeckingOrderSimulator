@@ -958,6 +958,35 @@ describe('PlayPage', () => {
     expect(face.style.transform).toBe('rotate(90deg)');
   });
 
+  it('turns a fresh card a quick 90° anti-clockwise on the very first click, not a long way around (#114)', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        ruleset={{
+          allowMoving: true,
+          allowReturnToHand: false,
+          allowCardRotation: true,
+        }}
+      />,
+    );
+    const hand = screen.getByRole('list', { name: 'Your hand' });
+    fireEvent.click(within(hand).getAllByRole('button')[0]);
+
+    const selectedCard = document.querySelector('.hand .card-selected');
+    const face = selectedCard.querySelector('.card-face');
+    expect(face.style.transform).toBe('');
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Rotate anti-clockwise' }),
+    );
+    // Wrapping this into the 0-359° range (e.g. -90 -> 270) made the CSS
+    // transition animate 270° clockwise instead of a quick 90° hop the
+    // other way — the raw stored value must go negative here, not wrap.
+    expect(face.style.transform).toBe('rotate(-90deg)');
+  });
+
   it('carries a rotated card’s visual spin onto the board once played (#92)', () => {
     render(
       <PlayPage

@@ -350,11 +350,13 @@ export default function PlayPage({
                   ? {
                       ...c,
                       sides: rotateSides(c.sides, direction),
-                      rotation:
-                        ((c.rotation ?? 0) +
-                          (direction === 'cw' ? 90 : -90) +
-                          360) %
-                        360,
+                      // Left unwrapped rather than normalized into
+                      // 0-359° — wrapping (e.g. -90 -> 270) made the CSS
+                      // transition animate the long way around on the
+                      // first anti-clockwise turn (#114). baseSides()
+                      // already reduces this mod 360 for computing side
+                      // values, so an ever-growing value here is safe.
+                      rotation: (c.rotation ?? 0) + (direction === 'cw' ? 90 : -90),
                     }
                   : c,
               ),
