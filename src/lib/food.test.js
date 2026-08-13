@@ -72,6 +72,19 @@ describe('placeFoodShapes', () => {
     );
   });
 
+  // Placement used to always pack shapes as close to the board's center
+  // as possible, so every new game put Food in the same spot — now it
+  // should land somewhere different each time (#101).
+  it('places Food at a random valid position instead of always the same spot', () => {
+    const food = { ...DEFAULT_FOOD, shapes: [chip] };
+    const positions = new Set();
+    for (let i = 0; i < 30; i++) {
+      const board = placeFoodShapes(food, REAL_BOARD_SIZE);
+      positions.add(Object.keys(board)[0]);
+    }
+    expect(positions.size).toBeGreaterThan(1);
+  });
+
   it('keeps every placed cell within the board bounds', () => {
     const boardSize = REAL_BOARD_SIZE;
     const board = placeFoodShapes(DEFAULT_FOOD, boardSize);

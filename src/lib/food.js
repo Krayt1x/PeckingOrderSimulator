@@ -110,8 +110,19 @@ function chebyshevDistance(rowA, colA, rowB, colB) {
   return Math.max(Math.abs(rowA - rowB), Math.abs(colA - colB));
 }
 
-// Places every shape in food.shapes onto a boardSize x boardSize board,
-// packed as close to the center as possible without overlapping, without
+// Fisher-Yates — local rather than importing decks.js's copy, so food
+// placement (a board-layout concern) doesn't depend on the deck module.
+function shuffle(list) {
+  const copy = [...list];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+// Places every shape in food.shapes onto a boardSize x boardSize board, at
+// a random valid position each time (#101) — without overlapping, without
 // any two distinct pieces landing within MIN_FOOD_DISTANCE tiles of each
 // other, and without any cell landing within EDGE_MARGIN tiles of the
 // board's edge. Bigger shapes are placed first so smaller ones can fill
@@ -125,19 +136,13 @@ export function placeFoodShapes(food, boardSize) {
   const minCoord = EDGE_MARGIN;
   const maxCoord = boardSize - 1 - EDGE_MARGIN;
 
-  const center = (boardSize - 1) / 2;
   const anchors = [];
   for (let row = 0; row < boardSize; row++) {
     for (let col = 0; col < boardSize; col++) {
       anchors.push({ row, col });
     }
   }
-  anchors.sort(
-    (a, b) =>
-      (a.row - center) ** 2 +
-      (a.col - center) ** 2 -
-      ((b.row - center) ** 2 + (b.col - center) ** 2),
-  );
+  const shuffledAnchors = shuffle(anchors);
 
   const bySize = [...shapes].sort((a, b) => b.cells.length - a.cells.length);
 
@@ -145,7 +150,7 @@ export function placeFoodShapes(food, boardSize) {
     if (shape.cells.length === 0) return;
     const { width, height } = shapeBounds(shape);
 
-    const anchor = anchors.find(({ row, col }) => {
+    const anchor = shuffledAnchors.find(({ row, col }) => {
       if (row + height > boardSize || col + width > boardSize) return false;
 
       return shape.cells.every((cell) => {

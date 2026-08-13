@@ -1582,10 +1582,12 @@ describe('PlayPage', () => {
     );
 
     let cells = screen.getAllByRole('gridcell');
-    const foodIndices = cells
-      .map((c, i) => (c.querySelector('.card-food') ? i : -1))
-      .filter((i) => i >= 0);
-    const [foodA, foodB] = foodIndices;
+    // Food placement is randomized (#101), so which board index ends up
+    // "first" varies from run to run — find Food A by its actual name
+    // rather than assuming index order matches shape order.
+    const foodA = cells.findIndex((c) =>
+      c.querySelector('.card-food[title="Crumb A"]'),
+    );
     const birdSpot = neighbors(foodA).find((i) => !isFilled(cells[i]));
 
     // Player 1 plays their only card next to Food A.
@@ -1625,6 +1627,8 @@ describe('PlayPage', () => {
     expect(foodCardButton.querySelector('.card-pixel-sprite')).toBeNull();
 
     cells = screen.getAllByRole('gridcell');
+    // Food A was just eaten, so Crumb B is the only Food left on the board.
+    const foodB = cells.findIndex((c) => c.querySelector('.card-food'));
     const destination = neighbors(foodB).find((i) => !isFilled(cells[i]));
 
     // Selecting the Food-derived card highlights no board cells, and
