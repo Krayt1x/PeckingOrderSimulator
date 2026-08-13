@@ -6,22 +6,28 @@ const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 
 export const BOARD_SIZE = 16;
 const VIEWPORT_SIZE = 5;
-const DESKTOP_CELL_SIZE = 102;
-const MOBILE_CELL_SIZE = 64;
-const MOBILE_BREAKPOINT_PX = 700;
 const MIN_CELL_SIZE = 32;
 const MAX_CELL_SIZE = 144;
 const ZOOM_STEP = 16;
 const CELL_GAP = 0;
 
-// Below the app's mobile breakpoint the viewport box itself needs to
-// shrink too, not just the cells inside it — otherwise a box sized for
-// desktop overflows a narrow phone screen regardless of zoom level.
+// Mirrors .page's own CSS (max-width: 560px; padding: 0 1.5rem) so the
+// viewport box always exactly fills the same content width .page gives
+// everything else — full desktop content width above 560px, narrowing
+// with the actual screen below it, rather than a couple of hardcoded
+// breakpoint sizes that only fit some phones and leave others with a
+// board too small (or, previously, too big) for the row around it.
+const PAGE_MAX_WIDTH_PX = 560;
+const PAGE_HORIZONTAL_PADDING_PX = 48;
+const DESKTOP_CELL_SIZE = Math.floor(
+  (PAGE_MAX_WIDTH_PX - PAGE_HORIZONTAL_PADDING_PX) / VIEWPORT_SIZE,
+);
+
 function defaultCellSize() {
   if (typeof window === 'undefined') return DESKTOP_CELL_SIZE;
-  return window.innerWidth <= MOBILE_BREAKPOINT_PX
-    ? MOBILE_CELL_SIZE
-    : DESKTOP_CELL_SIZE;
+  const pageWidth = Math.min(window.innerWidth, PAGE_MAX_WIDTH_PX);
+  const contentWidth = pageWidth - PAGE_HORIZONTAL_PADDING_PX;
+  return Math.max(MIN_CELL_SIZE, Math.floor(contentWidth / VIEWPORT_SIZE));
 }
 
 // The viewport box itself never resizes as you zoom — zooming changes how

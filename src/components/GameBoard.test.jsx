@@ -3,9 +3,20 @@ import { computeFitView, BOARD_SIZE } from './GameBoard.jsx';
 import { placeFoodShapes, DEFAULT_FOOD } from '../lib/food.js';
 
 const CELL_GAP = 0;
-const DESKTOP_CELL_SIZE = 102;
-const MOBILE_CELL_SIZE = 64;
-const VIEWPORT_PX = 5 * (DESKTOP_CELL_SIZE + CELL_GAP) - CELL_GAP;
+const VIEWPORT_SIZE = 5;
+const PAGE_MAX_WIDTH_PX = 560;
+const PAGE_HORIZONTAL_PADDING_PX = 48;
+const DESKTOP_CELL_SIZE = Math.floor(
+  (PAGE_MAX_WIDTH_PX - PAGE_HORIZONTAL_PADDING_PX) / VIEWPORT_SIZE,
+);
+const VIEWPORT_PX = VIEWPORT_SIZE * (DESKTOP_CELL_SIZE + CELL_GAP) - CELL_GAP;
+
+// Mirrors .page's own content-width math for a given screen width.
+function expectedCellSizeFor(innerWidth) {
+  const pageWidth = Math.min(innerWidth, PAGE_MAX_WIDTH_PX);
+  const contentWidth = pageWidth - PAGE_HORIZONTAL_PADDING_PX;
+  return Math.floor(contentWidth / VIEWPORT_SIZE);
+}
 
 const ORIGINAL_INNER_WIDTH = window.innerWidth;
 afterEach(() => {
@@ -32,18 +43,31 @@ describe('computeFitView', () => {
 
   // The viewport box is a fixed pixel size that doesn't respond to CSS
   // media queries — a box sized for desktop overflowed a narrow phone
-  // screen regardless of zoom level, so the default itself has to shrink
-  // below the app's mobile breakpoint.
-  it('uses a smaller default cell size below the mobile breakpoint, keeping the viewport box narrow enough for a phone screen', () => {
-    window.innerWidth = 375;
+  // screen regardless of zoom level. The default cell size is derived
+  // from the actual screen width (mirroring .page's own content-width
+  // math) rather than a couple of hardcoded breakpoint sizes, which
+  // either overflowed narrower phones or left wider ones with a board
+  // smaller than it had room for.
+  it.each([320, 360, 375, 390, 412, 428])(
+    'fills the available content width on a %ipx-wide phone screen without overflowing it',
+    (innerWidth) => {
+      window.innerWidth = innerWidth;
+      const { cellSize } = computeFitView(
+        Array(BOARD_SIZE * BOARD_SIZE).fill(null),
+      );
+      expect(cellSize).toBe(expectedCellSizeFor(innerWidth));
+      expect(5 * cellSize).toBeLessThanOrEqual(
+        innerWidth - PAGE_HORIZONTAL_PADDING_PX,
+      );
+    },
+  );
+
+  it('reverts to the desktop cell size once the screen is wide enough for .page’s max-width cap to apply', () => {
+    window.innerWidth = 1440;
     const { cellSize } = computeFitView(
       Array(BOARD_SIZE * BOARD_SIZE).fill(null),
     );
-    expect(cellSize).toBe(MOBILE_CELL_SIZE);
-    // The .page container leaves ~327px of content width on a 375px
-    // screen (560px max-width cap doesn't apply this narrow, minus 2 x
-    // 1.5rem padding) — the viewport box must fit inside that.
-    expect(5 * cellSize).toBeLessThanOrEqual(327);
+    expect(cellSize).toBe(DESKTOP_CELL_SIZE);
   });
 
   it('fits every Food cell inside the viewport', () => {
