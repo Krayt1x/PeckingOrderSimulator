@@ -60,6 +60,7 @@ function cardNameOf(cell) {
 // The score board's name and score sit in separate spans now (so each can
 // be styled independently), so their combined text isn't a single text
 // node getByText can match — read the whole entry's textContent instead.
+// The score value renders first, so the combined text is e.g. "1Player 1".
 function scoreEntryText(name) {
   const entry = Array.from(document.querySelectorAll('.score-entry')).find(
     (li) => li.querySelector('.score-name')?.textContent === name,
@@ -1033,7 +1034,7 @@ describe('PlayPage', () => {
       screen.getByRole('button', { name: 'Discard pile: 1 cards' }),
     ).toBeDefined();
     expect(screen.getByText('Actions: 0/1')).toBeDefined();
-    expect(scoreEntryText('Player 1')).toBe('Player 1: 1');
+    expect(scoreEntryText('Player 1')).toBe('1Player 1');
 
     // Draw pile lost 1 card refilling the hand after the earlier play, and
     // gained 1 back as the eaten Food's card — net unchanged.
@@ -1392,8 +1393,8 @@ describe('PlayPage', () => {
     );
 
     // Human players get no suffix; the CPU gets its strategy's letter.
-    expect(scoreEntryText('Player 1')).toBe('Player 1: 0');
-    expect(scoreEntryText('Player 2 (D)')).toBe('Player 2 (D): 0');
+    expect(scoreEntryText('Player 1')).toBe('0Player 1');
+    expect(scoreEntryText('Player 2 (D)')).toBe('0Player 2 (D)');
   });
 
   it('marks the active player’s score pill instead of showing a "Player N’s turn" heading (#101)', () => {
@@ -1625,7 +1626,7 @@ describe('PlayPage', () => {
     // later happens to the card it produces.
     fireEvent.click(screen.getAllByRole('gridcell')[foodA]);
     fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
-    expect(scoreEntryText('Player 1')).toBe('Player 1: 1');
+    expect(scoreEntryText('Player 1')).toBe('1Player 1');
     fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
     fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
 
@@ -1645,7 +1646,7 @@ describe('PlayPage', () => {
         .filter((b) => b.classList.contains('card')),
     ).toHaveLength(1);
     expect(screen.getByText('Actions: 2/1')).toBeDefined();
-    expect(scoreEntryText('Player 1')).toBe('Player 1: 1');
+    expect(scoreEntryText('Player 1')).toBe('1Player 1');
     // Used via the badge, so it's removed from play — not discarded.
     expect(
       screen.getByRole('button', { name: 'Removed from Play: 1 cards' }),

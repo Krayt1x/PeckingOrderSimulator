@@ -943,10 +943,10 @@ export default function PlayPage({
                 )
               }
             >
-              <span className="score-name">{displayName(p)}</span>:{' '}
               <span className={`score-value${isLeader ? ' score-leader' : ''}`}>
                 {score}
               </span>
+              <span className="score-name">{displayName(p)}</span>
             </li>
           );
         })}
