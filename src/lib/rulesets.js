@@ -42,7 +42,6 @@ export const SKIN_OPTIONS = [
 ];
 
 export const DEFAULT_RULESET = {
-  allowMoving: true,
   allowReturnToHand: true,
   allowCardRotation: true,
   allowEqualValuePlay: true,

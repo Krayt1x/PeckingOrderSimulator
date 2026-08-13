@@ -591,7 +591,7 @@ describe('NewGamePage', () => {
     expect(screen.queryByText(/Costs 1 action/)).toBeNull();
   });
 
-  it('defaults every ruleset option on on the Ruleset step', () => {
+  it('defaults every ruleset option on except Allow Moving on the Ruleset step (#112)', () => {
     render(
       <NewGamePage
         decks={DEFAULT_DECKS}
@@ -602,7 +602,7 @@ describe('NewGamePage', () => {
     goToStep('Ruleset');
 
     expect(screen.getByRole('checkbox', { name: 'Allow Moving' }).checked).toBe(
-      true,
+      false,
     );
     expect(
       screen.getByRole('checkbox', { name: 'Allow Return to Hand' }).checked,
@@ -630,7 +630,8 @@ describe('NewGamePage', () => {
     );
     goToStep('Ruleset');
 
-    // Both start checked by default — toggling clicks them off.
+    // Allow Moving starts unchecked by default (#112) — toggling clicks it
+    // on. Allow Return to Hand starts checked — toggling clicks it off.
     fireEvent.click(screen.getByRole('checkbox', { name: 'Allow Moving' }));
     fireEvent.click(
       screen.getByRole('checkbox', { name: 'Allow Return to Hand' }),
@@ -641,7 +642,7 @@ describe('NewGamePage', () => {
 
     const setup = onStart.mock.calls[0][0];
     expect(setup.ruleset).toEqual({
-      allowMoving: false,
+      allowMoving: true,
       allowReturnToHand: false,
       allowCardRotation: true,
       allowEqualValuePlay: true,
@@ -665,7 +666,6 @@ describe('NewGamePage', () => {
 
     const setup = onStart.mock.calls[0][0];
     expect(setup.ruleset).toEqual({
-      allowMoving: true,
       allowReturnToHand: true,
       allowCardRotation: true,
       allowEqualValuePlay: true,
