@@ -2132,9 +2132,11 @@ describe('PlayPage', () => {
     );
 
     const cells = screen.getAllByRole('gridcell');
-    const [foodA] = cells
-      .map((c, i) => (c.querySelector('.card-food') ? i : -1))
-      .filter((i) => i >= 0);
+    // Food placement is randomized (#101), so find Food A by its actual
+    // name rather than assuming index order matches shape order.
+    const foodA = cells.findIndex((c) =>
+      c.querySelector('.card-food[title="Crumb A"]'),
+    );
     const birdSpot = neighbors(foodA).find((i) => !isFilled(cells[i]));
 
     fireEvent.click(
