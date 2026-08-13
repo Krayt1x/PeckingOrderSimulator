@@ -1804,6 +1804,19 @@ body {
     grid-template-columns: 1fr;
   }
 
+  /* Forcing every player's score pill onto one row (#88) leaves each one
+     too narrow to show a name once there are 3+ players on a phone-width
+     screen — wrapping two per row instead gives names room to stay
+     legible. */
+  .score-board {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+
+  .score-entry {
+    flex: 1 1 45%;
+  }
+
   /* Below the desktop breakpoint, hand cards need to stay legible far
      more than the pile tiles do — the piles get a small, mostly-fixed
      width instead of splitting the row evenly, and the hand grows to
