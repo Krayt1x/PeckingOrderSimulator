@@ -1,0 +1,39 @@
+// Pixel-art rock cluster sprite for the Random Terrain ruleset's blocking
+// tiles (#107) — traced directly from the reference image attached to
+// issue #109, cell for cell, rather than an algorithmic approximation.
+const COLS = 22;
+const BLANK_ROW = Array(COLS).fill(null);
+
+// The traced crop was 22x19 — padded to a square 22x22 grid (1 row above,
+// 2 below) so it renders on the same square canvas convention every other
+// sprite in this codebase uses.
+const GRID = [
+  BLANK_ROW,
+  [null, null, null, null, null, null, null, null, '#3a4245', null, null, null, null, null, null, null, null, null, null, null, null, null],
+  [null, null, null, null, null, null, '#3a4245', '#3a4245', '#3a4245', '#3a4245', null, null, null, null, null, null, null, null, null, null, null, null],
+  [null, null, null, null, null, '#3a4245', '#3a4245', '#6f7577', '#e6e2dd', '#8f9294', '#3a4245', null, null, '#3a4245', '#3a4245', '#3a4245', '#3a4245', null, null, null, null, null],
+  [null, null, null, null, '#3a4245', '#6f7577', '#e6e2dd', '#e6e2dd', '#e6e2dd', '#e6e2dd', '#8f9294', '#3a4245', '#3a4245', '#3a4245', '#3a4245', '#3a4245', '#3a4245', '#3a4245', null, null, null, null],
+  [null, null, null, '#3a4245', '#6f7577', '#b6b6b3', '#b6b6b3', '#e6e2dd', '#e6e2dd', '#e6e2dd', '#e6e2dd', '#6f7577', '#3a4245', '#8f9294', '#e6e2dd', '#e6e2dd', '#e6e2dd', '#6f7577', '#3a4245', null, null, null],
+  [null, null, '#3a4245', '#3a4245', '#6f7577', '#e6e2dd', '#b6b6b3', '#b6b6b3', '#b6b6b3', '#e6e2dd', '#e6e2dd', '#8f9294', '#6f7577', '#b6b6b3', '#b6b6b3', '#e6e2dd', '#e6e2dd', '#e6e2dd', '#6f7577', '#3a4245', null, null],
+  [null, null, '#3a4245', '#3a4245', '#6f7577', '#b6b6b3', '#b6b6b3', '#b6b6b3', '#b6b6b3', '#b6b6b3', '#8f9294', '#8f9294', '#b6b6b3', '#b6b6b3', '#b6b6b3', '#b6b6b3', '#e6e2dd', '#e6e2dd', '#6f7577', '#3a4245', null, null],
+  [null, null, '#3a4245', '#3a4245', '#6f7577', '#6f7577', '#b6b6b3', '#b6b6b3', '#8f9294', '#8f9294', '#8f9294', '#8f9294', '#b6b6b3', '#e6e2dd', '#b6b6b3', '#b6b6b3', '#b6b6b3', '#b6b6b3', '#6f7577', '#3a4245', null, null],
+  [null, '#3a4245', '#3a4245', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#8f9294', '#8f9294', '#6f7577', '#6f7577', '#6f7577', '#b6b6b3', '#b6b6b3', '#8f9294', '#8f9294', '#8f9294', '#8f9294', '#3a4245', '#3a4245', null],
+  [null, '#3a4245', '#3a4245', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#b6b6b3', '#b6b6b3', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#8f9294', '#8f9294', '#8f9294', '#8f9294', '#8f9294', '#6f7577', '#3a4245', null],
+  [null, '#3a4245', '#3a4245', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#8f9294', '#e6e2dd', '#e6e2dd', '#b6b6b3', '#8f9294', '#6f7577', '#6f7577', '#6f7577', '#8f9294', '#8f9294', '#8f9294', '#8f9294', '#b6b6b3', '#3a4245', '#3a4245'],
+  ['#3a4245', '#3a4245', '#3a4245', '#6f7577', '#6f7577', '#6f7577', '#8f9294', '#b6b6b3', '#b6b6b3', '#e6e2dd', '#e6e2dd', '#e6e2dd', '#b6b6b3', '#6f7577', '#6f7577', '#8f9294', '#8f9294', '#8f9294', '#8f9294', '#b6b6b3', '#3a4245', '#3a4245'],
+  ['#3a4245', '#3a4245', '#3a4245', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#b6b6b3', '#e6e2dd', '#b6b6b3', '#b6b6b3', '#e6e2dd', '#e6e2dd', '#8f9294', '#6f7577', '#8f9294', '#8f9294', '#8f9294', '#8f9294', '#6f7577', '#3a4245', null],
+  [null, '#3a4245', '#3a4245', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#8f9294', '#b6b6b3', '#b6b6b3', '#b6b6b3', '#b6b6b3', '#b6b6b3', '#8f9294', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#3a4245', null, null],
+  [null, null, '#3a4245', '#3a4245', '#3a4245', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#8f9294', '#b6b6b3', '#b6b6b3', '#8f9294', '#8f9294', '#6f7577', '#3a4245', '#3a4245', '#3a4245', '#3a4245', null, null, null],
+  [null, null, null, '#3a4245', '#3a4245', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#8f9294', '#8f9294', '#8f9294', '#8f9294', '#8f9294', '#3a4245', '#3a4245', '#3a4245', null, null, null, null],
+  [null, null, null, '#3a4245', '#3a4245', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#8f9294', '#8f9294', '#8f9294', '#8f9294', '#8f9294', '#6f7577', '#3a4245', null, null, null, null, null],
+  [null, null, null, null, '#3a4245', '#3a4245', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#8f9294', '#8f9294', '#8f9294', '#8f9294', '#6f7577', '#3a4245', null, null, null, null, null],
+  [null, null, null, null, null, '#3a4245', '#3a4245', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#6f7577', '#8f9294', '#8f9294', '#6f7577', '#3a4245', null, null, null, null, null, null],
+  BLANK_ROW,
+  BLANK_ROW,
+];
+
+// Returns the traced grid of CSS color strings (or null for transparent),
+// ready to hand to a canvas renderer.
+export function buildTerrainSpriteGrid() {
+  return GRID;
+}

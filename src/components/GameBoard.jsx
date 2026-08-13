@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { baseSides } from '../lib/rotation.js';
 import PixelBirdSprite from './PixelBirdSprite.jsx';
+import PixelRockSprite from './PixelRockSprite.jsx';
 
 const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 
@@ -300,6 +301,7 @@ export default function GameBoard({
   const nameSize = Math.max(8, Math.round(cellSize * 0.14));
   const sideSize = Math.max(8, Math.round(cellSize * 0.16));
   const spriteSize = Math.max(16, Math.round(cellSize * 0.4));
+  const terrainIconSize = Math.max(20, Math.round(cellSize * 0.85));
   const zoomPercent = Math.round((cellSize / defaultCellSize()) * 100);
   const vpx = viewportPx();
 
@@ -372,6 +374,7 @@ export default function GameBoard({
             const isOwnerHighlighted =
               hoveredOwnerId != null &&
               card?.type !== 'food' &&
+              card?.type !== 'terrain' &&
               card?.ownerId === hoveredOwnerId;
             const rotationDeg = card?.rotation ?? 0;
             const faceSides = cardHasSides
@@ -399,7 +402,13 @@ export default function GameBoard({
                   onCardDrop?.(index);
                 }}
               >
-                {card ? (
+                {card && card.type === 'terrain' ? (
+                  <span className="card card-on-board card-terrain">
+                    <span className="card-face">
+                      <PixelRockSprite size={terrainIconSize} />
+                    </span>
+                  </span>
+                ) : card ? (
                   <span
                     className={`card card-on-board${card.type === 'food' ? ' card-food' : ''}${isClaimable ? ' card-claimable' : ''}${isOwnerHighlighted ? ' card-owner-highlighted' : ''}`}
                     style={

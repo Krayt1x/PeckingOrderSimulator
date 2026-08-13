@@ -56,6 +56,13 @@ describe('isPlayableCell', () => {
     expect(isPlayableCell(board, 56, BOARD_SIZE, 'p1')).toBe(true);
   });
 
+  it('is true for an empty cell orthogonally touching Terrain (#107)', () => {
+    const board = Array(100).fill(null);
+    board[55] = { id: 'rock', type: 'terrain' };
+    expect(isPlayableCell(board, 45, BOARD_SIZE, 'p1')).toBe(true);
+    expect(isPlayableCell(board, 56, BOARD_SIZE, 'p1')).toBe(true);
+  });
+
   it('is true for an empty cell orthogonally touching an opponent card', () => {
     const board = Array(100).fill(null);
     board[55] = { id: 'card', ownerId: 'p2' };

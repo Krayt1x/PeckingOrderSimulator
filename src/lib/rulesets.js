@@ -27,6 +27,12 @@ export const RULESET_OPTIONS = [
     description:
       'A card may be placed against an opponent card with the same facing value — normally you can only play into a matchup you would win outright. Eating Food via majority control still always requires strict majority, tied count or not.',
   },
+  {
+    key: 'allowRandomTerrain',
+    label: 'Random Terrain',
+    description:
+      'Scatters 1-5 rocks across the board at the start of the game. They have no side values and can never be captured or removed — they just take up their own cell, purely blocking a card from being placed there.',
+  },
 ];
 
 // Every available visual skin — add new ones here as they're built.

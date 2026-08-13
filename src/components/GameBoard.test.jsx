@@ -104,3 +104,18 @@ describe('computeFitView', () => {
     expect(board.style.height).toBe(`${BOARD_SIZE * cellSize}px`);
   });
 });
+
+describe('rendering a Terrain cell (#107)', () => {
+  it('renders it as a pixel-art rock sprite, with no side values or name shown', () => {
+    const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+    cells[0] = { id: 'terrain-0', type: 'terrain', name: 'Rock' };
+    const { container } = render(<GameBoard cells={cells} />);
+
+    const terrainCard = container.querySelector('.card-terrain');
+    expect(terrainCard).not.toBeNull();
+    expect(terrainCard.querySelector('.card-sides')).toBeNull();
+    expect(terrainCard.querySelector('.card-name')).toBeNull();
+    expect(terrainCard.querySelector('canvas.card-terrain-sprite')).not
+      .toBeNull();
+  });
+});

@@ -20,7 +20,9 @@ export function resolveCaptures(board, index, card, boardSize) {
   Object.entries(neighbors).forEach(([direction, neighborIndex]) => {
     if (neighborIndex === null) return;
     const target = next[neighborIndex];
-    if (!target || target.type === 'food') return;
+    if (!target || target.type === 'food' || target.type === 'terrain') {
+      return;
+    }
     if (target.ownerId === card.ownerId) return;
 
     const attackValue = card.sides[direction];
@@ -40,6 +42,8 @@ export function resolveCaptures(board, index, card, boardSize) {
 // or tie. Food follows the exact same rule as an opponent card (#98); only
 // the owner's own cards never block a placement. Passing allowEqual (the
 // "Equal Value Playable" ruleset) relaxes a tie back into a legal placement.
+// Terrain has no side values to compare against at all — it only blocks its
+// own cell (already excluded from candidate placements), never a neighbor's.
 export function canPlaceCard(
   board,
   index,
@@ -51,7 +55,7 @@ export function canPlaceCard(
   return Object.entries(neighbors).every(([direction, neighborIndex]) => {
     if (neighborIndex === null) return true;
     const target = board[neighborIndex];
-    if (!target) return true;
+    if (!target || target.type === 'terrain') return true;
     if (target.type !== 'food' && target.ownerId === card.ownerId) {
       return true;
     }

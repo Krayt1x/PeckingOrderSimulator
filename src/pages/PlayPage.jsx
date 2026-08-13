@@ -9,6 +9,7 @@ import {
   getEligibleFoodIndices,
   getAdjacentBirdIndices,
 } from '../lib/food.js';
+import { placeRandomTerrain } from '../lib/terrain.js';
 import {
   isPlayableCell,
   getPlayableIndices,
@@ -88,9 +89,10 @@ let nextLogId = 1;
 // The last 3 entries shown in the status tray — most recent first.
 const ACTION_LOG_LIMIT = 3;
 
-// Food is the objective the game is anchored around, placed as close to
-// the board's center as the chosen shapes allow.
-function createInitialBoard(food, foodShapeIds) {
+// Food is the objective the game is anchored around, placed at a random
+// valid spot each game (#101). With Random Terrain on, a handful of
+// blocking rocks are scattered across whatever's left over (#107).
+function createInitialBoard(food, foodShapeIds, allowRandomTerrain) {
   const activeFood = {
     ...food,
     shapes: food.shapes.filter((s) => foodShapeIds.includes(s.id)),
@@ -100,6 +102,13 @@ function createInitialBoard(food, foodShapeIds) {
   Object.entries(foodCells).forEach(([index, card]) => {
     cells[Number(index)] = card;
   });
+  if (allowRandomTerrain) {
+    const foodIndices = Object.keys(foodCells).map(Number);
+    const terrainCells = placeRandomTerrain(foodIndices, BOARD_SIZE);
+    Object.entries(terrainCells).forEach(([index, card]) => {
+      cells[Number(index)] = card;
+    });
+  }
   return cells;
 }
 
@@ -161,7 +170,9 @@ export default function PlayPage({
 }) {
   const shapeIds = foodShapeIds ?? food.shapes.map((s) => s.id);
 
-  const [board, setBoard] = useState(() => createInitialBoard(food, shapeIds));
+  const [board, setBoard] = useState(() =>
+    createInitialBoard(food, shapeIds, ruleset.allowRandomTerrain),
+  );
   const [playerStates, setPlayerStates] = useState(() =>
     players.map((p) => dealFrom(decks.find((d) => d.id === p.deckId))),
   );

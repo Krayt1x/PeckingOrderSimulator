@@ -231,6 +231,38 @@ describe('PlayPage', () => {
     );
   });
 
+  it('places no Terrain when Random Terrain is off (the default)', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
+
+    expect(document.querySelectorAll('.card-terrain')).toHaveLength(0);
+  });
+
+  it('scatters 1-5 Terrain tiles across the board when Random Terrain is on (#107)', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        ruleset={{ allowRandomTerrain: true }}
+      />,
+    );
+
+    const terrainCount = document.querySelectorAll('.card-terrain').length;
+    expect(terrainCount).toBeGreaterThanOrEqual(1);
+    expect(terrainCount).toBeLessThanOrEqual(5);
+    // Still every Food cell too — Terrain shouldn't crowd Food out.
+    const cells = screen.getAllByRole('gridcell');
+    expect(cells.filter((c) => c.querySelector('.card-food'))).toHaveLength(
+      TOTAL_FOOD_CELLS,
+    );
+  });
+
   it('has no action-mode buttons — playing a card just needs a hand selection and a board click', () => {
     render(
       <PlayPage

@@ -65,6 +65,22 @@ describe('resolveCaptures', () => {
     expect(captured).toHaveLength(0);
   });
 
+  it('never captures Terrain', () => {
+    const board = Array(100).fill(null);
+    board[56] = { type: 'terrain' };
+
+    const attacker = makeCard('p1', { top: 1, right: 9, bottom: 1, left: 1 });
+    const { board: next, captured } = resolveCaptures(
+      board,
+      55,
+      attacker,
+      BOARD_SIZE,
+    );
+
+    expect(captured).toHaveLength(0);
+    expect(next[56]).toBe(board[56]);
+  });
+
   it('captures multiple neighbors in a single placement', () => {
     const board = Array(100).fill(null);
     board[56] = makeCard('p2', { top: 1, right: 1, bottom: 1, left: 2 }); // right
@@ -139,5 +155,16 @@ describe('canPlaceCard', () => {
 
     const card = makeCard('p1', { top: 5, right: 5, bottom: 1, left: 1 });
     expect(canPlaceCard(board, 55, card, BOARD_SIZE)).toBe(false);
+  });
+
+  it('never blocks placement next to Terrain — it has no side values to compare (#107)', () => {
+    const board = Array(100).fill(null);
+    board[56] = { type: 'terrain' };
+
+    // Even a facing value of 0 should still be legal next to Terrain,
+    // since Terrain isn't a matchup you win or lose — it just has no
+    // side values at all to compare against.
+    const weakest = makeCard('p1', { top: 0, right: 0, bottom: 0, left: 0 });
+    expect(canPlaceCard(board, 55, weakest, BOARD_SIZE)).toBe(true);
   });
 });
