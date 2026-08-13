@@ -649,39 +649,32 @@ body {
   aspect-ratio: 1 / 1;
 }
 
-/* Draw/discard pile tiles run 25% smaller than hand cards. */
+/* Draw/discard/removed pile tiles are all square and share the same
+   size, smaller than a hand card — width comes from the flex row (capped
+   below) and height just follows via aspect-ratio. */
 .hand-row .card-back {
   max-width: 72px;
-  height: 93px;
+  height: auto;
+  aspect-ratio: 1 / 1;
 }
 
 /* The Removed from Play pile sits directly above the discard pile,
-   stacked in the same column instead of taking its own row slot. */
+   stacked in the same column instead of taking its own row slot. The
+   column itself carries the same 72px cap as the free-standing Draw Pile
+   tile (rather than capping its children) so both pile tiles land on the
+   same width instead of the column outgrowing its capped child. */
 .discard-stack {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
   flex: 1 1 0;
   min-width: 0;
+  max-width: 72px;
 }
 
 .discard-stack .card-back {
   flex: 0 0 auto;
   width: 100%;
-  /* The generic 72px pile cap (above) is meant for the free-standing Draw
-     Pile tile — inside this stack it fought the 100% width and left a
-     gap between the tile and the row's right edge, since the stack
-     itself grows wider than 72px via flex. */
-  max-width: none;
-}
-
-.hand-row .card-back.removed-pile {
-  height: 28px;
-  padding: 0 0.3rem;
-}
-
-.removed-pile .card-back-label {
-  font-size: clamp(0.4rem, 1.6vw, 0.55rem);
 }
 
 .hand {
@@ -1932,19 +1925,16 @@ body {
   }
 
   .hand-row > .card {
-    flex: 0 1 60px;
+    flex: 0 1 40px;
   }
 
   .discard-stack {
-    flex: 0 1 60px;
+    flex: 0 1 40px;
+    max-width: 40px;
   }
 
   .hand-row .card-back {
-    max-width: 60px;
-  }
-
-  .hand-row .card-back.removed-pile {
-    height: 22px;
+    max-width: 40px;
   }
 
   .hand-row .card-back-label {
