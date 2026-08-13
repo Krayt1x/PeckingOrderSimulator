@@ -99,7 +99,14 @@ function shapeBounds(shape) {
 
 // Minimum Chebyshev (chessboard) distance required between cells of two
 // *different* food pieces — placements any closer than this are rejected.
-export const MIN_FOOD_DISTANCE = 3;
+export const MIN_FOOD_DISTANCE = 2;
+
+// A newly placed piece must land within this Chebyshev distance of at
+// least one cell already placed, so Food stays clustered together rather
+// than scattered across the whole board (#108). Only applies once
+// something has already been placed — the first (biggest) piece can go
+// anywhere valid.
+export const MAX_FOOD_DISTANCE = 4;
 
 // Food may not spawn within this many tiles of the board's outer edge —
 // every food cell needs at least this much clearance from row/col 0 and
@@ -124,9 +131,11 @@ function shuffle(list) {
 // Places every shape in food.shapes onto a boardSize x boardSize board, at
 // a random valid position each time (#101) — without overlapping, without
 // any two distinct pieces landing within MIN_FOOD_DISTANCE tiles of each
-// other, and without any cell landing within EDGE_MARGIN tiles of the
-// board's edge. Bigger shapes are placed first so smaller ones can fill
-// in around them. Returns a { [boardIndex]: cardFace } map.
+// other, without any piece landing more than MAX_FOOD_DISTANCE tiles from
+// the nearest already-placed piece (#108), and without any cell landing
+// within EDGE_MARGIN tiles of the board's edge. Bigger shapes are placed
+// first so smaller ones can fill in around them. Returns a
+// { [boardIndex]: cardFace } map.
 export function placeFoodShapes(food, boardSize) {
   const shapes = food?.shapes ?? [];
   const occupied = new Set();
@@ -153,9 +162,12 @@ export function placeFoodShapes(food, boardSize) {
     const anchor = shuffledAnchors.find(({ row, col }) => {
       if (row + height > boardSize || col + width > boardSize) return false;
 
-      return shape.cells.every((cell) => {
-        const r = row + cell.row;
-        const c = col + cell.col;
+      const cellPositions = shape.cells.map((cell) => ({
+        r: row + cell.row,
+        c: col + cell.col,
+      }));
+
+      const fits = cellPositions.every(({ r, c }) => {
         if (r < minCoord || r > maxCoord || c < minCoord || c > maxCoord) {
           return false;
         }
@@ -165,6 +177,16 @@ export function placeFoodShapes(food, boardSize) {
             chebyshevDistance(r, c, other.row, other.col) > MIN_FOOD_DISTANCE,
         );
       });
+      if (!fits) return false;
+
+      if (placedCells.length === 0) return true;
+      return cellPositions.some(({ r, c }) =>
+        placedCells.some(
+          (other) =>
+            chebyshevDistance(r, c, other.row, other.col) <=
+            MAX_FOOD_DISTANCE,
+        ),
+      );
     });
     if (!anchor) return;
 

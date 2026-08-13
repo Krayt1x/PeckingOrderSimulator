@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   DEFAULT_FOOD,
   MIN_FOOD_DISTANCE,
+  MAX_FOOD_DISTANCE,
   EDGE_MARGIN,
   computeShapeCells,
   placeFoodShapes,
@@ -127,6 +128,35 @@ describe('placeFoodShapes', () => {
         });
       }
     }
+  });
+
+  it('keeps every piece within MAX_FOOD_DISTANCE tiles of some other piece (#108)', () => {
+    const board = placeFoodShapes(DEFAULT_FOOD, REAL_BOARD_SIZE);
+    const byShape = new Map();
+    Object.entries(board).forEach(([index, card]) => {
+      const row = Math.floor(Number(index) / REAL_BOARD_SIZE);
+      const col = Number(index) % REAL_BOARD_SIZE;
+      const list = byShape.get(card.name) ?? [];
+      list.push({ row, col });
+      byShape.set(card.name, list);
+    });
+
+    const groups = [...byShape.values()];
+    // Every group placed alongside at least one other must have some cell
+    // within MAX_FOOD_DISTANCE of some cell belonging to a different piece
+    // — otherwise Food ends up scattered instead of clustered together.
+    groups.forEach((group, i) => {
+      const others = groups.filter((_, j) => j !== i).flat();
+      if (others.length === 0) return;
+      const closest = Math.min(
+        ...group.flatMap((a) =>
+          others.map((b) =>
+            Math.max(Math.abs(a.row - b.row), Math.abs(a.col - b.col)),
+          ),
+        ),
+      );
+      expect(closest).toBeLessThanOrEqual(MAX_FOOD_DISTANCE);
+    });
   });
 
   it('keeps every placed cell at least EDGE_MARGIN tiles from the board edge', () => {
