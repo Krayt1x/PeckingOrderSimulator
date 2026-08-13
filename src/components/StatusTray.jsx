@@ -29,7 +29,9 @@ function summarizeSettings({ players, food, foodShapeIds, ruleset }) {
     },
     {
       label: 'Ruleset',
-      value: enabledRules.length === 0 ? 'None' : enabledRules.join(', '),
+      // One rule per line (#113) rather than a single comma-joined line —
+      // the list can get long once several rulesets are on at once.
+      items: enabledRules.length === 0 ? ['None'] : enabledRules,
     },
   ];
 }
@@ -82,10 +84,20 @@ export default function StatusTray({
           >
             <h3>Game Settings</h3>
             <dl className="status-tray-settings">
-              {settings.map(({ label, value }) => (
+              {settings.map(({ label, value, items }) => (
                 <div key={label} className="status-tray-setting">
                   <dt>{label}</dt>
-                  <dd>{value}</dd>
+                  <dd>
+                    {items ? (
+                      <ul className="status-tray-setting-list">
+                        {items.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      value
+                    )}
+                  </dd>
                 </div>
               ))}
             </dl>

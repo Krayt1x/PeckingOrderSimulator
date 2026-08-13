@@ -467,6 +467,14 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* One active ruleset per line (#113) instead of one long comma-joined
+   line. */
+.status-tray-setting-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .status-tray-actions {
   margin: 0;
   padding-left: 1.1rem;

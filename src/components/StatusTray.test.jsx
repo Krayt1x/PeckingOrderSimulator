@@ -122,6 +122,29 @@ describe('StatusTray', () => {
     ).toBeDefined();
   });
 
+  it('puts each enabled ruleset on its own line (#113)', () => {
+    render(
+      <StatusTray
+        players={players}
+        food={DEFAULT_FOOD}
+        foodShapeIds={foodShapeIds}
+        ruleset={{
+          ...DEFAULT_RULESET,
+          allowMoving: true,
+          allowCustomSkins: true,
+          skin: 'alpha-pixel-art',
+        }}
+        actionLog={[]}
+      />,
+    );
+    openSettings();
+
+    const rulesetRow = screen.getByText('Ruleset').closest('div');
+    const items = within(rulesetRow).getAllByRole('listitem');
+    expect(items.length).toBeGreaterThan(1);
+    expect(items[0].textContent).not.toContain(',');
+  });
+
   it('shows a placeholder when no actions have been played yet', () => {
     render(
       <StatusTray
