@@ -1608,6 +1608,19 @@ body {
   height: 208px;
 }
 
+/* The side/name text sizes are tuned for a normal-sized card — a bigger
+   box needs bigger text too, or "zoomed in" doesn't actually help
+   legibility. .card-side's own width/height are in em units, so bumping
+   its font-size scales the whole tab, not just the digits. */
+.pile-card-zoom-face .card-side {
+  font-size: 1.1rem;
+}
+
+.pile-card-zoom-face .card-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
 .export-modal {
   width: 560px;
 }
