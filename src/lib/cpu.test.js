@@ -71,6 +71,52 @@ describe('pickCpuMove', () => {
     expect(pickCpuMove(hand, board, BOARD_SIZE, 'p1')).toBeNull();
   });
 
+  // A card whose only strong side is 'left' can't legally face an
+  // opponent's weak 'left' side (1) from any of its unrotated edges — but
+  // rotating it 180° swaps 'left' onto 'right', which does beat it.
+  it('never rotates a card when Allow Card Rotation is off, even if rotating would make a placement legal', () => {
+    const hand = [
+      { id: 'c1', sides: { top: 1, right: 1, bottom: 1, left: 9 } },
+    ];
+    const board = Array(100).fill(null);
+    board[55] = {
+      type: 'bird',
+      ownerId: 'p2',
+      sides: { top: 9, right: 9, bottom: 9, left: 1 },
+    };
+
+    expect(pickCpuMove(hand, board, BOARD_SIZE, 'p1')).toBeNull();
+  });
+
+  it('rotates a card into an otherwise-illegal placement when Allow Card Rotation is on (#106)', () => {
+    const hand = [
+      { id: 'c1', sides: { top: 1, right: 1, bottom: 1, left: 9 } },
+    ];
+    const board = Array(100).fill(null);
+    board[55] = {
+      type: 'bird',
+      ownerId: 'p2',
+      sides: { top: 9, right: 9, bottom: 9, left: 1 },
+    };
+
+    const move = pickCpuMove(
+      hand,
+      board,
+      BOARD_SIZE,
+      'p1',
+      undefined,
+      false,
+      true,
+    );
+
+    expect(move).not.toBeNull();
+    // Only cell 54 (left of the opponent) has a winning matchup, and only
+    // after a 180° rotation moves the card's strong 'left' side onto
+    // 'right', which is what actually faces the opponent there.
+    expect(move.cellIndex).toBe(54);
+    expect(move.rotationSteps).toBe(2);
+  });
+
   it('prefers a capturing placement when using the aggressive strategy', () => {
     const strongCard = {
       id: 'c1',

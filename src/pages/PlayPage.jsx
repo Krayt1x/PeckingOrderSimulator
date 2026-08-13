@@ -627,10 +627,22 @@ export default function PlayPage({
         activePlayer.id,
         activePlayer.cpuStrategy,
         ruleset.allowEqualValuePlay,
+        ruleset.allowCardRotation,
       );
       if (!move) break;
       const card = workingHand.find((c) => c.id === move.cardId);
-      const placedCard = { ...card, ownerId: activePlayer.id };
+      // Applies whichever facing pickCpuMove settled on — a no-op when
+      // Allow Card Rotation is off, since rotationSteps is always 0 then.
+      let cardSides = card.sides;
+      for (let i = 0; i < move.rotationSteps; i++) {
+        cardSides = rotateSides(cardSides, 'cw');
+      }
+      const placedCard = {
+        ...card,
+        ownerId: activePlayer.id,
+        sides: cardSides,
+        rotation: (move.rotationSteps * 90) % 360,
+      };
 
       const withCard = [...workingBoard];
       withCard[move.cellIndex] = placedCard;

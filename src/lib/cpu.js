@@ -1,6 +1,7 @@
 import { getNeighbors, getPlayableIndices } from './board.js';
 import { canPlaceCard, resolveCaptures } from './combat.js';
 import { getEligibleFoodIndices, getAdjacentBirdIndices } from './food.js';
+import { rotateSides } from './rotation.js';
 
 function isAdjacentToFood(board, index, boardSize) {
   const neighbors = getNeighbors(index, boardSize);
@@ -146,9 +147,13 @@ function narrowByStrategy(options, strategy) {
 
 // Picks a card/cell pair from the CPU's hand and the legal (playable and
 // not a losing matchup) cells on the board, favoring options that fit its
-// strategy. Returns null if the CPU has no legal move (empty hand, no
-// cells adjacent to Food/an existing card, or every adjacent cell would
-// lose to a stronger opponent card).
+// strategy. With Allow Card Rotation on, each card's four facings are
+// considered as separate options too — the same freedom a human player
+// gets via the rotate arrows — so the CPU can rotate into a legal or
+// better-scoring placement instead of only ever playing its dealt
+// orientation (#106). Returns null if the CPU has no legal move (empty
+// hand, no cells adjacent to Food/an existing card, or every adjacent
+// cell would lose to a stronger opponent card in every orientation).
 export function pickCpuMove(
   hand,
   board,
@@ -156,6 +161,7 @@ export function pickCpuMove(
   ownerId,
   strategy,
   allowEqual = false,
+  allowRotation = false,
 ) {
   if (hand.length === 0) return null;
 
@@ -168,49 +174,63 @@ export function pickCpuMove(
     // A Food-derived card can only be discarded via Use Food, never
     // played onto the board.
     if (card.fromFood) return;
-    const placedCard = { ...card, ownerId };
-    playableIndexes.forEach((cellIndex) => {
-      if (!canPlaceCard(board, cellIndex, placedCard, boardSize, allowEqual))
-        return;
 
-      const withCard = [...board];
-      withCard[cellIndex] = placedCard;
-      const { captured } = resolveCaptures(
-        withCard,
-        cellIndex,
-        placedCard,
-        boardSize,
-      );
+    const rotationSteps = allowRotation ? [0, 1, 2, 3] : [0];
+    let sides = card.sides;
+    rotationSteps.forEach((steps) => {
+      if (steps > 0) sides = rotateSides(sides, 'cw');
+      const placedCard = { ...card, ownerId, sides };
+      playableIndexes.forEach((cellIndex) => {
+        if (
+          !canPlaceCard(board, cellIndex, placedCard, boardSize, allowEqual)
+        )
+          return;
 
-      options.push({
-        cardId: card.id,
-        cellIndex,
-        captures: captured.length > 0,
-        adjacentToFood: isAdjacentToFood(board, cellIndex, boardSize),
-        distanceToFood: distanceToNearestFood(positions, cellIndex, boardSize),
-        winsFoodMajority: wouldWinFoodMajority(
-          board,
-          boardSize,
-          ownerId,
+        const withCard = [...board];
+        withCard[cellIndex] = placedCard;
+        const { captured } = resolveCaptures(
+          withCard,
           cellIndex,
-        ),
-        deniesFoodVote: captured.some((c) =>
-          isAdjacentToFood(board, c.index, boardSize),
-        ),
-        contestsFood: contestsFoodMajority(
-          board,
+          placedCard,
           boardSize,
-          ownerId,
+        );
+
+        options.push({
+          cardId: card.id,
           cellIndex,
-        ),
+          rotationSteps: steps,
+          captures: captured.length > 0,
+          adjacentToFood: isAdjacentToFood(board, cellIndex, boardSize),
+          distanceToFood: distanceToNearestFood(
+            positions,
+            cellIndex,
+            boardSize,
+          ),
+          winsFoodMajority: wouldWinFoodMajority(
+            board,
+            boardSize,
+            ownerId,
+            cellIndex,
+          ),
+          deniesFoodVote: captured.some((c) =>
+            isAdjacentToFood(board, c.index, boardSize),
+          ),
+          contestsFood: contestsFoodMajority(
+            board,
+            boardSize,
+            ownerId,
+            cellIndex,
+          ),
+        });
       });
     });
   });
   if (options.length === 0) return null;
 
   const pool = narrowByStrategy(options, strategy);
-  const { cardId, cellIndex } = pool[Math.floor(Math.random() * pool.length)];
-  return { cardId, cellIndex };
+  const { cardId, cellIndex, rotationSteps } =
+    pool[Math.floor(Math.random() * pool.length)];
+  return { cardId, cellIndex, rotationSteps };
 }
 
 // Picks a Food tile the CPU currently has majority control over to eat,
