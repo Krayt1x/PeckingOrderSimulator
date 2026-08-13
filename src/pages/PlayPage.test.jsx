@@ -1849,6 +1849,52 @@ describe('PlayPage', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('opens an enlarged preview of a single card when tapped in the pile list', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: /Draw pile: \d+ cards/ }),
+    );
+
+    const modal = screen.getByRole('dialog', { name: 'Draw pile' });
+    const firstCard = within(modal).getAllByRole('button')[0];
+    const cardName = firstCard.textContent;
+    fireEvent.click(firstCard);
+
+    const zoomed = screen.getByRole('dialog', { name: cardName });
+    expect(within(zoomed).getByText(cardName)).toBeDefined();
+    // The list itself stays open underneath, not replaced.
+    expect(screen.getByRole('dialog', { name: 'Draw pile' })).toBeDefined();
+
+    fireEvent.click(within(zoomed).getByRole('button', { name: 'Back' }));
+    expect(screen.queryByRole('dialog', { name: cardName })).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Draw pile' })).toBeDefined();
+  });
+
+  it('closes the zoomed card preview along with the pile list when the pile modal is closed', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: /Draw pile: \d+ cards/ }),
+    );
+    const modal = screen.getByRole('dialog', { name: 'Draw pile' });
+    fireEvent.click(within(modal).getAllByRole('button')[0]);
+    expect(screen.getAllByRole('dialog')).toHaveLength(2);
+
+    fireEvent.click(within(modal).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
   it('opens a modal listing the discard pile cards when tapped', () => {
     render(
       <PlayPage

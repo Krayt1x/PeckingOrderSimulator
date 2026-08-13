@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import GameBoard, { BOARD_SIZE } from '../components/GameBoard.jsx';
 import Hand from '../components/Hand.jsx';
 import StatusTray from '../components/StatusTray.jsx';
+import PixelBirdSprite from '../components/PixelBirdSprite.jsx';
 import { HAND_SIZE, buildDrawPile, shuffle } from '../lib/decks.js';
 import {
   placeFoodShapes,
@@ -15,11 +16,12 @@ import {
 } from '../lib/board.js';
 import { resolveCaptures, canPlaceCard } from '../lib/combat.js';
 import { pickCpuMove, pickCpuEat } from '../lib/cpu.js';
-import { rotateSides } from '../lib/rotation.js';
+import { rotateSides, baseSides } from '../lib/rotation.js';
 import { playActionTick, playFoodCrunch } from '../lib/sound.js';
 import { DEFAULT_RULESET } from '../lib/rulesets.js';
 
 const ACTIONS_PER_TURN = 1;
+const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 
 const PILE_LABELS = {
   draw: 'Draw pile',
@@ -158,6 +160,7 @@ export default function PlayPage({
   const [eatFoodIndex, setEatFoodIndex] = useState(null);
   const [dragSourceIndex, setDragSourceIndex] = useState(null);
   const [pileModal, setPileModal] = useState(null);
+  const [zoomedPileCard, setZoomedPileCard] = useState(null);
   const [actionLog, setActionLog] = useState([]);
   const [hoveredPlayerId, setHoveredPlayerId] = useState(null);
   const [gameOverDismissed, setGameOverDismissed] = useState(false);
@@ -694,6 +697,12 @@ export default function PlayPage({
           ? activeState.removedFromPlay
           : activeState.discardPile;
     setPileModal({ type, cards: shuffle(pile) });
+    setZoomedPileCard(null);
+  }
+
+  function closePileModal() {
+    setPileModal(null);
+    setZoomedPileCard(null);
   }
 
   function computeBoardHighlights() {
@@ -983,10 +992,7 @@ export default function PlayPage({
         </div>
       </div>
       {pileModal ? (
-        <div
-          className="color-modal-backdrop"
-          onClick={() => setPileModal(null)}
-        >
+        <div className="color-modal-backdrop" onClick={closePileModal}>
           <div
             className="pile-modal"
             role="dialog"
@@ -1002,15 +1008,18 @@ export default function PlayPage({
             ) : (
               <ul className="pile-modal-list">
                 {pileModal.cards.map((card, i) => (
-                  <li
-                    key={`${card.id}-${i}`}
-                    className="pile-modal-card"
-                    style={{
-                      '--card-border': activePlayer.color,
-                      '--card-bg': card.deckColor,
-                    }}
-                  >
-                    <span>{card.name}</span>
+                  <li key={`${card.id}-${i}`}>
+                    <button
+                      type="button"
+                      className="pile-modal-card"
+                      style={{
+                        '--card-border': activePlayer.color,
+                        '--card-bg': card.deckColor,
+                      }}
+                      onClick={() => setZoomedPileCard(card)}
+                    >
+                      <span>{card.name}</span>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -1018,9 +1027,73 @@ export default function PlayPage({
             <button
               type="button"
               className="board-recenter"
-              onClick={() => setPileModal(null)}
+              onClick={closePileModal}
             >
               Close
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {zoomedPileCard ? (
+        <div
+          className="color-modal-backdrop"
+          onClick={() => setZoomedPileCard(null)}
+        >
+          <div
+            className="pile-modal pile-card-zoom"
+            role="dialog"
+            aria-modal="true"
+            aria-label={zoomedPileCard.name}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div
+              className="card pile-card-zoom-face"
+              style={{
+                '--card-border': activePlayer.color,
+                '--card-bg': zoomedPileCard.deckColor,
+              }}
+            >
+              <span
+                className="card-face"
+                style={
+                  zoomedPileCard.rotation
+                    ? { transform: `rotate(${zoomedPileCard.rotation}deg)` }
+                    : undefined
+                }
+              >
+                {zoomedPileCard.sides ? (
+                  <span className="card-sides">
+                    {SIDE_KEYS.map((side) => (
+                      <span
+                        key={side}
+                        className={`card-side card-side-${side}`}
+                      >
+                        {
+                          baseSides(
+                            zoomedPileCard.sides,
+                            zoomedPileCard.rotation ?? 0,
+                          )[side]
+                        }
+                      </span>
+                    ))}
+                  </span>
+                ) : null}
+                {zoomedPileCard.sides && !zoomedPileCard.fromFood ? (
+                  <PixelBirdSprite
+                    typeId={zoomedPileCard.typeId}
+                    name={zoomedPileCard.name}
+                    size={64}
+                  />
+                ) : null}
+                <span className="card-name">{zoomedPileCard.name}</span>
+              </span>
+            </div>
+            <button
+              type="button"
+              className="board-recenter"
+              onClick={() => setZoomedPileCard(null)}
+            >
+              Back
             </button>
           </div>
         </div>

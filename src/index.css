@@ -1574,16 +1574,38 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  width: 100%;
   padding: 0.35rem 0.6rem;
   border: 2px solid var(--card-border, var(--accent));
   background: var(--card-bg, var(--bg-card));
   border-radius: 0.375rem;
   font-size: 0.9rem;
   color: #f4f4f5;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pile-modal-card:hover,
+.pile-modal-card:focus-visible {
+  filter: brightness(1.15);
 }
 
 .pile-modal-card .card-emoji {
   font-size: 1rem;
+}
+
+/* A single enlarged card face, opened by tapping a name in the pile
+   list — the list itself stays a compact scannable strip, this is just
+   a closer look at one card. */
+.pile-card-zoom {
+  align-items: center;
+}
+
+.pile-card-zoom-face {
+  position: relative;
+  width: 160px;
+  height: 208px;
 }
 
 .export-modal {
