@@ -585,6 +585,11 @@ body {
 .discard-stack .card-back {
   flex: 0 0 auto;
   width: 100%;
+  /* The generic 72px pile cap (above) is meant for the free-standing Draw
+     Pile tile — inside this stack it fought the 100% width and left a
+     gap between the tile and the row's right edge, since the stack
+     itself grows wider than 72px via flex. */
+  max-width: none;
 }
 
 .hand-row .card-back.removed-pile {
