@@ -30,33 +30,69 @@ function defaultCellSize() {
   return Math.max(MIN_CELL_SIZE, Math.floor(contentWidth / VIEWPORT_SIZE));
 }
 
+// A square viewport on a narrow screen makes the board as tall as it is
+// wide — once the board fills the row's full width, that pushes the hand
+// and piles below it off-screen, forcing a scroll on every turn. Below
+// the desktop breakpoint the viewport shows fewer rows than columns (a
+// wide rectangle, not a square) so it still fills the row's width without
+// eating so much vertical space.
+const MOBILE_VIEWPORT_ROWS = 3;
+const MOBILE_BREAKPOINT_PX = PAGE_MAX_WIDTH_PX + PAGE_HORIZONTAL_PADDING_PX;
+
+function viewportRows() {
+  if (typeof window === 'undefined') return VIEWPORT_SIZE;
+  return window.innerWidth > MOBILE_BREAKPOINT_PX
+    ? VIEWPORT_SIZE
+    : MOBILE_VIEWPORT_ROWS;
+}
+
 // The viewport box itself never resizes as you zoom — zooming changes how
 // many cells fit inside this fixed pixel box, not the box's own size.
-function viewportPx() {
+function viewportWidthPx() {
   return VIEWPORT_SIZE * (defaultCellSize() + CELL_GAP) - CELL_GAP;
+}
+
+function viewportHeightPx() {
+  return viewportRows() * (defaultCellSize() + CELL_GAP) - CELL_GAP;
 }
 
 function pitchOf(cellSize) {
   return cellSize + CELL_GAP;
 }
 
-function maxOffsetOf(cellSize) {
-  return Math.max(0, BOARD_SIZE * pitchOf(cellSize) - viewportPx());
+function maxOffsetOf(cellSize, viewportSizePx) {
+  return Math.max(0, BOARD_SIZE * pitchOf(cellSize) - viewportSizePx);
 }
 
-function clampOffset(cellSize, value) {
-  return Math.min(Math.max(value, 0), maxOffsetOf(cellSize));
+function clampOffsetX(cellSize, value) {
+  return Math.min(Math.max(value, 0), maxOffsetOf(cellSize, viewportWidthPx()));
+}
+
+function clampOffsetY(cellSize, value) {
+  return Math.min(
+    Math.max(value, 0),
+    maxOffsetOf(cellSize, viewportHeightPx()),
+  );
 }
 
 // Snaps to the nearest whole cell so the viewport never shows a sliver of
 // an extra row/column.
-function snapOffset(cellSize, value) {
+function snapOffsetX(cellSize, value) {
   const pitch = pitchOf(cellSize);
-  return clampOffset(cellSize, Math.round(value / pitch) * pitch);
+  return clampOffsetX(cellSize, Math.round(value / pitch) * pitch);
 }
 
-function centeredOffset(cellSize) {
-  return snapOffset(cellSize, maxOffsetOf(cellSize) / 2);
+function snapOffsetY(cellSize, value) {
+  const pitch = pitchOf(cellSize);
+  return clampOffsetY(cellSize, Math.round(value / pitch) * pitch);
+}
+
+function centeredOffsetX(cellSize) {
+  return snapOffsetX(cellSize, maxOffsetOf(cellSize, viewportWidthPx()) / 2);
+}
+
+function centeredOffsetY(cellSize) {
+  return snapOffsetY(cellSize, maxOffsetOf(cellSize, viewportHeightPx()) / 2);
 }
 
 function clampCellSize(size) {
@@ -82,8 +118,8 @@ export function computeFitView(cells) {
     return {
       cellSize: defaultSize,
       offset: {
-        x: centeredOffset(defaultSize),
-        y: centeredOffset(defaultSize),
+        x: centeredOffsetX(defaultSize),
+        y: centeredOffsetY(defaultSize),
       },
     };
   }
@@ -100,11 +136,17 @@ export function computeFitView(cells) {
     BOARD_SIZE - 1,
     Math.max(...cols) + FIT_PADDING_CELLS,
   );
-  const span = Math.max(maxRow - minRow + 1, maxCol - minCol + 1);
+  const colSpan = maxCol - minCol + 1;
+  const rowSpan = maxRow - minRow + 1;
 
-  const vpx = viewportPx();
+  const vpxWidth = viewportWidthPx();
+  const vpxHeight = viewportHeightPx();
   let fitCellSize = MAX_CELL_SIZE;
-  while (fitCellSize > MIN_CELL_SIZE && span * pitchOf(fitCellSize) > vpx) {
+  while (
+    fitCellSize > MIN_CELL_SIZE &&
+    (colSpan * pitchOf(fitCellSize) > vpxWidth ||
+      rowSpan * pitchOf(fitCellSize) > vpxHeight)
+  ) {
     fitCellSize -= ZOOM_STEP;
   }
   fitCellSize = clampCellSize(fitCellSize);
@@ -116,8 +158,8 @@ export function computeFitView(cells) {
   return {
     cellSize: fitCellSize,
     offset: {
-      x: snapOffset(fitCellSize, centerCol * pitch - vpx / 2),
-      y: snapOffset(fitCellSize, centerRow * pitch - vpx / 2),
+      x: snapOffsetX(fitCellSize, centerCol * pitch - vpxWidth / 2),
+      y: snapOffsetY(fitCellSize, centerRow * pitch - vpxHeight / 2),
     },
   };
 }
@@ -197,8 +239,8 @@ export default function GameBoard({
     const cellY = (pinch.startOffset.y + pinch.midY) / oldPitch;
 
     setOffset({
-      x: clampOffset(nextCellSize, cellX * newPitch - pinch.midX),
-      y: clampOffset(nextCellSize, cellY * newPitch - pinch.midY),
+      x: clampOffsetX(nextCellSize, cellX * newPitch - pinch.midX),
+      y: clampOffsetY(nextCellSize, cellY * newPitch - pinch.midY),
     });
     setCellSize(nextCellSize);
   }
@@ -221,8 +263,8 @@ export default function GameBoard({
     const dy = event.clientY - drag.startY;
     if (Math.abs(dx) > 4 || Math.abs(dy) > 4) drag.moved = true;
     setOffset({
-      x: clampOffset(cellSize, drag.startOffset.x - dx),
-      y: clampOffset(cellSize, drag.startOffset.y - dy),
+      x: clampOffsetX(cellSize, drag.startOffset.x - dx),
+      y: clampOffsetY(cellSize, drag.startOffset.y - dy),
     });
   }
 
@@ -235,8 +277,8 @@ export default function GameBoard({
     if (pointers.current.size < 2 && pinchState.current) {
       pinchState.current = null;
       setOffset((current) => ({
-        x: clampOffset(cellSize, current.x),
-        y: clampOffset(cellSize, current.y),
+        x: clampOffsetX(cellSize, current.x),
+        y: clampOffsetY(cellSize, current.y),
       }));
     }
 
@@ -244,8 +286,8 @@ export default function GameBoard({
       dragState.current = null;
       setIsDragging(false);
       setOffset((current) => ({
-        x: clampOffset(cellSize, current.x),
-        y: clampOffset(cellSize, current.y),
+        x: clampOffsetX(cellSize, current.x),
+        y: clampOffsetY(cellSize, current.y),
       }));
     }
   }
@@ -262,15 +304,16 @@ export default function GameBoard({
     const clamped = clampCellSize(nextCellSize);
     if (clamped === cellSize) return;
 
-    const vpx = viewportPx();
+    const vpxWidth = viewportWidthPx();
+    const vpxHeight = viewportHeightPx();
     const oldPitch = pitchOf(cellSize);
     const newPitch = pitchOf(clamped);
     setOffset((current) => {
-      const centerCellX = (current.x + vpx / 2) / oldPitch;
-      const centerCellY = (current.y + vpx / 2) / oldPitch;
+      const centerCellX = (current.x + vpxWidth / 2) / oldPitch;
+      const centerCellY = (current.y + vpxHeight / 2) / oldPitch;
       return {
-        x: clampOffset(clamped, centerCellX * newPitch - vpx / 2),
-        y: clampOffset(clamped, centerCellY * newPitch - vpx / 2),
+        x: clampOffsetX(clamped, centerCellX * newPitch - vpxWidth / 2),
+        y: clampOffsetY(clamped, centerCellY * newPitch - vpxHeight / 2),
       };
     });
     setCellSize(clamped);
@@ -301,14 +344,15 @@ export default function GameBoard({
   const sideSize = Math.max(8, Math.round(cellSize * 0.16));
   const spriteSize = Math.max(16, Math.round(cellSize * 0.4));
   const zoomPercent = Math.round((cellSize / defaultCellSize()) * 100);
-  const vpx = viewportPx();
+  const vpxWidth = viewportWidthPx();
+  const vpxHeight = viewportHeightPx();
 
   return (
     <div className="board-wrap">
       <div
         ref={viewportRef}
         className={`board-viewport${isDragging ? ' board-dragging' : ''}`}
-        style={{ width: vpx, height: vpx }}
+        style={{ width: vpxWidth, height: vpxHeight }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={endDrag}
