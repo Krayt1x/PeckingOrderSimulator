@@ -347,7 +347,14 @@ export default function GameBoard({
           className="board"
           role="grid"
           aria-label="Game board"
+          // Explicit width/height (rather than leaving it to auto-size from
+          // the grid tracks) so a background painted on .board — like the
+          // pixel-art skin's grass checker — covers the full panned grid
+          // instead of only the portion that happens to fit .board-viewport's
+          // own width (#103).
           style={{
+            width: BOARD_SIZE * cellSize,
+            height: BOARD_SIZE * cellSize,
             gridTemplateColumns: `repeat(${BOARD_SIZE}, ${cellSize}px)`,
             transform: `translate(${-offset.x}px, ${-offset.y}px)`,
           }}

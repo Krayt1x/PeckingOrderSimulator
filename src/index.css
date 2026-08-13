@@ -328,9 +328,14 @@ body {
   }
 }
 
+/* Keeps the celebratory scatter as a static affordance rather than
+   vanishing outright — same "drop the animation, keep the effect"
+   pattern as .card-claimable's reduced-motion fallback (#105). */
 @media (prefers-reduced-motion: reduce) {
-  .confetti-burst {
-    display: none;
+  .confetti-piece {
+    animation: none;
+    opacity: 0.85;
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
   }
 }
 
@@ -991,6 +996,13 @@ body {
 [data-skin='alpha-pixel-art'] .board-viewport {
   border: 4px solid rgba(0, 0, 0, 0.55);
   border-radius: 0;
+}
+
+/* The grass checker lives on .board (the panning/transformed element)
+   rather than .board-viewport (the fixed clipping frame around it) — so
+   it pans together with the cards instead of staying put underneath them
+   while the grid slides over it (#103). */
+[data-skin='alpha-pixel-art'] .board {
   background-color: #1e6b1e;
   background-image: conic-gradient(
     #1e6b1e 90deg,

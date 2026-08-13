@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { computeFitView, BOARD_SIZE } from './GameBoard.jsx';
+import { render } from '@testing-library/react';
+import GameBoard, { computeFitView, BOARD_SIZE } from './GameBoard.jsx';
 import { placeFoodShapes, DEFAULT_FOOD } from '../lib/food.js';
 
 const CELL_GAP = 0;
@@ -87,5 +88,19 @@ describe('computeFitView', () => {
       expect(top).toBeGreaterThanOrEqual(offset.y);
       expect(top + cellSize).toBeLessThanOrEqual(offset.y + VIEWPORT_PX);
     });
+  });
+
+  // A background painted on .board (e.g. the pixel-art skin's grass
+  // checker) only covers .board's own box — if that box were left to
+  // auto-size instead of matching the full grid, the background would
+  // stop partway across the panned grid instead of covering all of it
+  // (#103). Pinning the explicit size here catches that regression.
+  it("sizes .board to the full grid (BOARD_SIZE * cellSize), not just its auto-fit width", () => {
+    const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+    const { cellSize } = computeFitView(cells);
+    const { container } = render(<GameBoard cells={cells} />);
+    const board = container.querySelector('.board');
+    expect(board.style.width).toBe(`${BOARD_SIZE * cellSize}px`);
+    expect(board.style.height).toBe(`${BOARD_SIZE * cellSize}px`);
   });
 });
