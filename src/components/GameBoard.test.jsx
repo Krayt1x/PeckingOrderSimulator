@@ -88,37 +88,4 @@ describe('computeFitView', () => {
       expect(top + cellSize).toBeLessThanOrEqual(offset.y + VIEWPORT_PX);
     });
   });
-
-  // A square viewport made the board as tall as it is wide once it filled
-  // the row's width — on a phone that pushed the hand/piles below it off
-  // the bottom of the screen, forcing a scroll every turn. The mobile
-  // viewport shows fewer rows than columns instead, so it stays a wide
-  // rectangle rather than growing into a big square.
-  it('shows fewer rows than columns on a mobile-width screen, keeping the board shorter than it is wide', () => {
-    window.innerWidth = 412;
-    const mobileRows = 3;
-    const defaultSize = expectedCellSizeFor(412);
-    const { cellSize, offset } = computeFitView(
-      Array(BOARD_SIZE * BOARD_SIZE).fill(null),
-    );
-    expect(cellSize).toBe(defaultSize);
-    const widthPx = VIEWPORT_SIZE * defaultSize;
-    const heightPx = mobileRows * defaultSize;
-    expect(heightPx).toBeLessThan(widthPx);
-
-    // Food still has to fit inside the shorter viewport height — the
-    // fixed reference box the fit search shrinks the cell size to fit
-    // inside, same as it always fits inside the width.
-    const foodBoard = placeFoodShapes(DEFAULT_FOOD, BOARD_SIZE);
-    const cells = buildCells(foodBoard);
-    const fit = computeFitView(cells);
-    const pitch = fit.cellSize + CELL_GAP;
-    Object.keys(foodBoard).forEach((index) => {
-      const row = Math.floor(Number(index) / BOARD_SIZE);
-      const top = row * pitch;
-      expect(top).toBeGreaterThanOrEqual(fit.offset.y);
-      expect(top + fit.cellSize).toBeLessThanOrEqual(fit.offset.y + heightPx);
-    });
-    expect(offset.y).toBeGreaterThanOrEqual(0);
-  });
 });

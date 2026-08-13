@@ -1832,11 +1832,35 @@ body {
      legible. */
   .score-board {
     flex-wrap: wrap;
-    row-gap: 0.5rem;
+    row-gap: 0.35rem;
+    margin-top: 0.5rem;
   }
 
   .score-entry {
     flex: 1 1 45%;
+    padding: 0.2rem 0.4rem 0.2rem 0.55rem;
+    gap: 0.3rem;
+  }
+
+  .score-value {
+    min-width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  /* The board takes the lion's share of a phone's vertical space, so
+     every bit of slack elsewhere helps keep the hand/piles below it
+     from scrolling off-screen. */
+  .status-tray {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .status-tray-heading {
+    margin-bottom: 0.25rem;
+  }
+
+  .status-tray-actions li {
+    padding: 0.05rem 0;
   }
 
   /* Below the desktop breakpoint, hand cards need to stay legible far
