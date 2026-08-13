@@ -1064,7 +1064,7 @@ describe('PlayPage', () => {
     expect(playActionTick).not.toHaveBeenCalled();
   });
 
-  it('ends the game and announces a winner when the last Food is eaten', () => {
+  it('ends the game and announces a winner when the last Food is eaten', async () => {
     render(
       <PlayPage
         players={twoPlayers()}
@@ -1082,12 +1082,16 @@ describe('PlayPage', () => {
     fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
     fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
 
-    expect(screen.getByText('Game Over')).toBeDefined();
-    expect(screen.getByText(/Player 1 wins with 1 point/)).toBeDefined();
     expect(screen.queryByRole('button', { name: 'End Turn' })).toBeNull();
+    // The leaderboard modal is presented half a second after the last
+    // Food is claimed (#confetti), so it isn't up immediately.
+    await waitFor(() => expect(screen.getByText('Game Over')).toBeDefined());
+    expect(screen.getByText(/Player 1 wins with 1 point/)).toBeDefined();
+    // A human player won, so the confetti burst plays (#confetti).
+    expect(document.querySelector('.confetti-piece')).not.toBeNull();
   });
 
-  it('lists every player’s placement on the game-over leaderboard', () => {
+  it('delays presenting the leaderboard for a beat after the last Food is claimed (#confetti)', async () => {
     render(
       <PlayPage
         players={twoPlayers()}
@@ -1104,6 +1108,54 @@ describe('PlayPage', () => {
     fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
     fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
 
+    expect(screen.queryByText('Game Over')).toBeNull();
+    await waitFor(() => expect(screen.getByText('Game Over')).toBeDefined());
+  });
+
+  it('skips the confetti burst when only CPU players win', async () => {
+    render(
+      <PlayPage
+        players={twoPlayers({ cpuSecond: true })}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+
+    // Player 1 never acts; the CPU plays two of its own turns, the second
+    // of which eats the only Food and wins alone.
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    await waitFor(
+      () => expect(screen.getByText(/Player 1.*turn/)).toBeDefined(),
+      { timeout: 3000 },
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    await waitFor(() => expect(screen.getByText('Game Over')).toBeDefined(), {
+      timeout: 3000,
+    });
+    expect(screen.getByText(/Player 2 \(A\) wins with 1 point/)).toBeDefined();
+    expect(document.querySelector('.confetti-piece')).toBeNull();
+  });
+
+  it('lists every player’s placement on the game-over leaderboard', async () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const birdSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    playThenCycleBackToPlayer1(birdSpot);
+    fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+
+    await waitFor(() => expect(screen.getByText('Game Over')).toBeDefined());
     const standings = document.querySelectorAll('.game-over-standing');
     expect(standings).toHaveLength(2);
     expect(
@@ -1123,7 +1175,7 @@ describe('PlayPage', () => {
     ).toBe('0 points');
   });
 
-  it('gives tied players the same placement and skips the next rank (1st, 1st, 3rd)', () => {
+  it('gives tied players the same placement and skips the next rank (1st, 1st, 3rd)', async () => {
     function tinyDecks() {
       const deck = (id, name) => ({
         id,
@@ -1198,7 +1250,7 @@ describe('PlayPage', () => {
     fireEvent.click(screen.getAllByRole('gridcell')[foodB]);
     fireEvent.click(screen.getAllByRole('gridcell')[birdSpotB]);
 
-    expect(screen.getByText('Game Over')).toBeDefined();
+    await waitFor(() => expect(screen.getByText('Game Over')).toBeDefined());
     expect(
       screen.getByText(/It's a tie between Player 1 and Player 2 at 1 point/),
     ).toBeDefined();
@@ -1215,7 +1267,7 @@ describe('PlayPage', () => {
     expect(names).toEqual(['Player 1', 'Player 2', 'Player 3']);
   });
 
-  it('shows the game-over announcement as a modal in front of the board, dismissible via View Board (#100)', () => {
+  it('shows the game-over announcement as a modal in front of the board, dismissible via View Board (#100)', async () => {
     render(
       <PlayPage
         players={twoPlayers()}
@@ -1232,7 +1284,9 @@ describe('PlayPage', () => {
     fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
     fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
 
-    expect(document.querySelector('.color-modal-backdrop')).not.toBeNull();
+    await waitFor(() =>
+      expect(document.querySelector('.color-modal-backdrop')).not.toBeNull(),
+    );
     expect(
       document.querySelector('.color-modal-backdrop .game-over-modal'),
     ).not.toBeNull();

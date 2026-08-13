@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import GameBoard, { BOARD_SIZE } from '../components/GameBoard.jsx';
 import Hand from '../components/Hand.jsx';
 import StatusTray from '../components/StatusTray.jsx';
@@ -29,6 +29,16 @@ const PILE_LABELS = {
   removed: 'Removed from Play',
 };
 const CAPTURE_REMOVAL_DELAY_MS = 250;
+const GAME_OVER_PRESENTATION_DELAY_MS = 500;
+const CONFETTI_COLORS = [
+  '#eab308',
+  '#ef4444',
+  '#22c55e',
+  '#3b82f6',
+  '#a855f7',
+  '#f97316',
+];
+const CONFETTI_PIECE_COUNT = 60;
 
 // CPU players carry their strategy as a single-letter suffix wherever
 // their name is shown, so it's visible at a glance during play.
@@ -164,6 +174,7 @@ export default function PlayPage({
   const [actionLog, setActionLog] = useState([]);
   const [hoveredPlayerId, setHoveredPlayerId] = useState(null);
   const [gameOverDismissed, setGameOverDismissed] = useState(false);
+  const [gameOverVisible, setGameOverVisible] = useState(false);
   // Snapshots taken before each move this turn, most recent last — cleared
   // whenever the turn advances, so undo never reaches into a prior turn.
   const [moveHistory, setMoveHistory] = useState([]);
@@ -689,6 +700,19 @@ export default function PlayPage({
     return () => clearTimeout(timer);
   }, [activeIndex, gameOver]);
 
+  // Holds the board reveal a beat before the Game Over modal covers it.
+  useEffect(() => {
+    if (!gameOver) {
+      setGameOverVisible(false);
+      return;
+    }
+    const timer = setTimeout(
+      () => setGameOverVisible(true),
+      GAME_OVER_PRESENTATION_DELAY_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [gameOver]);
+
   function openPileModal(type) {
     const pile =
       type === 'draw'
@@ -802,15 +826,49 @@ export default function PlayPage({
     ? players.filter((p, i) => playerStates[i].score === maxScore)
     : [];
   const standings = gameOver ? rankPlayers(players, playerStates) : [];
+  const showConfetti = gameOver && winners.some((player) => !player.isCPU);
+  // Regenerated once per game-over event (not per render) so the burst
+  // doesn't reshuffle itself on every re-render while it's animating.
+  const confettiPieces = useMemo(() => {
+    if (!showConfetti) return [];
+    return Array.from({ length: CONFETTI_PIECE_COUNT }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 110 + Math.random() * 170;
+      return {
+        dx: Math.cos(angle) * distance,
+        dy: Math.sin(angle) * distance,
+        rot: Math.random() * 360,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        delay: Math.random() * 0.08,
+      };
+    });
+  }, [showConfetti]);
   const activeSkin = ruleset.allowCustomSkins ? ruleset.skin : 'alpha';
 
   return (
     <main className="page" data-skin={activeSkin}>
-      {gameOver && !gameOverDismissed ? (
+      {gameOverVisible && !gameOverDismissed ? (
         <div
           className="color-modal-backdrop"
           onClick={() => setGameOverDismissed(true)}
         >
+          {showConfetti ? (
+            <div className="confetti-burst" aria-hidden="true">
+              {confettiPieces.map((piece, i) => (
+                <span
+                  key={i}
+                  className="confetti-piece"
+                  style={{
+                    '--dx': `${piece.dx}px`,
+                    '--dy': `${piece.dy}px`,
+                    '--rot': `${piece.rot}deg`,
+                    backgroundColor: piece.color,
+                    animationDelay: `${piece.delay}s`,
+                  }}
+                />
+              ))}
+            </div>
+          ) : null}
           <div
             className="pile-modal game-over-modal"
             onClick={(event) => event.stopPropagation()}
