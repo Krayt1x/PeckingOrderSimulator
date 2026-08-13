@@ -1086,7 +1086,9 @@ describe('PlayPage', () => {
     expect(screen.queryByRole('button', { name: 'End Turn' })).toBeNull();
     // The leaderboard modal is presented half a second after the last
     // Food is claimed (#confetti), so it isn't up immediately.
-    await waitFor(() => expect(screen.getByText('Game Over')).toBeDefined());
+    await waitFor(() =>
+      expect(screen.getByText('Congratulations!')).toBeDefined(),
+    );
     expect(screen.getByText(/Player 1 wins with 1 point/)).toBeDefined();
     // A human player won, so the confetti burst plays (#confetti).
     expect(document.querySelector('.confetti-piece')).not.toBeNull();
@@ -1109,8 +1111,10 @@ describe('PlayPage', () => {
     fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
     fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
 
-    expect(screen.queryByText('Game Over')).toBeNull();
-    await waitFor(() => expect(screen.getByText('Game Over')).toBeDefined());
+    expect(screen.queryByText('Congratulations!')).toBeNull();
+    await waitFor(() =>
+      expect(screen.getByText('Congratulations!')).toBeDefined(),
+    );
   });
 
   it('skips the confetti burst when only CPU players win', async () => {
@@ -1156,7 +1160,9 @@ describe('PlayPage', () => {
     fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
     fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
 
-    await waitFor(() => expect(screen.getByText('Game Over')).toBeDefined());
+    await waitFor(() =>
+      expect(screen.getByText('Congratulations!')).toBeDefined(),
+    );
     const standings = document.querySelectorAll('.game-over-standing');
     expect(standings).toHaveLength(2);
     expect(
@@ -1251,7 +1257,9 @@ describe('PlayPage', () => {
     fireEvent.click(screen.getAllByRole('gridcell')[foodB]);
     fireEvent.click(screen.getAllByRole('gridcell')[birdSpotB]);
 
-    await waitFor(() => expect(screen.getByText('Game Over')).toBeDefined());
+    await waitFor(() =>
+      expect(screen.getByText('Congratulations!')).toBeDefined(),
+    );
     expect(
       screen.getByText(/It's a tie between Player 1 and Player 2 at 1 point/),
     ).toBeDefined();
@@ -1294,6 +1302,82 @@ describe('PlayPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'View Board' }));
     expect(document.querySelector('.color-modal-backdrop')).toBeNull();
+  });
+
+  it('keeps the "Game Over" heading (no confetti wording) when only a CPU wins', async () => {
+    render(
+      <PlayPage
+        players={twoPlayers({ cpuSecond: true })}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    await waitFor(
+      () => expect(screen.getByText(/Player 1.*turn/)).toBeDefined(),
+      { timeout: 3000 },
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    await waitFor(() => expect(screen.getByText('Game Over')).toBeDefined(), {
+      timeout: 3000,
+    });
+    expect(screen.queryByText('Congratulations!')).toBeNull();
+  });
+
+  it('offers a Play Again button that calls onPlayAgain, only when provided', async () => {
+    const onPlayAgain = vi.fn();
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+        onPlayAgain={onPlayAgain}
+      />,
+    );
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const birdSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    playThenCycleBackToPlayer1(birdSpot);
+    fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Play Again' }),
+      ).toBeDefined(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Play Again' }));
+    expect(onPlayAgain).toHaveBeenCalledTimes(1);
+  });
+
+  it('omits the Play Again button when no onPlayAgain callback is provided', async () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const birdSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    playThenCycleBackToPlayer1(birdSpot);
+    fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'View Board' })).toBeDefined(),
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Play Again' }),
+    ).toBeNull();
   });
 
   it("puts a gold circle behind the current leader's score, not a tied/trailing one", () => {

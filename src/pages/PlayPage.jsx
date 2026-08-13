@@ -157,6 +157,7 @@ export default function PlayPage({
   food,
   foodShapeIds,
   ruleset = DEFAULT_RULESET,
+  onPlayAgain,
 }) {
   const shapeIds = foodShapeIds ?? food.shapes.map((s) => s.id);
 
@@ -826,11 +827,13 @@ export default function PlayPage({
     ? players.filter((p, i) => playerStates[i].score === maxScore)
     : [];
   const standings = gameOver ? rankPlayers(players, playerStates) : [];
-  const showConfetti = gameOver && winners.some((player) => !player.isCPU);
+  // A human player among the winners gets the celebratory heading and
+  // confetti; an all-CPU win stays a plain "Game Over".
+  const humanWon = gameOver && winners.some((player) => !player.isCPU);
   // Regenerated once per game-over event (not per render) so the burst
   // doesn't reshuffle itself on every re-render while it's animating.
   const confettiPieces = useMemo(() => {
-    if (!showConfetti) return [];
+    if (!humanWon) return [];
     return Array.from({ length: CONFETTI_PIECE_COUNT }, () => {
       const angle = Math.random() * Math.PI * 2;
       const distance = 110 + Math.random() * 170;
@@ -842,7 +845,7 @@ export default function PlayPage({
         delay: Math.random() * 0.08,
       };
     });
-  }, [showConfetti]);
+  }, [humanWon]);
   const activeSkin = ruleset.allowCustomSkins ? ruleset.skin : 'alpha';
 
   return (
@@ -852,7 +855,7 @@ export default function PlayPage({
           className="color-modal-backdrop"
           onClick={() => setGameOverDismissed(true)}
         >
-          {showConfetti ? (
+          {humanWon ? (
             <div className="confetti-burst" aria-hidden="true">
               {confettiPieces.map((piece, i) => (
                 <span
@@ -873,7 +876,7 @@ export default function PlayPage({
             className="pile-modal game-over-modal"
             onClick={(event) => event.stopPropagation()}
           >
-            <h2>Game Over</h2>
+            <h2>{humanWon ? 'Congratulations!' : 'Game Over'}</h2>
             <p>
               {winners.length === 1
                 ? `${displayName(winners[0])} wins with ${maxScore} point${maxScore === 1 ? '' : 's'}!`
@@ -894,13 +897,24 @@ export default function PlayPage({
                 </li>
               ))}
             </ol>
-            <button
-              type="button"
-              className="board-recenter"
-              onClick={() => setGameOverDismissed(true)}
-            >
-              View Board
-            </button>
+            <div className="game-over-actions">
+              <button
+                type="button"
+                className="board-recenter"
+                onClick={() => setGameOverDismissed(true)}
+              >
+                View Board
+              </button>
+              {onPlayAgain ? (
+                <button
+                  type="button"
+                  className="board-recenter"
+                  onClick={onPlayAgain}
+                >
+                  Play Again
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
       ) : null}

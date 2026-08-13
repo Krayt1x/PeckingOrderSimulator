@@ -379,6 +379,11 @@ body {
   font-size: 0.9rem;
 }
 
+.game-over-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 /* Sits directly under the board — a running log of the last few actions
    played, with the game's settings tucked behind an info button rather
    than shown inline (#70, #87). */

@@ -36,6 +36,10 @@ export default function App() {
     loadJSON(FOOD_STORAGE_KEY, DEFAULT_FOOD),
   );
   const [gameSetup, setGameSetup] = useState(null);
+  // Bumped on every new game (including Play Again) so PlayPage remounts
+  // and re-runs its lazy initial state — a fresh shuffle/board — instead
+  // of reusing whatever was left over from the game that just ended.
+  const [gameId, setGameId] = useState(0);
 
   useEffect(() => {
     function onHashChange() {
@@ -62,8 +66,16 @@ export default function App() {
 
   function startGame(setup) {
     setGameSetup(setup);
+    setGameId((id) => id + 1);
     window.location.hash = '#play';
     setRoute('play');
+  }
+
+  // Play Again reuses the exact same players/ruleset/food selection as
+  // the game that just ended — only the gameId changes, to remount
+  // PlayPage into a fresh game rather than reset its state in place.
+  function playAgain() {
+    setGameId((id) => id + 1);
   }
 
   // The active game's chosen skin themes the nav bar too, not just the
@@ -91,11 +103,13 @@ export default function App() {
     if (route === 'play' && gameSetup) {
       return (
         <PlayPage
+          key={gameId}
           players={gameSetup.players}
           decks={decks}
           food={food}
           foodShapeIds={gameSetup.foodShapeIds}
           ruleset={gameSetup.ruleset}
+          onPlayAgain={playAgain}
         />
       );
     }
