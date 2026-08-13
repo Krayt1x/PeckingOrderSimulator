@@ -6,22 +6,36 @@ const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 
 export const BOARD_SIZE = 16;
 const VIEWPORT_SIZE = 5;
-const DEFAULT_CELL_SIZE = 102;
+const DESKTOP_CELL_SIZE = 102;
+const MOBILE_CELL_SIZE = 64;
+const MOBILE_BREAKPOINT_PX = 700;
 const MIN_CELL_SIZE = 32;
 const MAX_CELL_SIZE = 144;
 const ZOOM_STEP = 16;
 const CELL_GAP = 0;
 
-// The viewport box itself never resizes — zooming changes how many cells
-// fit inside this fixed pixel box, not the box's own size.
-const VIEWPORT_PX = VIEWPORT_SIZE * (DEFAULT_CELL_SIZE + CELL_GAP) - CELL_GAP;
+// Below the app's mobile breakpoint the viewport box itself needs to
+// shrink too, not just the cells inside it — otherwise a box sized for
+// desktop overflows a narrow phone screen regardless of zoom level.
+function defaultCellSize() {
+  if (typeof window === 'undefined') return DESKTOP_CELL_SIZE;
+  return window.innerWidth <= MOBILE_BREAKPOINT_PX
+    ? MOBILE_CELL_SIZE
+    : DESKTOP_CELL_SIZE;
+}
+
+// The viewport box itself never resizes as you zoom — zooming changes how
+// many cells fit inside this fixed pixel box, not the box's own size.
+function viewportPx() {
+  return VIEWPORT_SIZE * (defaultCellSize() + CELL_GAP) - CELL_GAP;
+}
 
 function pitchOf(cellSize) {
   return cellSize + CELL_GAP;
 }
 
 function maxOffsetOf(cellSize) {
-  return Math.max(0, BOARD_SIZE * pitchOf(cellSize) - VIEWPORT_PX);
+  return Math.max(0, BOARD_SIZE * pitchOf(cellSize) - viewportPx());
 }
 
 function clampOffset(cellSize, value) {
@@ -56,13 +70,14 @@ export function computeFitView(cells) {
   cells.forEach((card, i) => {
     if (card?.type === 'food') foodIndices.push(i);
   });
+  const defaultSize = defaultCellSize();
 
   if (foodIndices.length === 0) {
     return {
-      cellSize: DEFAULT_CELL_SIZE,
+      cellSize: defaultSize,
       offset: {
-        x: centeredOffset(DEFAULT_CELL_SIZE),
-        y: centeredOffset(DEFAULT_CELL_SIZE),
+        x: centeredOffset(defaultSize),
+        y: centeredOffset(defaultSize),
       },
     };
   }
@@ -81,11 +96,9 @@ export function computeFitView(cells) {
   );
   const span = Math.max(maxRow - minRow + 1, maxCol - minCol + 1);
 
+  const vpx = viewportPx();
   let fitCellSize = MAX_CELL_SIZE;
-  while (
-    fitCellSize > MIN_CELL_SIZE &&
-    span * pitchOf(fitCellSize) > VIEWPORT_PX
-  ) {
+  while (fitCellSize > MIN_CELL_SIZE && span * pitchOf(fitCellSize) > vpx) {
     fitCellSize -= ZOOM_STEP;
   }
   fitCellSize = clampCellSize(fitCellSize);
@@ -97,8 +110,8 @@ export function computeFitView(cells) {
   return {
     cellSize: fitCellSize,
     offset: {
-      x: snapOffset(fitCellSize, centerCol * pitch - VIEWPORT_PX / 2),
-      y: snapOffset(fitCellSize, centerRow * pitch - VIEWPORT_PX / 2),
+      x: snapOffset(fitCellSize, centerCol * pitch - vpx / 2),
+      y: snapOffset(fitCellSize, centerRow * pitch - vpx / 2),
     },
   };
 }
@@ -243,14 +256,15 @@ export default function GameBoard({
     const clamped = clampCellSize(nextCellSize);
     if (clamped === cellSize) return;
 
+    const vpx = viewportPx();
     const oldPitch = pitchOf(cellSize);
     const newPitch = pitchOf(clamped);
     setOffset((current) => {
-      const centerCellX = (current.x + VIEWPORT_PX / 2) / oldPitch;
-      const centerCellY = (current.y + VIEWPORT_PX / 2) / oldPitch;
+      const centerCellX = (current.x + vpx / 2) / oldPitch;
+      const centerCellY = (current.y + vpx / 2) / oldPitch;
       return {
-        x: clampOffset(clamped, centerCellX * newPitch - VIEWPORT_PX / 2),
-        y: clampOffset(clamped, centerCellY * newPitch - VIEWPORT_PX / 2),
+        x: clampOffset(clamped, centerCellX * newPitch - vpx / 2),
+        y: clampOffset(clamped, centerCellY * newPitch - vpx / 2),
       };
     });
     setCellSize(clamped);
@@ -280,14 +294,15 @@ export default function GameBoard({
   const nameSize = Math.max(8, Math.round(cellSize * 0.14));
   const sideSize = Math.max(8, Math.round(cellSize * 0.16));
   const spriteSize = Math.max(16, Math.round(cellSize * 0.4));
-  const zoomPercent = Math.round((cellSize / DEFAULT_CELL_SIZE) * 100);
+  const zoomPercent = Math.round((cellSize / defaultCellSize()) * 100);
+  const vpx = viewportPx();
 
   return (
     <div className="board-wrap">
       <div
         ref={viewportRef}
         className={`board-viewport${isDragging ? ' board-dragging' : ''}`}
-        style={{ width: VIEWPORT_PX, height: VIEWPORT_PX }}
+        style={{ width: vpx, height: vpx }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={endDrag}
