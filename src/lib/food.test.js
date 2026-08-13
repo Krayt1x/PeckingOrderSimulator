@@ -130,33 +130,36 @@ describe('placeFoodShapes', () => {
     }
   });
 
-  it('keeps every piece within MAX_FOOD_DISTANCE tiles of some other piece (#108)', () => {
-    const board = placeFoodShapes(DEFAULT_FOOD, REAL_BOARD_SIZE);
-    const byShape = new Map();
-    Object.entries(board).forEach(([index, card]) => {
-      const row = Math.floor(Number(index) / REAL_BOARD_SIZE);
-      const col = Number(index) % REAL_BOARD_SIZE;
-      const list = byShape.get(card.name) ?? [];
-      list.push({ row, col });
-      byShape.set(card.name, list);
-    });
+  it('keeps every pair of distinct pieces within MAX_FOOD_DISTANCE tiles of each other (#108)', () => {
+    // Run several times — a piece being close to whichever piece was
+    // placed right before it doesn't guarantee it's close to every piece,
+    // only checking every pairing catches that (a real bug once: Chip and
+    // Potato Cake could each be near Burger but far from each other).
+    for (let trial = 0; trial < 20; trial++) {
+      const board = placeFoodShapes(DEFAULT_FOOD, REAL_BOARD_SIZE);
+      const byShape = new Map();
+      Object.entries(board).forEach(([index, card]) => {
+        const row = Math.floor(Number(index) / REAL_BOARD_SIZE);
+        const col = Number(index) % REAL_BOARD_SIZE;
+        const list = byShape.get(card.name) ?? [];
+        list.push({ row, col });
+        byShape.set(card.name, list);
+      });
 
-    const groups = [...byShape.values()];
-    // Every group placed alongside at least one other must have some cell
-    // within MAX_FOOD_DISTANCE of some cell belonging to a different piece
-    // — otherwise Food ends up scattered instead of clustered together.
-    groups.forEach((group, i) => {
-      const others = groups.filter((_, j) => j !== i).flat();
-      if (others.length === 0) return;
-      const closest = Math.min(
-        ...group.flatMap((a) =>
-          others.map((b) =>
-            Math.max(Math.abs(a.row - b.row), Math.abs(a.col - b.col)),
-          ),
-        ),
-      );
-      expect(closest).toBeLessThanOrEqual(MAX_FOOD_DISTANCE);
-    });
+      const groups = [...byShape.values()];
+      for (let i = 0; i < groups.length; i++) {
+        for (let j = i + 1; j < groups.length; j++) {
+          const closest = Math.min(
+            ...groups[i].flatMap((a) =>
+              groups[j].map((b) =>
+                Math.max(Math.abs(a.row - b.row), Math.abs(a.col - b.col)),
+              ),
+            ),
+          );
+          expect(closest).toBeLessThanOrEqual(MAX_FOOD_DISTANCE);
+        }
+      }
+    }
   });
 
   it('keeps every placed cell at least EDGE_MARGIN tiles from the board edge', () => {

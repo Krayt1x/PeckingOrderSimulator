@@ -101,11 +101,12 @@ function shapeBounds(shape) {
 // *different* food pieces — placements any closer than this are rejected.
 export const MIN_FOOD_DISTANCE = 2;
 
-// A newly placed piece must land within this Chebyshev distance of at
-// least one cell already placed, so Food stays clustered together rather
-// than scattered across the whole board (#108). Only applies once
-// something has already been placed — the first (biggest) piece can go
-// anywhere valid.
+// A newly placed piece must land within this Chebyshev distance of every
+// piece already placed (at least one cell each), so every pair of Food
+// pieces ends up close together rather than just chained through whatever
+// was placed immediately before it (#108). Only applies once something
+// has already been placed — the first (biggest) piece can go anywhere
+// valid.
 export const MAX_FOOD_DISTANCE = 4;
 
 // Food may not spawn within this many tiles of the board's outer edge —
@@ -140,6 +141,7 @@ export function placeFoodShapes(food, boardSize) {
   const shapes = food?.shapes ?? [];
   const occupied = new Set();
   const placedCells = []; // [{ row, col }] across every shape placed so far
+  const placedGroups = []; // [{ row, col }][] — one entry per shape placed so far
   const board = {};
 
   const minCoord = EDGE_MARGIN;
@@ -179,23 +181,28 @@ export function placeFoodShapes(food, boardSize) {
       });
       if (!fits) return false;
 
-      if (placedCells.length === 0) return true;
-      return cellPositions.some(({ r, c }) =>
-        placedCells.some(
-          (other) =>
-            chebyshevDistance(r, c, other.row, other.col) <=
-            MAX_FOOD_DISTANCE,
+      // Every already-placed piece — not just the most recent one — must
+      // have a cell within MAX_FOOD_DISTANCE of this piece.
+      return placedGroups.every((group) =>
+        cellPositions.some(({ r, c }) =>
+          group.some(
+            (other) =>
+              chebyshevDistance(r, c, other.row, other.col) <=
+              MAX_FOOD_DISTANCE,
+          ),
         ),
       );
     });
     if (!anchor) return;
 
+    const thisGroup = [];
     computeShapeCells(shape).forEach(({ row, col, sides }) => {
       const boardRow = anchor.row + row;
       const boardCol = anchor.col + col;
       const index = boardRow * boardSize + boardCol;
       occupied.add(index);
       placedCells.push({ row: boardRow, col: boardCol });
+      thisGroup.push({ row: boardRow, col: boardCol });
       board[index] = {
         id: `${shape.id}-${boardRow}-${boardCol}`,
         type: 'food',
@@ -205,6 +212,7 @@ export function placeFoodShapes(food, boardSize) {
         sides,
       };
     });
+    placedGroups.push(thisGroup);
   });
 
   return board;
