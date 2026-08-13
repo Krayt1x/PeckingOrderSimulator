@@ -1087,6 +1087,134 @@ describe('PlayPage', () => {
     expect(screen.queryByRole('button', { name: 'End Turn' })).toBeNull();
   });
 
+  it('lists every player’s placement on the game-over leaderboard', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+      />,
+    );
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const birdSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+
+    playThenCycleBackToPlayer1(birdSpot);
+    fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
+
+    const standings = document.querySelectorAll('.game-over-standing');
+    expect(standings).toHaveLength(2);
+    expect(
+      standings[0].querySelector('.game-over-standing-place').textContent,
+    ).toBe('1st');
+    expect(
+      standings[0].querySelector('.game-over-standing-name').textContent,
+    ).toBe('Player 1');
+    expect(
+      standings[0].querySelector('.game-over-standing-score').textContent,
+    ).toBe('1 point');
+    expect(
+      standings[1].querySelector('.game-over-standing-place').textContent,
+    ).toBe('2nd');
+    expect(
+      standings[1].querySelector('.game-over-standing-score').textContent,
+    ).toBe('0 points');
+  });
+
+  it('gives tied players the same placement and skips the next rank (1st, 1st, 3rd)', () => {
+    function tinyDecks() {
+      const deck = (id, name) => ({
+        id,
+        name,
+        cardTypes: [
+          {
+            id: `${id}-card`,
+            name: `${name}Card`,
+            emoji: 'C',
+            color: '#57534e',
+            quantity: 1,
+            sides: { top: 1, right: 1, bottom: 1, left: 1 },
+          },
+        ],
+      });
+      return [
+        deck('deck-p1', 'P1'),
+        deck('deck-p2', 'P2'),
+        deck('deck-p3', 'P3'),
+      ];
+    }
+
+    render(
+      <PlayPage
+        players={[
+          { id: 'p1', name: 'Player 1', isCPU: false, deckId: 'deck-p1' },
+          { id: 'p2', name: 'Player 2', isCPU: false, deckId: 'deck-p2' },
+          { id: 'p3', name: 'Player 3', isCPU: false, deckId: 'deck-p3' },
+        ]}
+        decks={tinyDecks()}
+        food={TWO_FOOD}
+        foodShapeIds={['crumb-a', 'crumb-b']}
+      />,
+    );
+
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndices = cells
+      .map((c, i) => (c.querySelector('.card-food') ? i : -1))
+      .filter((i) => i >= 0);
+    const [foodA, foodB] = foodIndices;
+    const birdSpotA = neighbors(foodA).find((i) => !isFilled(cells[i]));
+
+    // Player 1 plants a bird next to Food A.
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpotA]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' })); // -> Player 2
+
+    cells = screen.getAllByRole('gridcell');
+    const birdSpotB = neighbors(foodB).find((i) => !isFilled(cells[i]));
+
+    // Player 2 plants a bird next to Food B.
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpotB]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' })); // -> Player 3
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' })); // Player 3 passes -> Player 1 turn 2
+
+    // Player 1 eats Food A.
+    fireEvent.click(screen.getAllByRole('gridcell')[foodA]);
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpotA]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' })); // -> Player 2 turn 2
+
+    // Player 2 eats Food B — the last Food, so the game ends here, before
+    // Player 3 ever gets a second turn.
+    fireEvent.click(screen.getAllByRole('gridcell')[foodB]);
+    fireEvent.click(screen.getAllByRole('gridcell')[birdSpotB]);
+
+    expect(screen.getByText('Game Over')).toBeDefined();
+    expect(
+      screen.getByText(/It's a tie between Player 1 and Player 2 at 1 point/),
+    ).toBeDefined();
+
+    const standings = document.querySelectorAll('.game-over-standing');
+    expect(standings).toHaveLength(3);
+    const places = Array.from(standings).map(
+      (s) => s.querySelector('.game-over-standing-place').textContent,
+    );
+    const names = Array.from(standings).map(
+      (s) => s.querySelector('.game-over-standing-name').textContent,
+    );
+    expect(places).toEqual(['1st', '1st', '3rd']);
+    expect(names).toEqual(['Player 1', 'Player 2', 'Player 3']);
+  });
+
   it('shows the game-over announcement as a modal in front of the board, dismissible via View Board (#100)', () => {
     render(
       <PlayPage

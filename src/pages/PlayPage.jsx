@@ -36,6 +36,40 @@ function displayName(player) {
   return `${player.name} (${STRATEGY_SUFFIX[player.cpuStrategy] ?? 'A'})`;
 }
 
+// Standard English ordinal suffix — 1st, 2nd, 3rd, 4th, 11th, 21st, etc.
+function ordinal(n) {
+  const remainder100 = n % 100;
+  if (remainder100 >= 11 && remainder100 <= 13) return `${n}th`;
+  switch (n % 10) {
+    case 1:
+      return `${n}st`;
+    case 2:
+      return `${n}nd`;
+    case 3:
+      return `${n}rd`;
+    default:
+      return `${n}th`;
+  }
+}
+
+// Ranks players by score, descending — tied scores share a place and the
+// next distinct score resumes at the count of players ranked above it
+// (competition ranking: 1st, 1st, 3rd, not 1st, 1st, 2nd).
+function rankPlayers(players, playerStates) {
+  const sorted = players
+    .map((player, i) => ({ player, score: playerStates[i].score }))
+    .sort((a, b) => b.score - a.score);
+  let place = 0;
+  let previousScore = null;
+  return sorted.map((entry, index) => {
+    if (entry.score !== previousScore) {
+      place = index + 1;
+      previousScore = entry.score;
+    }
+    return { ...entry, place };
+  });
+}
+
 let nextFoodCardId = 1;
 let nextLogId = 1;
 
@@ -758,6 +792,7 @@ export default function PlayPage({
   const winners = gameOver
     ? players.filter((p, i) => playerStates[i].score === maxScore)
     : [];
+  const standings = gameOver ? rankPlayers(players, playerStates) : [];
   const activeSkin = ruleset.allowCustomSkins ? ruleset.skin : 'alpha';
 
   return (
@@ -777,6 +812,21 @@ export default function PlayPage({
                 ? `${displayName(winners[0])} wins with ${maxScore} point${maxScore === 1 ? '' : 's'}!`
                 : `It's a tie between ${winners.map(displayName).join(' and ')} at ${maxScore} points!`}
             </p>
+            <ol className="game-over-standings">
+              {standings.map(({ player, score, place }) => (
+                <li key={player.id} className="game-over-standing">
+                  <span className="game-over-standing-place">
+                    {ordinal(place)}
+                  </span>
+                  <span className="game-over-standing-name">
+                    {displayName(player)}
+                  </span>
+                  <span className="game-over-standing-score">
+                    {score} point{score === 1 ? '' : 's'}
+                  </span>
+                </li>
+              ))}
+            </ol>
             <button
               type="button"
               className="board-recenter"

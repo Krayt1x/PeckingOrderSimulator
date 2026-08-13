@@ -296,6 +296,42 @@ body {
   color: var(--text-secondary);
 }
 
+.game-over-standings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.game-over-standing {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.375rem;
+  background: var(--bg-container);
+  text-align: left;
+}
+
+.game-over-standing-place {
+  font-weight: 700;
+  color: var(--text-secondary);
+  min-width: 2.5em;
+}
+
+.game-over-standing-name {
+  flex: 1;
+  font-weight: 600;
+}
+
+.game-over-standing-score {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
 /* Sits directly under the board — a running log of the last few actions
    played, with the game's settings tucked behind an info button rather
    than shown inline (#70, #87). */
@@ -980,6 +1016,21 @@ body {
 
 [data-skin='alpha-pixel-art'] .status-tray-setting dt,
 [data-skin='alpha-pixel-art'] .game-over-modal p {
+  color: var(--pixel-ink-dim);
+}
+
+[data-skin='alpha-pixel-art'] .game-over-standing {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  border: 2px solid #000;
+}
+
+[data-skin='alpha-pixel-art'] .game-over-standing-place,
+[data-skin='alpha-pixel-art'] .game-over-standing-name {
+  color: var(--pixel-ink);
+}
+
+[data-skin='alpha-pixel-art'] .game-over-standing-score {
   color: var(--pixel-ink-dim);
 }
 
