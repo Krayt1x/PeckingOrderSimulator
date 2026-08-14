@@ -2332,12 +2332,11 @@ body {
 /* On a wide desktop screen, the map gets its own column and grows well
    past the mobile-first single-column width — everything that used to
    sit below it moves into a narrow, fixed-width sidebar next to it
-   instead, with hand/pile cards shrunk to fit the column (#118 example
-   B). GameBoard.jsx mirrors this same 900px breakpoint, 1300px page cap,
-   and 320px sidebar for its own cell-size math. */
+   instead. GameBoard.jsx mirrors this same 900px breakpoint, 1600px page
+   cap, and 380px sidebar for its own cell-size math (#125). */
 @media (min-width: 900px) {
   .page {
-    max-width: 1300px;
+    max-width: 1600px;
   }
 
   .play-layout {
@@ -2356,18 +2355,29 @@ body {
     min-width: 0;
   }
 
+  /* Hand cards keep their full size here instead of shrinking to fit a
+     single row — wrapping onto as many rows as it takes reads far better
+     than the illegibly small squeezed cards this used to render (#125).
+     .hand already wraps (see the base .hand rule); this just stops the
+     cards from being flex-shrunk below their normal size first. */
   .play-side-col .hand-row .hand {
     flex: 1 1 0;
+    /* The base .hand-row .hand rule pins flex-wrap to nowrap (for the
+       single-row squeeze this sidebar used to do) — overridden back to
+       wrap here so full-size cards spill onto as many rows as needed
+       instead of overflowing the sidebar's fixed width (#125). */
+    flex-wrap: wrap;
+    gap: 0.35rem;
   }
 
   .play-side-col .hand-row .card {
+    flex: 0 0 96px;
     max-width: 96px;
+    width: 96px;
   }
 
-  /* Piles are secondary to the hand — same as the mobile layout below
-     700px, they get squeezed down first so the hand cards keep enough
-     room for their name text not to collide with the side-value badges
-     (#118 example B). */
+  /* Piles stay at their small, secondary size regardless — the hand no
+     longer needs the room ceded from squeezing them down further. */
   .play-side-col .discard-stack,
   .play-side-col .draw-stack {
     flex: 0 1 40px;
@@ -2386,29 +2396,5 @@ body {
   .play-side-col .hand-row .card-back-deck {
     font-size: 0.45rem;
     padding: 0.1rem 0.3rem;
-  }
-
-  /* .card-name/.card-side normally size themselves off viewport width
-     (vw), which assumes a narrow card only ever happens on a narrow
-     screen — not true here, where the card is small because the sidebar
-     column is narrow despite a wide desktop viewport. Pinned to fixed
-     sizes (matching the alpha-pixel-art skin's own mobile treatment)
-     instead so they actually shrink with the card (#118 example B). */
-  .play-side-col .hand-row .hand .card-name {
-    font-size: 0.5rem;
-  }
-
-  .play-side-col .hand-row .hand .card-side {
-    font-size: 0.42rem;
-  }
-
-  .play-side-col .hand-row .hand .card-pixel-sprite {
-    width: 26px !important;
-    height: 26px !important;
-    image-rendering: pixelated;
-  }
-
-  .play-side-col .hand-row .hand .card-face {
-    gap: 0.15rem;
   }
 }

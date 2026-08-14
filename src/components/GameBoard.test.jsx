@@ -7,7 +7,7 @@ const CELL_GAP = 0;
 const VIEWPORT_SIZE = 5;
 const MOBILE_PAGE_MAX_WIDTH_PX = 560;
 const MOBILE_BOARD_GUTTER_PX = 8;
-const DESKTOP_PAGE_MAX_WIDTH_PX = 1300;
+const DESKTOP_PAGE_MAX_WIDTH_PX = 1600;
 const DESKTOP_BREAKPOINT_PX = 900;
 const SIDE_COL_WIDTH_PX = 380;
 const SIDE_COL_GAP_PX = 24;
@@ -60,11 +60,12 @@ function buildCells(foodBoard) {
 describe('computeFitView', () => {
   it('falls back to the default centered view when there is no Food', () => {
     // jsdom's own default innerWidth (1024) sits below the desktop page's
-    // 1300px cap, so it needs to be set explicitly here to actually reach
-    // DESKTOP_CELL_SIZE — previously any width past the old 560px mobile
-    // cap gave the same result, which no longer holds now that the
-    // desktop cap is bigger than jsdom's default (#118 example B).
-    window.innerWidth = 1440;
+    // 1600px cap (#125), so it needs to be set explicitly here to
+    // actually reach DESKTOP_CELL_SIZE — previously any width past the
+    // old 560px mobile cap gave the same result, which no longer holds
+    // now that the desktop cap is bigger than jsdom's default (#118
+    // example B).
+    window.innerWidth = 1650;
     const { cellSize, offset } = computeFitView(
       Array(BOARD_SIZE * BOARD_SIZE).fill(null),
     );
@@ -95,7 +96,7 @@ describe('computeFitView', () => {
   );
 
   it('reverts to the desktop cell size once the screen is wide enough for .page’s max-width cap to apply', () => {
-    window.innerWidth = 1440;
+    window.innerWidth = 1650;
     const { cellSize } = computeFitView(
       Array(BOARD_SIZE * BOARD_SIZE).fill(null),
     );

@@ -8,7 +8,7 @@ const SIDE_KEYS = ['top', 'left', 'right', 'bottom'];
 export const BOARD_SIZE = 16;
 const VIEWPORT_SIZE = 5;
 const MIN_CELL_SIZE = 32;
-const MAX_CELL_SIZE = 200;
+const MAX_CELL_SIZE = 240;
 const ZOOM_STEP = 16;
 const CELL_GAP = 0;
 
@@ -32,7 +32,7 @@ const CELL_GAP = 0;
 // gutter, unlike every other page which still keeps the full padding.
 const MOBILE_PAGE_MAX_WIDTH_PX = 560;
 const MOBILE_BOARD_GUTTER_PX = 8;
-const DESKTOP_PAGE_MAX_WIDTH_PX = 1300;
+const DESKTOP_PAGE_MAX_WIDTH_PX = 1600;
 const DESKTOP_BREAKPOINT_PX = 900;
 const SIDE_COL_WIDTH_PX = 380;
 const SIDE_COL_GAP_PX = 24;
@@ -95,8 +95,13 @@ function clampCellSize(size) {
 }
 
 // Extra empty cells of breathing room kept around the food bounding box
-// when fitting the camera to it.
-const FIT_PADDING_CELLS = 1;
+// when fitting the camera to it — more on desktop, where there's screen
+// real estate to spare and a further-zoomed-out starting view reads the
+// whole board more easily, than on a cramped mobile viewport.
+function fitPaddingCells() {
+  if (typeof window === 'undefined') return 1;
+  return window.innerWidth >= DESKTOP_BREAKPOINT_PX ? 3 : 1;
+}
 
 // Finds the largest cellSize/offset that fits every Food cell (plus a
 // little padding) inside the viewport — used both as the board's initial
@@ -119,18 +124,13 @@ export function computeFitView(cells) {
     };
   }
 
+  const padding = fitPaddingCells();
   const rows = foodIndices.map((i) => Math.floor(i / BOARD_SIZE));
   const cols = foodIndices.map((i) => i % BOARD_SIZE);
-  const minRow = Math.max(0, Math.min(...rows) - FIT_PADDING_CELLS);
-  const maxRow = Math.min(
-    BOARD_SIZE - 1,
-    Math.max(...rows) + FIT_PADDING_CELLS,
-  );
-  const minCol = Math.max(0, Math.min(...cols) - FIT_PADDING_CELLS);
-  const maxCol = Math.min(
-    BOARD_SIZE - 1,
-    Math.max(...cols) + FIT_PADDING_CELLS,
-  );
+  const minRow = Math.max(0, Math.min(...rows) - padding);
+  const maxRow = Math.min(BOARD_SIZE - 1, Math.max(...rows) + padding);
+  const minCol = Math.max(0, Math.min(...cols) - padding);
+  const maxCol = Math.min(BOARD_SIZE - 1, Math.max(...cols) + padding);
   const span = Math.max(maxRow - minRow + 1, maxCol - minCol + 1);
 
   const vpx = viewportPx();
