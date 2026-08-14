@@ -1099,6 +1099,29 @@ body {
   pointer-events: none;
 }
 
+/* Scaling Points (#125) — a small star badge on a Food tile showing how
+   many points it's currently worth (adjacent bird count, min 1). Sits
+   outside .card-face like the Landing Sickness badge, in the opposite
+   (top-right) corner since the two never appear on the same card anyway
+   (only birds go landing-sick, only Food tiles show points). */
+.card-food-points-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: flex;
+  align-items: center;
+  gap: 0.1em;
+  padding: 1px 4px;
+  font-size: clamp(0.5rem, 1.8vw, 0.7rem);
+  font-weight: 800;
+  line-height: 1.4;
+  color: #1c1917;
+  background: #eab308;
+  border-radius: 999px;
+  z-index: 2;
+  pointer-events: none;
+}
+
 .card-back {
   cursor: pointer;
   flex-shrink: 0;

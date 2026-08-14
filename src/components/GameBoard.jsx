@@ -171,6 +171,7 @@ export default function GameBoard({
   onCardDrop,
   hoveredOwnerId,
   sickIndices,
+  foodPointsByIndex,
 }) {
   const [cellSize, setCellSize] = useState(
     () => computeFitView(cells).cellSize,
@@ -414,6 +415,8 @@ export default function GameBoard({
               card?.type !== 'terrain' &&
               card?.ownerId === hoveredOwnerId;
             const isSick = Boolean(card) && Boolean(sickIndices?.has(index));
+            const foodPoints =
+              card?.type === 'food' ? foodPointsByIndex?.get(index) : null;
             const rotationDeg = card?.rotation ?? 0;
             const faceSides = cardHasSides
               ? baseSides(card.sides, rotationDeg)
@@ -475,6 +478,21 @@ export default function GameBoard({
                         title="Protected by Landing Sickness — can't be captured until its owner's next turn begins"
                       >
                         &#128564;
+                      </span>
+                    ) : null}
+                    {foodPoints != null ? (
+                      // Scaling Points (#125) — how many points this tile
+                      // is currently worth (adjacent bird count, min 1).
+                      // Sits outside .card-face like the badges above,
+                      // since it's a status indicator rather than a
+                      // directional value.
+                      <span
+                        className="card-food-points-badge"
+                        role="img"
+                        aria-label={`Worth ${foodPoints} point${foodPoints === 1 ? '' : 's'} right now`}
+                        title={`Worth ${foodPoints} point${foodPoints === 1 ? '' : 's'} right now — as many as the birds touching it`}
+                      >
+                        ★{foodPoints}
                       </span>
                     ) : null}
                     <span

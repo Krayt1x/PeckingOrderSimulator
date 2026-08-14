@@ -45,6 +45,12 @@ export const RULESET_OPTIONS = [
     description:
       'A card cannot be captured by an opponent until its owner’s next turn begins. Cards still under this protection show a small sleeping badge.',
   },
+  {
+    key: 'scalingPoints',
+    label: 'Scaling Points',
+    description:
+      'Claiming a Food tile is worth as many points as birds are touching it, instead of always 1 — never fewer than 1 point, though. A star on the tile shows its current point value.',
+  },
 ];
 
 // Every available visual skin — add new ones here as they're built.

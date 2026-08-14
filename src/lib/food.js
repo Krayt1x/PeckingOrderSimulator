@@ -280,3 +280,27 @@ export function getAdjacentBirdIndices(board, foodIndex, boardSize, ownerId) {
       board[neighborIndex].ownerId === ownerId,
   );
 }
+
+// How many birds — of any owner — orthogonally touch a Food index right
+// now. Used by the Scaling Points ruleset (#125): claiming a tile is worth
+// this many points (never fewer than 1), so it counts the crowd around the
+// tile as a whole rather than just the claiming player's own birds.
+export function countAdjacentBirds(board, foodIndex, boardSize) {
+  const neighbors = getNeighbors(foodIndex, boardSize);
+  return Object.values(neighbors).filter((neighborIndex) => {
+    if (neighborIndex === null) return false;
+    const neighbor = board[neighborIndex];
+    return (
+      Boolean(neighbor) &&
+      neighbor.type !== 'food' &&
+      neighbor.type !== 'terrain'
+    );
+  }).length;
+}
+
+// Points a Food tile is currently worth, per the Scaling Points ruleset —
+// the adjacent-bird count, but never fewer than 1 so a completely
+// uncontested tile is still worth claiming.
+export function foodPointValue(board, foodIndex, boardSize) {
+  return Math.max(1, countAdjacentBirds(board, foodIndex, boardSize));
+}

@@ -1172,6 +1172,90 @@ describe('PlayPage', () => {
     expect(playActionTick).not.toHaveBeenCalled();
   });
 
+  it('awards points equal to the adjacent bird count under the Scaling Points ruleset (#125)', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={TWO_FOOD}
+        foodShapeIds={['crumb-a', 'crumb-b']}
+        ruleset={{ scalingPoints: true }}
+      />,
+    );
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const [spotA, spotB] = neighbors(foodIndex).filter(
+      (i) => !isFilled(cells[i]),
+    );
+
+    // Two of Player 1's own birds end up touching the same Food tile —
+    // eating it should be worth 2 points, not the flat 1 it'd be off.
+    playThenCycleBackToPlayer1(spotA);
+    playThenCycleBackToPlayer1(spotB);
+
+    fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
+    fireEvent.click(screen.getAllByRole('gridcell')[spotA]);
+
+    cells = screen.getAllByRole('gridcell');
+    expect(isFilled(cells[foodIndex])).toBe(false);
+    expect(scoreEntryText('Player 1')).toBe('2Player 1');
+  });
+
+  it('still awards a flat 1 point per Food eaten when Scaling Points is off, regardless of adjacent bird count', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={TWO_FOOD}
+        foodShapeIds={['crumb-a', 'crumb-b']}
+      />,
+    );
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const [spotA, spotB] = neighbors(foodIndex).filter(
+      (i) => !isFilled(cells[i]),
+    );
+
+    playThenCycleBackToPlayer1(spotA);
+    playThenCycleBackToPlayer1(spotB);
+
+    fireEvent.click(screen.getAllByRole('gridcell')[foodIndex]);
+    fireEvent.click(screen.getAllByRole('gridcell')[spotA]);
+
+    expect(scoreEntryText('Player 1')).toBe('1Player 1');
+  });
+
+  it('shows a star badge with the Food tile’s current point value under Scaling Points, and none when the ruleset is off', () => {
+    const { rerender } = render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={TWO_FOOD}
+        foodShapeIds={['crumb-a', 'crumb-b']}
+      />,
+    );
+    expect(
+      screen.queryByRole('img', { name: /Worth \d+ points? right now/ }),
+    ).toBeNull();
+
+    rerender(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={TWO_FOOD}
+        foodShapeIds={['crumb-a', 'crumb-b']}
+        ruleset={{ scalingPoints: true }}
+      />,
+    );
+    // No bird has been played yet, so every Food tile is worth the
+    // minimum of 1 point.
+    const badges = screen.getAllByRole('img', {
+      name: /Worth \d+ points? right now/,
+    });
+    expect(badges.length).toBeGreaterThan(0);
+    badges.forEach((badge) => expect(badge.textContent).toBe('★1'));
+  });
+
   it('ends the game and announces a winner when the last Food is eaten', async () => {
     render(
       <PlayPage

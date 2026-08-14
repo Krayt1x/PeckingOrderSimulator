@@ -8,6 +8,8 @@ import {
   placeFoodShapes,
   getEligibleFoodIndices,
   getAdjacentBirdIndices,
+  countAdjacentBirds,
+  foodPointValue,
 } from './food.js';
 
 // Real board size the app uses — large enough that DEFAULT_FOOD's shapes
@@ -288,5 +290,70 @@ describe('getAdjacentBirdIndices', () => {
     };
 
     expect(getAdjacentBirdIndices(board, 55, BOARD_SIZE, 'p1')).toEqual([45]);
+  });
+});
+
+describe('countAdjacentBirds (#125)', () => {
+  it('counts birds of every owner, not just one player’s', () => {
+    const board = Array(100).fill(null);
+    board[55] = {
+      type: 'food',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+    board[45] = bird('p1');
+    board[54] = bird('p1');
+    board[56] = bird('p2');
+
+    expect(countAdjacentBirds(board, 55, BOARD_SIZE)).toBe(3);
+  });
+
+  it('ignores Food and Terrain neighbors, only counting birds', () => {
+    const board = Array(100).fill(null);
+    board[55] = {
+      type: 'food',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+    board[45] = {
+      type: 'food',
+      sides: { top: 0, right: 0, bottom: 0, left: 0 },
+    };
+    board[54] = { type: 'terrain' };
+    board[56] = bird('p1');
+
+    expect(countAdjacentBirds(board, 55, BOARD_SIZE)).toBe(1);
+  });
+
+  it('is 0 when no bird touches the tile', () => {
+    const board = Array(100).fill(null);
+    board[55] = {
+      type: 'food',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+
+    expect(countAdjacentBirds(board, 55, BOARD_SIZE)).toBe(0);
+  });
+});
+
+describe('foodPointValue (#125)', () => {
+  it('matches the adjacent bird count when at least one bird touches the tile', () => {
+    const board = Array(100).fill(null);
+    board[55] = {
+      type: 'food',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+    board[45] = bird('p1');
+    board[54] = bird('p2');
+
+    expect(foodPointValue(board, 55, BOARD_SIZE)).toBe(2);
+  });
+
+  it('is never less than 1, even with no adjacent birds', () => {
+    const board = Array(100).fill(null);
+    board[55] = {
+      type: 'food',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+    };
+
+    expect(foodPointValue(board, 55, BOARD_SIZE)).toBe(1);
   });
 });

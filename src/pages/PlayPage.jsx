@@ -9,6 +9,7 @@ import {
   placeFoodShapes,
   getEligibleFoodIndices,
   getAdjacentBirdIndices,
+  foodPointValue,
 } from '../lib/food.js';
 import { placeRandomTerrain } from '../lib/terrain.js';
 import {
@@ -489,6 +490,13 @@ export default function PlayPage({
     const eatenFood = board[eatFoodIndex];
     if (!eatenBird || !eatenFood) return;
 
+    // Counted against the board as it stands right now, before the eaten
+    // bird and Food are removed from it — the sacrificed bird was still
+    // touching the tile up until the moment it's claimed.
+    const points = ruleset.scalingPoints
+      ? foodPointValue(board, eatFoodIndex, BOARD_SIZE)
+      : 1;
+
     recordMove();
     const nextBoard = [...board];
     nextBoard[eatFoodIndex] = null;
@@ -504,7 +512,7 @@ export default function PlayPage({
         next = {
           ...next,
           drawPile: shuffle([...next.drawPile, foodCard]),
-          score: next.score + 1,
+          score: next.score + points,
         };
       }
       return next;
@@ -649,6 +657,7 @@ export default function PlayPage({
     let workingHand = activeState.hand;
     let capturedList = [];
     let eatenFoodCards = [];
+    let pointsEarned = 0;
     let usedFoodCards = [];
     let remaining = actionsRemaining;
     const newLogEntries = [];
@@ -658,6 +667,11 @@ export default function PlayPage({
       if (eatChoice) {
         const eatenBird = workingBoard[eatChoice.birdIndex];
         const eatenFood = workingBoard[eatChoice.foodIndex];
+        // Same as the human path — counted before this claim removes the
+        // bird and Food from workingBoard.
+        pointsEarned += ruleset.scalingPoints
+          ? foodPointValue(workingBoard, eatChoice.foodIndex, BOARD_SIZE)
+          : 1;
         const nextBoard = [...workingBoard];
         nextBoard[eatChoice.foodIndex] = null;
         nextBoard[eatChoice.birdIndex] = null;
@@ -766,7 +780,7 @@ export default function PlayPage({
           ? {
               ...state,
               drawPile: shuffle([...state.drawPile, ...eatenFoodCards]),
-              score: state.score + eatenFoodCards.length,
+              score: state.score + pointsEarned,
             }
           : state,
       );
@@ -926,6 +940,19 @@ export default function PlayPage({
       .filter((i) => i !== null),
   );
 
+  // Under the Scaling Points ruleset (#125), every Food tile shows a star
+  // with its current point value — how many birds are touching it right
+  // now (minimum 1) — so players can see what claiming it would be worth
+  // before they commit to it.
+  const foodPointsByIndex = new Map();
+  if (ruleset.scalingPoints) {
+    board.forEach((card, i) => {
+      if (card?.type === 'food') {
+        foodPointsByIndex.set(i, foodPointValue(board, i, BOARD_SIZE));
+      }
+    });
+  }
+
   const draggableIndices = new Set();
   if ((canAct && ruleset.allowMoving) || canReturnToDiscard) {
     board.forEach((cell, i) => {
@@ -1057,6 +1084,7 @@ export default function PlayPage({
             onCardDrop={handleCardDrop}
             hoveredOwnerId={hoveredPlayerId}
             sickIndices={sickIndices}
+            foodPointsByIndex={foodPointsByIndex}
           />
         </div>
         <div className="play-side-col">
