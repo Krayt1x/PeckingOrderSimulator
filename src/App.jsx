@@ -29,6 +29,7 @@ function getRoute() {
 export default function App() {
   const [theme, setTheme] = useState(getInitialTheme);
   const [route, setRoute] = useState(getRoute);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [decks, setDecks] = useState(() =>
     loadJSON(DECKS_STORAGE_KEY, DEFAULT_DECKS),
   );
@@ -44,6 +45,7 @@ export default function App() {
   useEffect(() => {
     function onHashChange() {
       setRoute(getRoute());
+      setMenuOpen(false);
     }
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
@@ -124,25 +126,56 @@ export default function App() {
           <a href="#" className="topnav-brand">
             <strong>Pecking Order</strong>
           </a>
-          <nav className="topnav-links">
-            <a
-              href="#new-game"
-              className={route === 'new-game' ? 'active' : ''}
-            >
-              New Game
-            </a>
-            <a href="#manage" className={route === 'manage' ? 'active' : ''}>
-              Manage
-            </a>
-          </nav>
         </div>
-        <button
-          type="button"
-          onClick={toggleTheme}
-          aria-label="Toggle dark mode"
-        >
-          {theme === 'dark' ? 'Light' : 'Dark'}
-        </button>
+        <div className="nav-menu-wrap">
+          <button
+            type="button"
+            className="nav-menu-toggle"
+            aria-label="Menu"
+            aria-haspopup="true"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            &#9776;
+          </button>
+          {menuOpen ? (
+            <>
+              {/* Full-screen invisible backdrop so a tap anywhere outside
+                  the menu closes it (#123) — same click-outside pattern
+                  every other dropdown/modal in the app already uses. */}
+              <div
+                className="nav-menu-backdrop"
+                onClick={() => setMenuOpen(false)}
+              />
+              <nav className="nav-menu" aria-label="Main menu">
+                <a
+                  href="#new-game"
+                  className={route === 'new-game' ? 'active' : ''}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  New Game
+                </a>
+                <a
+                  href="#manage"
+                  className={route === 'manage' ? 'active' : ''}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Manage
+                </a>
+                <button
+                  type="button"
+                  className="nav-menu-item-btn"
+                  onClick={() => {
+                    toggleTheme();
+                    setMenuOpen(false);
+                  }}
+                >
+                  {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                </button>
+              </nav>
+            </>
+          ) : null}
+        </div>
       </header>
       {renderRoute()}
     </div>
