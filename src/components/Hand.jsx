@@ -1,7 +1,7 @@
 import { baseSides } from '../lib/rotation.js';
 import PixelBirdSprite from './PixelBirdSprite.jsx';
 
-const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
+const SIDE_KEYS = ['top', 'left', 'right', 'bottom'];
 
 export default function Hand({
   cards,

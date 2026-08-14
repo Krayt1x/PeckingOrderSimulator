@@ -3,7 +3,7 @@ import { baseSides } from '../lib/rotation.js';
 import PixelBirdSprite from './PixelBirdSprite.jsx';
 import PixelRockSprite from './PixelRockSprite.jsx';
 
-const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
+const SIDE_KEYS = ['top', 'left', 'right', 'bottom'];
 
 export const BOARD_SIZE = 16;
 const VIEWPORT_SIZE = 5;

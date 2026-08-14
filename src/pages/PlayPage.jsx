@@ -24,7 +24,7 @@ import { DEFAULT_RULESET } from '../lib/rulesets.js';
 import { TUTORIAL_STEPS } from '../lib/tutorial.js';
 
 const ACTIONS_PER_TURN = 1;
-const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
+const SIDE_KEYS = ['top', 'left', 'right', 'bottom'];
 
 const PILE_LABELS = {
   draw: 'Draw pile',

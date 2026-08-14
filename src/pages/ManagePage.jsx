@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { DEFAULT_DECKS, createCardType, deckSize } from '../lib/decks.js';
 import { DEFAULT_FOOD, createFoodShape, FOOD_GRID_SIZE } from '../lib/food.js';
 
-const SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
+const SIDE_KEYS = ['top', 'left', 'right', 'bottom'];
 const GRID_ROWS = Array.from({ length: FOOD_GRID_SIZE }, (_, row) => row);
 const GRID_COLS = Array.from({ length: FOOD_GRID_SIZE }, (_, col) => col);
 
