@@ -2106,6 +2106,18 @@ body {
   margin-top: 1.5rem;
 }
 
+/* .page itself widens well past this on desktop (#125) so the Play page's
+   board has room for its two-column layout — .wizard-card shares that
+   same .page wrapper but shouldn't stretch to match it, so it gets its
+   own, narrower cap here instead, centered independently within .page. */
+@media (min-width: 900px) {
+  .wizard-card {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 .wizard-card-header {
   display: flex;
   align-items: center;
