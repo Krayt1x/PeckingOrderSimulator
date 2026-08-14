@@ -34,20 +34,20 @@ describe('DEFAULT_DECKS', () => {
       City: {
         Sparrow: { quantity: 4, sides: [2, 2, 1, 1] },
         Pigeon: { quantity: 4, sides: [2, 2, 2, 2] },
-        Crow: { quantity: 2, sides: [4, 2, 4, 2] },
-        'Bin Chicken': { quantity: 2, sides: [5, 3, 3, 2] },
+        Crow: { quantity: 2, sides: [4, 2, 2, 4] },
+        'Bin Chicken': { quantity: 2, sides: [5, 3, 2, 3] },
       },
       Park: {
         Sparrow: { quantity: 4, sides: [2, 2, 1, 1] },
-        Duck: { quantity: 4, sides: [3, 3, 2, 1] },
-        Magpie: { quantity: 2, sides: [4, 2, 2, 1] },
-        Swan: { quantity: 2, sides: [4, 4, 4, 2] },
+        Duck: { quantity: 4, sides: [3, 3, 1, 2] },
+        Magpie: { quantity: 2, sides: [4, 2, 1, 2] },
+        Swan: { quantity: 2, sides: [4, 4, 2, 4] },
       },
       Beach: {
         Sparrow: { quantity: 3, sides: [2, 2, 1, 1] },
-        Seagull: { quantity: 5, sides: [3, 2, 2, 1] },
-        Pelican: { quantity: 2, sides: [4, 4, 4, 2] },
-        Cockatoo: { quantity: 2, sides: [5, 2, 2, 1] },
+        Seagull: { quantity: 5, sides: [3, 2, 1, 2] },
+        Pelican: { quantity: 2, sides: [4, 4, 2, 4] },
+        Cockatoo: { quantity: 2, sides: [5, 2, 1, 2] },
       },
     };
 
