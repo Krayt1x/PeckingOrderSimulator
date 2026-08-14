@@ -2406,6 +2406,52 @@ describe('PlayPage', () => {
   });
 });
 
+describe('Tutorial intro modal (#115)', () => {
+  it('is shown immediately when launching a Tutorial game', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        ruleset={{ allowRandomTerrain: false }}
+        isTutorial
+      />,
+    );
+    expect(
+      screen.getByRole('dialog', { name: 'Welcome to the tutorial' }),
+    ).toBeDefined();
+  });
+
+  it('is not shown outside of a Tutorial game', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        ruleset={{ allowRandomTerrain: false }}
+      />,
+    );
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('dismisses when Start Tutorial is clicked, revealing the tutorial banner', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        ruleset={{ allowRandomTerrain: false }}
+        isTutorial
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Tutorial' }));
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByText(`Step 1 of ${TUTORIAL_STEPS.length}`)).toBeDefined();
+  });
+});
+
 describe('Tutorial banner (#102)', () => {
   it('is not shown outside of a Tutorial game', () => {
     render(

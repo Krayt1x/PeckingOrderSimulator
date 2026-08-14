@@ -3,6 +3,7 @@ import GameBoard, { BOARD_SIZE } from '../components/GameBoard.jsx';
 import Hand from '../components/Hand.jsx';
 import StatusTray from '../components/StatusTray.jsx';
 import PixelBirdSprite from '../components/PixelBirdSprite.jsx';
+import TutorialIntroModal from '../components/TutorialIntroModal.jsx';
 import { HAND_SIZE, buildDrawPile, shuffle } from '../lib/decks.js';
 import {
   placeFoodShapes,
@@ -191,6 +192,7 @@ export default function PlayPage({
   const [gameOverVisible, setGameOverVisible] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [tutorialDismissed, setTutorialDismissed] = useState(false);
+  const [showIntroModal, setShowIntroModal] = useState(isTutorial);
   // Snapshots taken before each move this turn, most recent last — cleared
   // whenever the turn advances, so undo never reaches into a prior turn.
   const [moveHistory, setMoveHistory] = useState([]);
@@ -879,6 +881,9 @@ export default function PlayPage({
 
   return (
     <main className="page" data-skin={activeSkin}>
+      {showIntroModal ? (
+        <TutorialIntroModal onDismiss={() => setShowIntroModal(false)} />
+      ) : null}
       {gameOverVisible && !gameOverDismissed ? (
         <div
           className="color-modal-backdrop"
