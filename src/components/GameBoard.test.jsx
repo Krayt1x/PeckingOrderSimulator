@@ -119,3 +119,48 @@ describe('rendering a Terrain cell (#107)', () => {
       .toBeNull();
   });
 });
+
+describe('claiming Food gives eligible birds a yellow ring (#115 follow-up)', () => {
+  it('marks a bird card as a claim choice when its index is highlighted', () => {
+    const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+    cells[0] = {
+      id: 'bird-0',
+      type: 'bird',
+      name: 'Sparrow',
+      ownerId: 'p1',
+      sides: { top: 2, right: 2, bottom: 2, left: 2 },
+    };
+    cells[1] = {
+      id: 'bird-1',
+      type: 'bird',
+      name: 'Duck',
+      ownerId: 'p1',
+      sides: { top: 2, right: 2, bottom: 2, left: 2 },
+    };
+    const { container } = render(
+      <GameBoard cells={cells} highlightedIndices={new Set([0])} />,
+    );
+
+    const cellButtons = container.querySelectorAll('.board-cell');
+    expect(
+      cellButtons[0].querySelector('.card-claim-choice'),
+    ).not.toBeNull();
+    expect(
+      cellButtons[1].querySelector('.card-claim-choice'),
+    ).toBeNull();
+  });
+
+  it('does not mark anything when nothing is highlighted', () => {
+    const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+    cells[0] = {
+      id: 'bird-0',
+      type: 'bird',
+      name: 'Sparrow',
+      ownerId: 'p1',
+      sides: { top: 2, right: 2, bottom: 2, left: 2 },
+    };
+    const { container } = render(<GameBoard cells={cells} />);
+
+    expect(container.querySelector('.card-claim-choice')).toBeNull();
+  });
+});

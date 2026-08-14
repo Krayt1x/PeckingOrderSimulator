@@ -371,6 +371,12 @@ export default function GameBoard({
 
             const isDraggable = Boolean(draggableIndices?.has(index));
             const isClaimable = Boolean(claimableIndices?.has(index));
+            // Food is being claimed and this card is one of the birds
+            // eligible to take it (highlightedIndices only ever holds
+            // occupied cells in that mode — every other mode highlights
+            // empty cells to drop a card onto) (#115 follow-up).
+            const isClaimChoice =
+              Boolean(card) && Boolean(highlightedIndices?.has(index));
             const isOwnerHighlighted =
               hoveredOwnerId != null &&
               card?.type !== 'food' &&
@@ -410,7 +416,7 @@ export default function GameBoard({
                   </span>
                 ) : card ? (
                   <span
-                    className={`card card-on-board${card.type === 'food' ? ' card-food' : ''}${isClaimable ? ' card-claimable' : ''}${isOwnerHighlighted ? ' card-owner-highlighted' : ''}`}
+                    className={`card card-on-board${card.type === 'food' ? ' card-food' : ''}${isClaimable ? ' card-claimable' : ''}${isOwnerHighlighted ? ' card-owner-highlighted' : ''}${isClaimChoice ? ' card-claim-choice' : ''}`}
                     style={
                       card.type === 'food'
                         ? {

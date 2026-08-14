@@ -221,6 +221,19 @@ body {
   z-index: 1;
 }
 
+/* Food has been tapped to claim it — every one of the active player's
+   birds adjacent to it gets this yellow ring, same as the Tutorial's
+   intro demo. Three chained classes (not just .card-claim-choice) so
+   this outranks the Alpha Pixel Art skin's own .card box-shadow bevel,
+   which would otherwise win on specificity and hide the ring entirely
+   (see TutorialIntroModal's .tutorial-demo-card-selected for the same
+   fix) (#115 follow-up). */
+.card.card-on-board.card-claim-choice {
+  box-shadow:
+    0 0 0 2px #f0c419,
+    0 0 8px 2px rgba(240, 196, 25, 0.9);
+}
+
 .board-cell-draggable {
   cursor: grab;
 }
