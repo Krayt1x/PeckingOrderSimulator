@@ -972,6 +972,14 @@ export default function PlayPage({
           </div>
         </div>
       ) : null}
+      {/* On a wide desktop screen, the board gets its own column so it can
+          grow well past the mobile-first single-column width, while
+          everything that used to sit below it — status tray, scores,
+          hand, piles — moves into a narrow sidebar instead (#118 example
+          B). Below the desktop breakpoint this is just a plain vertical
+          stack, unchanged from before. */}
+      <div className="play-layout">
+      <div className="play-board-col">
       <GameBoard
         cells={board}
         highlightedIndices={highlighted}
@@ -986,6 +994,8 @@ export default function PlayPage({
         onCardDrop={handleCardDrop}
         hoveredOwnerId={hoveredPlayerId}
       />
+      </div>
+      <div className="play-side-col">
 
       <StatusTray
         players={players}
@@ -1156,6 +1166,8 @@ export default function PlayPage({
             <span className="card-back-deck">{activeDeck?.name}</span>
           </button>
         </div>
+      </div>
+      </div>
       </div>
       {pileModal ? (
         <div className="color-modal-backdrop" onClick={closePileModal}>

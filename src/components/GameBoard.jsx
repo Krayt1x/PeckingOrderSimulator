@@ -8,26 +8,45 @@ const SIDE_KEYS = ['top', 'left', 'right', 'bottom'];
 export const BOARD_SIZE = 16;
 const VIEWPORT_SIZE = 5;
 const MIN_CELL_SIZE = 32;
-const MAX_CELL_SIZE = 144;
+const MAX_CELL_SIZE = 200;
 const ZOOM_STEP = 16;
 const CELL_GAP = 0;
 
-// Mirrors .page's own CSS (max-width: 560px; padding: 0 1.5rem) so the
-// viewport box always exactly fills the same content width .page gives
-// everything else — full desktop content width above 560px, narrowing
-// with the actual screen below it, rather than a couple of hardcoded
-// breakpoint sizes that only fit some phones and leave others with a
-// board too small (or, previously, too big) for the row around it.
-const PAGE_MAX_WIDTH_PX = 560;
+// Mirrors .page's own CSS so the viewport box always exactly fills the
+// same content width .page gives the board column — full desktop content
+// width above the 900px breakpoint, narrowing with the actual screen
+// below it, rather than a couple of hardcoded breakpoint sizes that only
+// fit some phones and leave others with a board too small (or,
+// previously, too big) for the row around it.
+//
+// At the desktop breakpoint, .play-layout also splits into two columns
+// (see index.css) — the board gets its own column and the status
+// tray/hand/piles move into a fixed-width sidebar next to it, so the
+// board's available width is .page's width minus that sidebar and the
+// gap between them, not the full page width (#118 example B).
+const MOBILE_PAGE_MAX_WIDTH_PX = 560;
+const DESKTOP_PAGE_MAX_WIDTH_PX = 1300;
+const DESKTOP_BREAKPOINT_PX = 900;
+const SIDE_COL_WIDTH_PX = 380;
+const SIDE_COL_GAP_PX = 24;
 const PAGE_HORIZONTAL_PADDING_PX = 48;
 const DESKTOP_CELL_SIZE = Math.floor(
-  (PAGE_MAX_WIDTH_PX - PAGE_HORIZONTAL_PADDING_PX) / VIEWPORT_SIZE,
+  (DESKTOP_PAGE_MAX_WIDTH_PX -
+    PAGE_HORIZONTAL_PADDING_PX -
+    SIDE_COL_WIDTH_PX -
+    SIDE_COL_GAP_PX) /
+    VIEWPORT_SIZE,
 );
 
 function defaultCellSize() {
   if (typeof window === 'undefined') return DESKTOP_CELL_SIZE;
-  const pageWidth = Math.min(window.innerWidth, PAGE_MAX_WIDTH_PX);
-  const contentWidth = pageWidth - PAGE_HORIZONTAL_PADDING_PX;
+  const isDesktop = window.innerWidth >= DESKTOP_BREAKPOINT_PX;
+  const pageWidth = Math.min(
+    window.innerWidth,
+    isDesktop ? DESKTOP_PAGE_MAX_WIDTH_PX : MOBILE_PAGE_MAX_WIDTH_PX,
+  );
+  const sidebarWidth = isDesktop ? SIDE_COL_WIDTH_PX + SIDE_COL_GAP_PX : 0;
+  const contentWidth = pageWidth - PAGE_HORIZONTAL_PADDING_PX - sidebarWidth;
   return Math.max(MIN_CELL_SIZE, Math.floor(contentWidth / VIEWPORT_SIZE));
 }
 

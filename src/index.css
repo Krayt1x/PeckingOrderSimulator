@@ -2233,3 +2233,96 @@ body {
     gap: 0.15rem;
   }
 }
+
+.play-layout {
+  display: flex;
+  flex-direction: column;
+}
+
+.play-board-col {
+  min-width: 0;
+}
+
+/* On a wide desktop screen, the map gets its own column and grows well
+   past the mobile-first single-column width — everything that used to
+   sit below it moves into a narrow, fixed-width sidebar next to it
+   instead, with hand/pile cards shrunk to fit the column (#118 example
+   B). GameBoard.jsx mirrors this same 900px breakpoint, 1300px page cap,
+   and 320px sidebar for its own cell-size math. */
+@media (min-width: 900px) {
+  .page {
+    max-width: 1300px;
+  }
+
+  .play-layout {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  .play-board-col {
+    flex: 1 1 auto;
+  }
+
+  .play-side-col {
+    flex: 0 0 380px;
+    width: 380px;
+    min-width: 0;
+  }
+
+  .play-side-col .hand-row .hand {
+    flex: 1 1 0;
+  }
+
+  .play-side-col .hand-row .card {
+    max-width: 96px;
+  }
+
+  /* Piles are secondary to the hand — same as the mobile layout below
+     700px, they get squeezed down first so the hand cards keep enough
+     room for their name text not to collide with the side-value badges
+     (#118 example B). */
+  .play-side-col .discard-stack,
+  .play-side-col .draw-stack {
+    flex: 0 1 40px;
+    max-width: 40px;
+  }
+
+  .play-side-col .hand-row .card-back {
+    max-width: 40px;
+  }
+
+  .play-side-col .hand-row .card-back-label {
+    font-size: 0.48rem;
+    line-height: 1.1;
+  }
+
+  .play-side-col .hand-row .card-back-deck {
+    font-size: 0.45rem;
+    padding: 0.1rem 0.3rem;
+  }
+
+  /* .card-name/.card-side normally size themselves off viewport width
+     (vw), which assumes a narrow card only ever happens on a narrow
+     screen — not true here, where the card is small because the sidebar
+     column is narrow despite a wide desktop viewport. Pinned to fixed
+     sizes (matching the alpha-pixel-art skin's own mobile treatment)
+     instead so they actually shrink with the card (#118 example B). */
+  .play-side-col .hand-row .hand .card-name {
+    font-size: 0.5rem;
+  }
+
+  .play-side-col .hand-row .hand .card-side {
+    font-size: 0.42rem;
+  }
+
+  .play-side-col .hand-row .hand .card-pixel-sprite {
+    width: 26px !important;
+    height: 26px !important;
+    image-rendering: pixelated;
+  }
+
+  .play-side-col .hand-row .hand .card-face {
+    gap: 0.15rem;
+  }
+}

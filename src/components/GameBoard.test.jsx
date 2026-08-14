@@ -5,17 +5,32 @@ import { placeFoodShapes, DEFAULT_FOOD } from '../lib/food.js';
 
 const CELL_GAP = 0;
 const VIEWPORT_SIZE = 5;
-const PAGE_MAX_WIDTH_PX = 560;
+const MOBILE_PAGE_MAX_WIDTH_PX = 560;
+const DESKTOP_PAGE_MAX_WIDTH_PX = 1300;
+const DESKTOP_BREAKPOINT_PX = 900;
+const SIDE_COL_WIDTH_PX = 380;
+const SIDE_COL_GAP_PX = 24;
 const PAGE_HORIZONTAL_PADDING_PX = 48;
 const DESKTOP_CELL_SIZE = Math.floor(
-  (PAGE_MAX_WIDTH_PX - PAGE_HORIZONTAL_PADDING_PX) / VIEWPORT_SIZE,
+  (DESKTOP_PAGE_MAX_WIDTH_PX -
+    PAGE_HORIZONTAL_PADDING_PX -
+    SIDE_COL_WIDTH_PX -
+    SIDE_COL_GAP_PX) /
+    VIEWPORT_SIZE,
 );
 const VIEWPORT_PX = VIEWPORT_SIZE * (DESKTOP_CELL_SIZE + CELL_GAP) - CELL_GAP;
 
-// Mirrors .page's own content-width math for a given screen width.
+// Mirrors .page's own content-width math for a given screen width — below
+// the desktop breakpoint it's the mobile single-column page; at/above it,
+// .play-layout splits into the board column plus a fixed sidebar (#118).
 function expectedCellSizeFor(innerWidth) {
-  const pageWidth = Math.min(innerWidth, PAGE_MAX_WIDTH_PX);
-  const contentWidth = pageWidth - PAGE_HORIZONTAL_PADDING_PX;
+  const isDesktop = innerWidth >= DESKTOP_BREAKPOINT_PX;
+  const pageWidth = Math.min(
+    innerWidth,
+    isDesktop ? DESKTOP_PAGE_MAX_WIDTH_PX : MOBILE_PAGE_MAX_WIDTH_PX,
+  );
+  const sidebarWidth = isDesktop ? SIDE_COL_WIDTH_PX + SIDE_COL_GAP_PX : 0;
+  const contentWidth = pageWidth - PAGE_HORIZONTAL_PADDING_PX - sidebarWidth;
   return Math.floor(contentWidth / VIEWPORT_SIZE);
 }
 
@@ -34,6 +49,12 @@ function buildCells(foodBoard) {
 
 describe('computeFitView', () => {
   it('falls back to the default centered view when there is no Food', () => {
+    // jsdom's own default innerWidth (1024) sits below the desktop page's
+    // 1300px cap, so it needs to be set explicitly here to actually reach
+    // DESKTOP_CELL_SIZE — previously any width past the old 560px mobile
+    // cap gave the same result, which no longer holds now that the
+    // desktop cap is bigger than jsdom's default (#118 example B).
+    window.innerWidth = 1440;
     const { cellSize, offset } = computeFitView(
       Array(BOARD_SIZE * BOARD_SIZE).fill(null),
     );
@@ -69,6 +90,20 @@ describe('computeFitView', () => {
       Array(BOARD_SIZE * BOARD_SIZE).fill(null),
     );
     expect(cellSize).toBe(DESKTOP_CELL_SIZE);
+  });
+
+  // At the desktop breakpoint, .play-layout splits into a board column
+  // plus a fixed-width sidebar (#118 example B) — the board should grow
+  // well past its old 560px-page cap, filling the space next to that
+  // sidebar instead.
+  it('grows past the old mobile page cap once the desktop sidebar layout kicks in', () => {
+    window.innerWidth = 1440;
+    const { cellSize } = computeFitView(
+      Array(BOARD_SIZE * BOARD_SIZE).fill(null),
+    );
+    expect(cellSize).toBeGreaterThan(
+      Math.floor((MOBILE_PAGE_MAX_WIDTH_PX - PAGE_HORIZONTAL_PADDING_PX) / VIEWPORT_SIZE),
+    );
   });
 
   it('fits every Food cell inside the viewport', () => {
