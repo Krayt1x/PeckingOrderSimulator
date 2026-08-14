@@ -28,15 +28,20 @@ export function isLandingSick(card, ownerTurnCounts) {
 // Checks the 4 neighbors of `index` (where `card` was just placed or moved
 // to) and captures any adjacent opponent card whose facing side value is
 // lower than `card`'s facing side on that edge. Food, the owner's own
-// cards, and a still-landing-sick opponent card are never captured.
-// Returns { board, captured }, where captured is [{ index, card }] for
-// every card that was removed from the board.
+// cards, and a still-landing-sick opponent card are never captured. Under
+// the Triple Triad ruleset (#126), a captured card isn't removed from the
+// board at all — it stays put with the same stats, just switching to the
+// capturing player's ownerId, same as flipping a card's team in the game
+// it's named after. Returns { board, captured }, where captured is
+// [{ index, card }] — `card` is always the pre-capture card (its original
+// owner), for every card that was captured, removed or converted alike.
 export function resolveCaptures(
   board,
   index,
   card,
   boardSize,
   ownerTurnCounts,
+  convertOwnership = false,
 ) {
   const neighbors = getNeighbors(index, boardSize);
   const next = [...board];
@@ -55,7 +60,9 @@ export function resolveCaptures(
     const defendValue = target.sides[OPPOSITE_SIDE[direction]];
     if (attackValue > defendValue) {
       captured.push({ index: neighborIndex, card: target });
-      next[neighborIndex] = null;
+      next[neighborIndex] = convertOwnership
+        ? { ...target, ownerId: card.ownerId }
+        : null;
     }
   });
 

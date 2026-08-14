@@ -309,6 +309,11 @@ export default function PlayPage({
   }
 
   function applyOwnerCaptureBookkeeping(states, capturedList) {
+    // Under Triple Triad (#126), a captured card switches teams and stays
+    // on the board instead of being removed — its original owner never
+    // gets it back in their discard pile, since it was never taken off
+    // the board to begin with.
+    if (ruleset.tripleTriad) return states;
     return states.map((state, i) => {
       const ownCaptured = capturedList.filter(
         (c) => c.card.ownerId === players[i].id,
@@ -411,7 +416,8 @@ export default function PlayPage({
 
   function logCaptureSuffix(captured) {
     if (captured.length === 0) return '';
-    return `, capturing ${captured.length} card${captured.length === 1 ? '' : 's'}`;
+    const verb = ruleset.tripleTriad ? 'converting' : 'capturing';
+    return `, ${verb} ${captured.length} card${captured.length === 1 ? '' : 's'}`;
   }
 
   function handlePlayCard(cellIndex) {
@@ -434,6 +440,7 @@ export default function PlayPage({
       placedCard,
       BOARD_SIZE,
       ownerTurnCounts,
+      ruleset.tripleTriad,
     );
 
     let nextPlayerStates = playerStates.map((state, i) =>
@@ -469,6 +476,7 @@ export default function PlayPage({
       card,
       BOARD_SIZE,
       ownerTurnCounts,
+      ruleset.tripleTriad,
     );
 
     const nextPlayerStates = applyOwnerCaptureBookkeeping(
@@ -740,6 +748,7 @@ export default function PlayPage({
         placedCard,
         BOARD_SIZE,
         ownerTurnCounts,
+        ruleset.tripleTriad,
       );
 
       workingBoard = afterCaptures;

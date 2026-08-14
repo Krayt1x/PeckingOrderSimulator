@@ -51,6 +51,12 @@ export const RULESET_OPTIONS = [
     description:
       'Claiming a Food tile is worth as many points as birds are touching it, instead of always 1 — never fewer than 1 point, though. A star on the tile shows its current point value.',
   },
+  {
+    key: 'tripleTriad',
+    label: 'Triple Triad',
+    description:
+      'A card that would be captured switches to the capturing player’s team instead of being removed from the board — same stats, new owner, staying right where it was.',
+  },
 ];
 
 // Every available visual skin — add new ones here as they're built.

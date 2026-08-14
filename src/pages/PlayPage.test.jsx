@@ -564,6 +564,67 @@ describe('PlayPage', () => {
     ).toBeDefined();
   });
 
+  it('converts a captured card to the capturing player’s team instead of removing it, under Triple Triad (#126)', async () => {
+    render(
+      <PlayPage
+        players={[
+          { id: 'p1', name: 'Player 1', isCPU: false, deckId: 'deck-weak' },
+          { id: 'p2', name: 'Player 2', isCPU: false, deckId: 'deck-strong' },
+        ]}
+        decks={strongVsWeakDecks()}
+        food={SINGLE_FOOD}
+        foodShapeIds={['crumb']}
+        ruleset={{ tripleTriad: true }}
+      />,
+    );
+
+    // Player 1 (Weak) plays next to Food.
+    let cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    const weakSpot = neighbors(foodIndex).find((i) => !isFilled(cells[i]));
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[weakSpot]);
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    // Player 2 (Strong) plays next to Player 1's Weak card.
+    cells = screen.getAllByRole('gridcell');
+    const strongSpot = neighbors(weakSpot).find((i) => !isFilled(cells[i]));
+    fireEvent.click(
+      within(screen.getByRole('list', { name: 'Your hand' })).getAllByRole(
+        'button',
+      )[0],
+    );
+    fireEvent.click(screen.getAllByRole('gridcell')[strongSpot]);
+
+    expect(
+      screen.getByText(/Player 2 played Strong, converting 1 card/),
+    ).toBeDefined();
+
+    // The captured card stays on the board the whole time under Triple
+    // Triad — never removed, so it's still filled once the usual
+    // capture-removal delay elapses.
+    await waitFor(
+      () => {
+        cells = screen.getAllByRole('gridcell');
+        expect(cardNameOf(cells[weakSpot])).toBe('Weak');
+      },
+      { timeout: 2000 },
+    );
+    expect(isFilled(screen.getAllByRole('gridcell')[weakSpot])).toBe(true);
+
+    // ...and it never went to Player 1's discard pile, since it was
+    // never taken off the board.
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    expect(screen.getByText(/Player 1.*turn/)).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: 'Discard pile: 0 cards' }),
+    ).toBeDefined();
+  });
+
   it('blocks a tied-value placement without Equal Value Playable, but allows it with the ruleset enabled', () => {
     function tiedDecks() {
       return [
