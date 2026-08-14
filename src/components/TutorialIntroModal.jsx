@@ -98,13 +98,13 @@ export default function TutorialIntroModal({ onDismiss }) {
         <h2>Watch a Turn Play Out</h2>
         <ul className="tutorial-intro-rules">
           <li>
-            When playing a card, if the strength of your card is higher than
-            the opposing cards, the opposing cards will fly off the board.
+            When playing a card, if the strength of your card is higher than the
+            opposing cards, the opposing cards will fly off the board.
           </li>
           <li>
-            If you have more birds adjacent to a piece of food, you can use
-            an action to tap the food and then select a bird to fly away
-            with it, securing you a victory point.
+            If you have more birds adjacent to a piece of food, you can use an
+            action to tap the food and then select a bird to fly away with it,
+            securing you a victory point.
           </li>
         </ul>
         <div className="tutorial-intro-board" aria-hidden="true">
@@ -113,7 +113,11 @@ export default function TutorialIntroModal({ onDismiss }) {
           </div>
           <div className="tutorial-intro-cell tutorial-intro-cell-left">
             {showLeft ? (
-              <DemoBirdCard color="#3b82f6" sides={3} selected={birdsSelected} />
+              <DemoBirdCard
+                color="#3b82f6"
+                sides={3}
+                selected={birdsSelected}
+              />
             ) : null}
           </div>
           <div className="tutorial-intro-cell tutorial-intro-cell-food">
@@ -127,7 +131,11 @@ export default function TutorialIntroModal({ onDismiss }) {
           </div>
           <div className="tutorial-intro-cell tutorial-intro-cell-bottom">
             {showBottomOld ? (
-              <DemoBirdCard color="#ef4444" sides={3} flying={bottomOldFlying} />
+              <DemoBirdCard
+                color="#ef4444"
+                sides={3}
+                flying={bottomOldFlying}
+              />
             ) : null}
           </div>
           <div className="tutorial-intro-cell tutorial-intro-cell-play">

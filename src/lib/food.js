@@ -141,7 +141,11 @@ function shuffle(list) {
 // placing more shapes than the default clustering distance can
 // comfortably fit (e.g. Double Food, #119) should widen maxDistance so
 // every shape still finds room somewhere on the board.
-export function placeFoodShapes(food, boardSize, maxDistance = MAX_FOOD_DISTANCE) {
+export function placeFoodShapes(
+  food,
+  boardSize,
+  maxDistance = MAX_FOOD_DISTANCE,
+) {
   const shapes = food?.shapes ?? [];
   const occupied = new Set();
   const placedCells = []; // [{ row, col }] across every shape placed so far
@@ -190,7 +194,8 @@ export function placeFoodShapes(food, boardSize, maxDistance = MAX_FOOD_DISTANCE
       return placedGroups.every((group) =>
         cellPositions.some(({ r, c }) =>
           group.some(
-            (other) => chebyshevDistance(r, c, other.row, other.col) <= maxDistance,
+            (other) =>
+              chebyshevDistance(r, c, other.row, other.col) <= maxDistance,
           ),
         ),
       );
@@ -239,7 +244,11 @@ export function getEligibleFoodIndices(board, boardSize, activePlayerId) {
       // Terrain has no ownerId, so left uncounted here it would land in
       // counts[undefined] and inflate "others" — an unowned rock acting
       // as a phantom opponent vote against every player (#107 follow-up).
-      if (!neighbor || neighbor.type === 'food' || neighbor.type === 'terrain') {
+      if (
+        !neighbor ||
+        neighbor.type === 'food' ||
+        neighbor.type === 'terrain'
+      ) {
         return;
       }
       counts[neighbor.ownerId] = (counts[neighbor.ownerId] ?? 0) + 1;

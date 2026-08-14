@@ -185,9 +185,7 @@ export function pickCpuMove(
       if (steps > 0) sides = rotateSides(sides, 'cw');
       const placedCard = { ...card, ownerId, sides };
       playableIndexes.forEach((cellIndex) => {
-        if (
-          !canPlaceCard(board, cellIndex, placedCard, boardSize, allowEqual)
-        )
+        if (!canPlaceCard(board, cellIndex, placedCard, boardSize, allowEqual))
           return;
 
         const withCard = [...board];

@@ -58,9 +58,7 @@ describe('App', () => {
     render(<App />);
     expect(screen.queryByRole('link', { name: 'New Game' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Manage' })).toBeNull();
-    expect(
-      screen.queryByRole('button', { name: /mode$/ }),
-    ).toBeNull();
+    expect(screen.queryByRole('button', { name: /mode$/ })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
 

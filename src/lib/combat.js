@@ -31,7 +31,13 @@ export function isLandingSick(card, ownerTurnCounts) {
 // cards, and a still-landing-sick opponent card are never captured.
 // Returns { board, captured }, where captured is [{ index, card }] for
 // every card that was removed from the board.
-export function resolveCaptures(board, index, card, boardSize, ownerTurnCounts) {
+export function resolveCaptures(
+  board,
+  index,
+  card,
+  boardSize,
+  ownerTurnCounts,
+) {
   const neighbors = getNeighbors(index, boardSize);
   const next = [...board];
   const captured = [];

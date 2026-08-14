@@ -99,11 +99,18 @@ let nextLogId = 1;
 // all mutually cluster within the default distance, so doubled food gets
 // the whole board to spread across rather than risk pieces getting
 // silently skipped for having nowhere left to fit.
-function createInitialBoard(food, foodShapeIds, allowRandomTerrain, doubleFood) {
+function createInitialBoard(
+  food,
+  foodShapeIds,
+  allowRandomTerrain,
+  doubleFood,
+) {
   const selectedShapes = food.shapes.filter((s) => foodShapeIds.includes(s.id));
   const activeFood = {
     ...food,
-    shapes: doubleFood ? [...selectedShapes, ...selectedShapes] : selectedShapes,
+    shapes: doubleFood
+      ? [...selectedShapes, ...selectedShapes]
+      : selectedShapes,
   };
   const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
   const foodCells = placeFoodShapes(
@@ -390,7 +397,8 @@ export default function PlayPage({
                       // first anti-clockwise turn (#114). baseSides()
                       // already reduces this mod 360 for computing side
                       // values, so an ever-growing value here is safe.
-                      rotation: (c.rotation ?? 0) + (direction === 'cw' ? 90 : -90),
+                      rotation:
+                        (c.rotation ?? 0) + (direction === 'cw' ? 90 : -90),
                     }
                   : c,
               ),
@@ -945,7 +953,8 @@ export default function PlayPage({
         dx: Math.cos(angle) * distance,
         dy: Math.sin(angle) * distance,
         rot: Math.random() * 360,
-        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        color:
+          CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
         delay: Math.random() * 0.08,
       };
     });
@@ -1032,196 +1041,201 @@ export default function PlayPage({
           B). Below the desktop breakpoint this is just a plain vertical
           stack, unchanged from before. */}
       <div className="play-layout">
-      <div className="play-board-col">
-      <GameBoard
-        cells={board}
-        highlightedIndices={highlighted}
-        claimableIndices={claimable}
-        claimColor={activePlayer.color}
-        selectedIndex={selected}
-        onCellClick={handleCellClick}
-        playerColors={playerColors}
-        draggableIndices={draggableIndices}
-        onCardDragStart={handleCardDragStart}
-        onCardDragEnd={handleCardDragEnd}
-        onCardDrop={handleCardDrop}
-        hoveredOwnerId={hoveredPlayerId}
-        sickIndices={sickIndices}
-      />
-      </div>
-      <div className="play-side-col">
+        <div className="play-board-col">
+          <GameBoard
+            cells={board}
+            highlightedIndices={highlighted}
+            claimableIndices={claimable}
+            claimColor={activePlayer.color}
+            selectedIndex={selected}
+            onCellClick={handleCellClick}
+            playerColors={playerColors}
+            draggableIndices={draggableIndices}
+            onCardDragStart={handleCardDragStart}
+            onCardDragEnd={handleCardDragEnd}
+            onCardDrop={handleCardDrop}
+            hoveredOwnerId={hoveredPlayerId}
+            sickIndices={sickIndices}
+          />
+        </div>
+        <div className="play-side-col">
+          <StatusTray
+            players={players}
+            food={food}
+            foodShapeIds={shapeIds}
+            ruleset={ruleset}
+            actionLog={actionLog}
+          />
 
-      <StatusTray
-        players={players}
-        food={food}
-        foodShapeIds={shapeIds}
-        ruleset={ruleset}
-        actionLog={actionLog}
-      />
+          <ul className="score-board">
+            {players.map((p, i) => {
+              const score = playerStates[i].score;
+              const isLeader = maxScore > 0 && score === maxScore;
+              return (
+                <li
+                  key={p.id}
+                  className={`score-entry${p.id === activePlayer.id ? ' score-entry-active' : ''}`}
+                  style={{ '--player-color': p.color }}
+                  onMouseEnter={() => setHoveredPlayerId(p.id)}
+                  onMouseLeave={() =>
+                    setHoveredPlayerId((current) =>
+                      current === p.id ? null : current,
+                    )
+                  }
+                >
+                  <span
+                    className={`score-value${isLeader ? ' score-leader' : ''}`}
+                  >
+                    {score}
+                  </span>
+                  <span className="score-name">{displayName(p)}</span>
+                </li>
+              );
+            })}
+          </ul>
 
-      <ul className="score-board">
-        {players.map((p, i) => {
-          const score = playerStates[i].score;
-          const isLeader = maxScore > 0 && score === maxScore;
-          return (
-            <li
-              key={p.id}
-              className={`score-entry${p.id === activePlayer.id ? ' score-entry-active' : ''}`}
-              style={{ '--player-color': p.color }}
-              onMouseEnter={() => setHoveredPlayerId(p.id)}
-              onMouseLeave={() =>
-                setHoveredPlayerId((current) =>
-                  current === p.id ? null : current,
-                )
-              }
-            >
-              <span className={`score-value${isLeader ? ' score-leader' : ''}`}>
-                {score}
-              </span>
-              <span className="score-name">{displayName(p)}</span>
-            </li>
-          );
-        })}
-      </ul>
-
-      <div className="hand-header">
-        {/* Whose turn it is now reads from the bright border on their
+          <div className="hand-header">
+            {/* Whose turn it is now reads from the bright border on their
             score pill above (#101) — kept here only for assistive tech,
             since a border alone isn't perceivable non-visually. */}
-        <h2 className="sr-only">
-          {displayName(activePlayer)}&rsquo;s turn
-          {activePlayer.isCPU ? ' (CPU)' : ''}
-        </h2>
-        {!activePlayer.isCPU && !gameOver ? (
-          <span className="draw-pile-count">
-            Actions: {actionsRemaining}/{ACTIONS_PER_TURN}
-          </span>
-        ) : null}
-        {gameOver ? null : activePlayer.isCPU ? (
-          <span className="draw-pile-count end-turn-spacer">
-            CPU is playing&hellip;
-          </span>
-        ) : (
-          <div className="end-turn-spacer turn-controls">
-            <button
-              type="button"
-              className="undo-move-btn"
-              onClick={handleUndo}
-              disabled={moveHistory.length === 0}
-            >
-              Undo
-            </button>
-            <button
-              type="button"
-              className="end-turn-btn"
-              onClick={handleEndTurn}
-            >
-              End Turn
-            </button>
+            <h2 className="sr-only">
+              {displayName(activePlayer)}&rsquo;s turn
+              {activePlayer.isCPU ? ' (CPU)' : ''}
+            </h2>
+            {!activePlayer.isCPU && !gameOver ? (
+              <span className="draw-pile-count">
+                Actions: {actionsRemaining}/{ACTIONS_PER_TURN}
+              </span>
+            ) : null}
+            {gameOver ? null : activePlayer.isCPU ? (
+              <span className="draw-pile-count end-turn-spacer">
+                CPU is playing&hellip;
+              </span>
+            ) : (
+              <div className="end-turn-spacer turn-controls">
+                <button
+                  type="button"
+                  className="undo-move-btn"
+                  onClick={handleUndo}
+                  disabled={moveHistory.length === 0}
+                >
+                  Undo
+                </button>
+                <button
+                  type="button"
+                  className="end-turn-btn"
+                  onClick={handleEndTurn}
+                >
+                  End Turn
+                </button>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      {isTutorial && !tutorialDismissed && tutorialStep < TUTORIAL_STEPS.length ? (
-        <div className="tutorial-banner">
-          <div className="tutorial-banner-header">
-            <span>
-              Step {tutorialStep + 1} of {TUTORIAL_STEPS.length}
-            </span>
-            <button
-              type="button"
-              className="tutorial-banner-skip"
-              onClick={() => setTutorialDismissed(true)}
-            >
-              Skip Tutorial
-            </button>
-          </div>
-          <p className="tutorial-banner-body">{TUTORIAL_STEPS[tutorialStep]}</p>
-          <div className="tutorial-banner-actions">
-            <button
-              type="button"
-              className="end-turn-btn"
-              onClick={() => setTutorialStep((s) => s + 1)}
-            >
-              Got it
-            </button>
+          {isTutorial &&
+          !tutorialDismissed &&
+          tutorialStep < TUTORIAL_STEPS.length ? (
+            <div className="tutorial-banner">
+              <div className="tutorial-banner-header">
+                <span>
+                  Step {tutorialStep + 1} of {TUTORIAL_STEPS.length}
+                </span>
+                <button
+                  type="button"
+                  className="tutorial-banner-skip"
+                  onClick={() => setTutorialDismissed(true)}
+                >
+                  Skip Tutorial
+                </button>
+              </div>
+              <p className="tutorial-banner-body">
+                {TUTORIAL_STEPS[tutorialStep]}
+              </p>
+              <div className="tutorial-banner-actions">
+                <button
+                  type="button"
+                  className="end-turn-btn"
+                  onClick={() => setTutorialStep((s) => s + 1)}
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          ) : null}
+          <div className="hand-row">
+            <div className="draw-stack">
+              <button
+                type="button"
+                className="card card-back"
+                style={{
+                  '--card-border': activePlayer.color,
+                  '--card-bg': activeDeck?.color,
+                }}
+                aria-label="Deck List: every card in your deck"
+                onClick={() => openPileModal('deck')}
+              >
+                <span className="card-back-label">Deck List</span>
+              </button>
+              <button
+                type="button"
+                className="card card-back"
+                style={{
+                  '--card-border': activePlayer.color,
+                  '--card-bg': activeDeck?.color,
+                }}
+                aria-label={`Draw pile: ${activeState.drawPile.length} cards`}
+                onClick={() => openPileModal('draw')}
+              >
+                <span className="card-back-label">Draw Pile</span>
+                <span className="card-back-deck">{activeDeck?.name}</span>
+              </button>
+            </div>
+            <Hand
+              cards={activeState.hand}
+              selectedCardId={selectedCardId}
+              onSelectCard={handleSelectCard}
+              onUseFood={handleUseFood}
+              onRotateCard={handleRotateCard}
+              allowRotation={ruleset.allowCardRotation}
+              playerColor={activePlayer.color}
+              disabled={!canAct}
+              useFoodDisabled={!canUseFood}
+            />
+            <div className="discard-stack">
+              <button
+                type="button"
+                className="card card-back removed-pile"
+                style={{
+                  '--card-border': activePlayer.color,
+                  '--card-bg': activeDeck?.color,
+                }}
+                aria-label={`Removed from Play: ${activeState.removedFromPlay.length} cards`}
+                onClick={() => openPileModal('removed')}
+              >
+                <span className="card-back-label">Removed</span>
+              </button>
+              <button
+                type="button"
+                className="card card-back"
+                style={{
+                  '--card-border': activePlayer.color,
+                  '--card-bg': activeDeck?.color,
+                }}
+                aria-label={`Discard pile: ${activeState.discardPile.length} cards`}
+                onClick={() => openPileModal('discard')}
+                onDragOver={(event) => {
+                  if (ruleset.allowReturnToHand) event.preventDefault();
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  handleReturnToDiscard();
+                }}
+              >
+                <span className="card-back-label">Discard Pile</span>
+                <span className="card-back-deck">{activeDeck?.name}</span>
+              </button>
+            </div>
           </div>
         </div>
-      ) : null}
-      <div className="hand-row">
-        <div className="draw-stack">
-          <button
-            type="button"
-            className="card card-back"
-            style={{
-              '--card-border': activePlayer.color,
-              '--card-bg': activeDeck?.color,
-            }}
-            aria-label="Deck List: every card in your deck"
-            onClick={() => openPileModal('deck')}
-          >
-            <span className="card-back-label">Deck List</span>
-          </button>
-          <button
-            type="button"
-            className="card card-back"
-            style={{
-              '--card-border': activePlayer.color,
-              '--card-bg': activeDeck?.color,
-            }}
-            aria-label={`Draw pile: ${activeState.drawPile.length} cards`}
-            onClick={() => openPileModal('draw')}
-          >
-            <span className="card-back-label">Draw Pile</span>
-            <span className="card-back-deck">{activeDeck?.name}</span>
-          </button>
-        </div>
-        <Hand
-          cards={activeState.hand}
-          selectedCardId={selectedCardId}
-          onSelectCard={handleSelectCard}
-          onUseFood={handleUseFood}
-          onRotateCard={handleRotateCard}
-          allowRotation={ruleset.allowCardRotation}
-          playerColor={activePlayer.color}
-          disabled={!canAct}
-          useFoodDisabled={!canUseFood}
-        />
-        <div className="discard-stack">
-          <button
-            type="button"
-            className="card card-back removed-pile"
-            style={{
-              '--card-border': activePlayer.color,
-              '--card-bg': activeDeck?.color,
-            }}
-            aria-label={`Removed from Play: ${activeState.removedFromPlay.length} cards`}
-            onClick={() => openPileModal('removed')}
-          >
-            <span className="card-back-label">Removed</span>
-          </button>
-          <button
-            type="button"
-            className="card card-back"
-            style={{
-              '--card-border': activePlayer.color,
-              '--card-bg': activeDeck?.color,
-            }}
-            aria-label={`Discard pile: ${activeState.discardPile.length} cards`}
-            onClick={() => openPileModal('discard')}
-            onDragOver={(event) => {
-              if (ruleset.allowReturnToHand) event.preventDefault();
-            }}
-            onDrop={(event) => {
-              event.preventDefault();
-              handleReturnToDiscard();
-            }}
-          >
-            <span className="card-back-label">Discard Pile</span>
-            <span className="card-back-deck">{activeDeck?.name}</span>
-          </button>
-        </div>
-      </div>
-      </div>
       </div>
       {pileModal ? (
         <div className="color-modal-backdrop" onClick={closePileModal}>

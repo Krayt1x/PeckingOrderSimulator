@@ -1455,9 +1455,7 @@ describe('PlayPage', () => {
     fireEvent.click(screen.getAllByRole('gridcell')[birdSpot]);
 
     await waitFor(() =>
-      expect(
-        screen.getByRole('button', { name: 'Play Again' }),
-      ).toBeDefined(),
+      expect(screen.getByRole('button', { name: 'Play Again' })).toBeDefined(),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Play Again' }));
     expect(onPlayAgain).toHaveBeenCalledTimes(1);
@@ -1483,9 +1481,7 @@ describe('PlayPage', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'View Board' })).toBeDefined(),
     );
-    expect(
-      screen.queryByRole('button', { name: 'Play Again' }),
-    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Play Again' })).toBeNull();
   });
 
   it("puts a gold circle behind the current leader's score, not a tied/trailing one", () => {
@@ -2506,7 +2502,9 @@ describe('Tutorial intro modal (#115)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start Tutorial' }));
 
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(screen.getByText(`Step 1 of ${TUTORIAL_STEPS.length}`)).toBeDefined();
+    expect(
+      screen.getByText(`Step 1 of ${TUTORIAL_STEPS.length}`),
+    ).toBeDefined();
   });
 });
 
@@ -2536,9 +2534,7 @@ describe('Tutorial banner (#102)', () => {
 
     const totalSteps = TUTORIAL_STEPS.length;
     for (let step = 1; step <= totalSteps; step++) {
-      expect(
-        screen.getByText(`Step ${step} of ${totalSteps}`),
-      ).toBeDefined();
+      expect(screen.getByText(`Step ${step} of ${totalSteps}`)).toBeDefined();
       fireEvent.click(screen.getByRole('button', { name: 'Got it' }));
     }
 

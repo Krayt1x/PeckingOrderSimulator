@@ -48,7 +48,10 @@ function defaultCellSize() {
   if (window.innerWidth >= DESKTOP_BREAKPOINT_PX) {
     const pageWidth = Math.min(window.innerWidth, DESKTOP_PAGE_MAX_WIDTH_PX);
     const contentWidth =
-      pageWidth - PAGE_HORIZONTAL_PADDING_PX - SIDE_COL_WIDTH_PX - SIDE_COL_GAP_PX;
+      pageWidth -
+      PAGE_HORIZONTAL_PADDING_PX -
+      SIDE_COL_WIDTH_PX -
+      SIDE_COL_GAP_PX;
     return Math.max(MIN_CELL_SIZE, Math.floor(contentWidth / VIEWPORT_SIZE));
   }
   const pageWidth = Math.min(window.innerWidth, MOBILE_PAGE_MAX_WIDTH_PX);

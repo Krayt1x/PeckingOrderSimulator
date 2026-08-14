@@ -31,7 +31,10 @@ function expectedCellSizeFor(innerWidth) {
   if (isDesktop) {
     const pageWidth = Math.min(innerWidth, DESKTOP_PAGE_MAX_WIDTH_PX);
     const contentWidth =
-      pageWidth - PAGE_HORIZONTAL_PADDING_PX - SIDE_COL_WIDTH_PX - SIDE_COL_GAP_PX;
+      pageWidth -
+      PAGE_HORIZONTAL_PADDING_PX -
+      SIDE_COL_WIDTH_PX -
+      SIDE_COL_GAP_PX;
     return Math.floor(contentWidth / VIEWPORT_SIZE);
   }
   const pageWidth = Math.min(innerWidth, MOBILE_PAGE_MAX_WIDTH_PX);
@@ -106,7 +109,9 @@ describe('computeFitView', () => {
       Array(BOARD_SIZE * BOARD_SIZE).fill(null),
     );
     expect(cellSize).toBeGreaterThan(
-      Math.floor((MOBILE_PAGE_MAX_WIDTH_PX - PAGE_HORIZONTAL_PADDING_PX) / VIEWPORT_SIZE),
+      Math.floor(
+        (MOBILE_PAGE_MAX_WIDTH_PX - PAGE_HORIZONTAL_PADDING_PX) / VIEWPORT_SIZE,
+      ),
     );
   });
 
@@ -134,7 +139,7 @@ describe('computeFitView', () => {
   // auto-size instead of matching the full grid, the background would
   // stop partway across the panned grid instead of covering all of it
   // (#103). Pinning the explicit size here catches that regression.
-  it("sizes .board to the full grid (BOARD_SIZE * cellSize), not just its auto-fit width", () => {
+  it('sizes .board to the full grid (BOARD_SIZE * cellSize), not just its auto-fit width', () => {
     const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
     const { cellSize } = computeFitView(cells);
     const { container } = render(<GameBoard cells={cells} />);
@@ -154,8 +159,9 @@ describe('rendering a Terrain cell (#107)', () => {
     expect(terrainCard).not.toBeNull();
     expect(terrainCard.querySelector('.card-sides')).toBeNull();
     expect(terrainCard.querySelector('.card-name')).toBeNull();
-    expect(terrainCard.querySelector('canvas.card-terrain-sprite')).not
-      .toBeNull();
+    expect(
+      terrainCard.querySelector('canvas.card-terrain-sprite'),
+    ).not.toBeNull();
   });
 });
 
@@ -181,12 +187,8 @@ describe('claiming Food gives eligible birds a yellow ring (#115 follow-up)', ()
     );
 
     const cellButtons = container.querySelectorAll('.board-cell');
-    expect(
-      cellButtons[0].querySelector('.card-claim-choice'),
-    ).not.toBeNull();
-    expect(
-      cellButtons[1].querySelector('.card-claim-choice'),
-    ).toBeNull();
+    expect(cellButtons[0].querySelector('.card-claim-choice')).not.toBeNull();
+    expect(cellButtons[1].querySelector('.card-claim-choice')).toBeNull();
   });
 
   it('does not mark anything when nothing is highlighted', () => {
