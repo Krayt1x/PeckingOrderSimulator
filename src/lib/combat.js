@@ -7,12 +7,31 @@ const OPPOSITE_SIDE = {
   left: 'right',
 };
 
+// Under the Landing Sickness ruleset (#122), a card stamped with
+// `landingSicknessTurn` (the owner's own turn count at the moment it
+// landed on the board) can't be captured until the owner's turn count has
+// advanced past their very next turn — protected through the rest of the
+// turn it landed on and the owner's one turn after that, capturable from
+// the turn after. `ownerTurnCounts` is a { [playerId]: number } map, each
+// count incremented once every time that specific player's own turn
+// begins (see PlayPage.jsx's advanceTurn). Cards from a game where the
+// ruleset was off never carry the stamp, so this is always false for them.
+export function isLandingSick(card, ownerTurnCounts) {
+  if (!card || card.landingSicknessTurn == null || !ownerTurnCounts) {
+    return false;
+  }
+  const ownerTurn = ownerTurnCounts[card.ownerId];
+  if (ownerTurn == null) return false;
+  return ownerTurn <= card.landingSicknessTurn + 1;
+}
+
 // Checks the 4 neighbors of `index` (where `card` was just placed or moved
 // to) and captures any adjacent opponent card whose facing side value is
-// lower than `card`'s facing side on that edge. Food and the owner's own
-// cards are never captured. Returns { board, captured }, where captured is
-// [{ index, card }] for every card that was removed from the board.
-export function resolveCaptures(board, index, card, boardSize) {
+// lower than `card`'s facing side on that edge. Food, the owner's own
+// cards, and a still-landing-sick opponent card are never captured.
+// Returns { board, captured }, where captured is [{ index, card }] for
+// every card that was removed from the board.
+export function resolveCaptures(board, index, card, boardSize, ownerTurnCounts) {
   const neighbors = getNeighbors(index, boardSize);
   const next = [...board];
   const captured = [];
@@ -24,6 +43,7 @@ export function resolveCaptures(board, index, card, boardSize) {
       return;
     }
     if (target.ownerId === card.ownerId) return;
+    if (isLandingSick(target, ownerTurnCounts)) return;
 
     const attackValue = card.sides[direction];
     const defendValue = target.sides[OPPOSITE_SIDE[direction]];

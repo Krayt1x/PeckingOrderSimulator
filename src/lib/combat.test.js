@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveCaptures, canPlaceCard } from './combat.js';
+import { resolveCaptures, canPlaceCard, isLandingSick } from './combat.js';
 
 const BOARD_SIZE = 10;
 
@@ -91,6 +91,75 @@ describe('resolveCaptures', () => {
 
     const indices = captured.map((c) => c.index).sort((a, b) => a - b);
     expect(indices).toEqual([45, 56]);
+  });
+
+  it('does not capture a landing-sick target even when the attacking side is higher (#122)', () => {
+    const board = Array(100).fill(null);
+    board[56] = {
+      ...makeCard('p2', { top: 1, right: 1, bottom: 1, left: 3 }),
+      landingSicknessTurn: 4,
+    };
+
+    const attacker = makeCard('p1', { top: 1, right: 5, bottom: 1, left: 1 });
+    const { board: next, captured } = resolveCaptures(
+      board,
+      55,
+      attacker,
+      BOARD_SIZE,
+      { p2: 5 },
+    );
+
+    expect(captured).toHaveLength(0);
+    expect(next[56]).toBe(board[56]);
+  });
+
+  it('captures a target once its owner’s protection has expired (#122)', () => {
+    const board = Array(100).fill(null);
+    board[56] = {
+      ...makeCard('p2', { top: 1, right: 1, bottom: 1, left: 3 }),
+      landingSicknessTurn: 4,
+    };
+
+    const attacker = makeCard('p1', { top: 1, right: 5, bottom: 1, left: 1 });
+    const { captured } = resolveCaptures(board, 55, attacker, BOARD_SIZE, {
+      p2: 6,
+    });
+
+    expect(captured).toHaveLength(1);
+    expect(captured[0].index).toBe(56);
+  });
+});
+
+describe('isLandingSick', () => {
+  it('is false for a card with no landingSicknessTurn stamp', () => {
+    const card = makeCard('p1', { top: 1, right: 1, bottom: 1, left: 1 });
+    expect(isLandingSick(card, { p1: 1 })).toBe(false);
+  });
+
+  it('is true through the rest of the landing turn and the owner’s next turn', () => {
+    const card = {
+      ...makeCard('p1', { top: 1, right: 1, bottom: 1, left: 1 }),
+      landingSicknessTurn: 2,
+    };
+    expect(isLandingSick(card, { p1: 2 })).toBe(true);
+    expect(isLandingSick(card, { p1: 3 })).toBe(true);
+  });
+
+  it('is false once the owner’s turn count passes the protected window', () => {
+    const card = {
+      ...makeCard('p1', { top: 1, right: 1, bottom: 1, left: 1 }),
+      landingSicknessTurn: 2,
+    };
+    expect(isLandingSick(card, { p1: 4 })).toBe(false);
+  });
+
+  it('is false without a card, or without an ownerTurnCounts map', () => {
+    const card = {
+      ...makeCard('p1', { top: 1, right: 1, bottom: 1, left: 1 }),
+      landingSicknessTurn: 2,
+    };
+    expect(isLandingSick(null, { p1: 2 })).toBe(false);
+    expect(isLandingSick(card, undefined)).toBe(false);
   });
 });
 

@@ -39,6 +39,12 @@ export const RULESET_OPTIONS = [
     description:
       'Doubles the amount of Food generated at the start of the game — two of each selected Food shape instead of one.',
   },
+  {
+    key: 'landingSickness',
+    label: 'Landing Sickness',
+    description:
+      'A card cannot be captured by an opponent until after its owner’s next turn. Cards still under this protection show a small sleeping badge.',
+  },
 ];
 
 // Every available visual skin — add new ones here as they're built.

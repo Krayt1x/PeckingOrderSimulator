@@ -16,7 +16,7 @@ import {
   getPlayableIndices,
   getAdjacentEmptyIndices,
 } from '../lib/board.js';
-import { resolveCaptures, canPlaceCard } from '../lib/combat.js';
+import { resolveCaptures, canPlaceCard, isLandingSick } from '../lib/combat.js';
 import { pickCpuMove, pickCpuEat } from '../lib/cpu.js';
 import { rotateSides, baseSides } from '../lib/rotation.js';
 import { playActionTick, playFoodCrunch } from '../lib/sound.js';
@@ -195,6 +195,18 @@ export default function PlayPage({
     players.map((p) => dealFrom(decks.find((d) => d.id === p.deckId))),
   );
   const [activeIndex, setActiveIndex] = useState(0);
+  // How many of each player's own turns have started so far — players[0]
+  // is already on their 1st turn as the game opens; everyone else is on
+  // 0 until their own turn first begins. Used by the Landing Sickness
+  // ruleset (#122) to know when a card stops being protected.
+  const [ownerTurnCounts, setOwnerTurnCounts] = useState(() => {
+    const counts = {};
+    players.forEach((p) => {
+      counts[p.id] = 0;
+    });
+    counts[players[0].id] = 1;
+    return counts;
+  });
   const [actionsRemaining, setActionsRemaining] = useState(ACTIONS_PER_TURN);
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [eatFoodIndex, setEatFoodIndex] = useState(null);
@@ -252,7 +264,13 @@ export default function PlayPage({
   }
 
   function advanceTurn() {
-    setActiveIndex((current) => (current + 1) % players.length);
+    const nextIndex = (activeIndex + 1) % players.length;
+    setActiveIndex(nextIndex);
+    const nextPlayerId = players[nextIndex].id;
+    setOwnerTurnCounts((prev) => ({
+      ...prev,
+      [nextPlayerId]: (prev[nextPlayerId] ?? 0) + 1,
+    }));
     setActionsRemaining(ACTIONS_PER_TURN);
     clearSelections();
     setMoveHistory([]);
@@ -390,7 +408,13 @@ export default function PlayPage({
   function handlePlayCard(cellIndex) {
     const card = activeState.hand.find((c) => c.id === selectedCardId);
     if (!card) return;
-    const placedCard = { ...card, ownerId: activePlayer.id };
+    const placedCard = {
+      ...card,
+      ownerId: activePlayer.id,
+      ...(ruleset.landingSickness
+        ? { landingSicknessTurn: ownerTurnCounts[activePlayer.id] }
+        : {}),
+    };
 
     recordMove();
     const withCard = [...board];
@@ -400,6 +424,7 @@ export default function PlayPage({
       cellIndex,
       placedCard,
       BOARD_SIZE,
+      ownerTurnCounts,
     );
 
     let nextPlayerStates = playerStates.map((state, i) =>
@@ -426,11 +451,15 @@ export default function PlayPage({
     const withMove = [...board];
     withMove[sourceIndex] = null;
     withMove[cellIndex] = card;
+    // Moving a card keeps whatever landingSicknessTurn stamp it already
+    // has rather than refreshing it — otherwise shuffling a card back and
+    // forth each turn would keep it permanently uncapturable.
     const { board: nextBoard, captured } = resolveCaptures(
       withMove,
       cellIndex,
       card,
       BOARD_SIZE,
+      ownerTurnCounts,
     );
 
     const nextPlayerStates = applyOwnerCaptureBookkeeping(
@@ -675,6 +704,9 @@ export default function PlayPage({
         ownerId: activePlayer.id,
         sides: cardSides,
         rotation: (move.rotationSteps * 90) % 360,
+        ...(ruleset.landingSickness
+          ? { landingSicknessTurn: ownerTurnCounts[activePlayer.id] }
+          : {}),
       };
 
       const withCard = [...workingBoard];
@@ -684,6 +716,7 @@ export default function PlayPage({
         move.cellIndex,
         placedCard,
         BOARD_SIZE,
+        ownerTurnCounts,
       );
 
       workingBoard = afterCaptures;
@@ -876,6 +909,13 @@ export default function PlayPage({
 
   const { highlighted, claimable, selected } = computeBoardHighlights();
   const playerColors = Object.fromEntries(players.map((p) => [p.id, p.color]));
+  // Every board cell still protected by Landing Sickness (#122), for the
+  // small badge GameBoard shows on top of them.
+  const sickIndices = new Set(
+    board
+      .map((card, i) => (isLandingSick(card, ownerTurnCounts) ? i : null))
+      .filter((i) => i !== null),
+  );
 
   const draggableIndices = new Set();
   if ((canAct && ruleset.allowMoving) || canReturnToDiscard) {
@@ -1006,6 +1046,7 @@ export default function PlayPage({
         onCardDragEnd={handleCardDragEnd}
         onCardDrop={handleCardDrop}
         hoveredOwnerId={hoveredPlayerId}
+        sickIndices={sickIndices}
       />
       </div>
       <div className="play-side-col">

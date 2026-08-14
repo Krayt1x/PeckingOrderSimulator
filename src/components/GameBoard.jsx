@@ -164,6 +164,7 @@ export default function GameBoard({
   onCardDragEnd,
   onCardDrop,
   hoveredOwnerId,
+  sickIndices,
 }) {
   const [cellSize, setCellSize] = useState(
     () => computeFitView(cells).cellSize,
@@ -406,6 +407,7 @@ export default function GameBoard({
               card?.type !== 'food' &&
               card?.type !== 'terrain' &&
               card?.ownerId === hoveredOwnerId;
+            const isSick = Boolean(card) && Boolean(sickIndices?.has(index));
             const rotationDeg = card?.rotation ?? 0;
             const faceSides = cardHasSides
               ? baseSides(card.sides, rotationDeg)
@@ -456,6 +458,19 @@ export default function GameBoard({
                     }
                     title={card.name}
                   >
+                    {isSick ? (
+                      // Landing Sickness (#122) — sits outside .card-face so
+                      // it never rotates with the card's own facing, since
+                      // it's a status indicator, not a directional value.
+                      <span
+                        className="card-landing-sick-badge"
+                        role="img"
+                        aria-label="Protected by Landing Sickness"
+                        title="Protected by Landing Sickness — can't be captured until after its owner's next turn"
+                      >
+                        &#128564;
+                      </span>
+                    ) : null}
                     <span
                       className="card-face"
                       style={
