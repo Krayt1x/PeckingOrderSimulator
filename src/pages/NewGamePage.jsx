@@ -528,34 +528,45 @@ export default function NewGamePage({ decks, food, onStart }) {
     );
   }
 
+  function renderRulesetOption(option) {
+    return (
+      <label key={option.key} className="ruleset-option">
+        <input
+          type="checkbox"
+          checked={Boolean(ruleset[option.key])}
+          aria-label={option.label}
+          onChange={() => toggleRuleset(option.key)}
+        />
+        <span>
+          <span className="ruleset-option-label">
+            {option.label}{' '}
+            <span
+              className="info-tooltip"
+              role="img"
+              aria-label={`${option.label} info`}
+              title={option.description}
+            >
+              &#9432;
+            </span>
+          </span>
+        </span>
+      </label>
+    );
+  }
+
   function renderRulesetStep() {
+    const defaultOptions = RULESET_OPTIONS.filter(
+      (option) => DEFAULT_RULESET[option.key],
+    );
+    const experimentalOptions = RULESET_OPTIONS.filter(
+      (option) => !DEFAULT_RULESET[option.key],
+    );
     return (
       <>
         <p className="stage-label">Ruleset</p>
+        <p className="ruleset-section-label">Default</p>
         <div className="ruleset-options">
-          {RULESET_OPTIONS.map((option) => (
-            <label key={option.key} className="ruleset-option">
-              <input
-                type="checkbox"
-                checked={Boolean(ruleset[option.key])}
-                aria-label={option.label}
-                onChange={() => toggleRuleset(option.key)}
-              />
-              <span>
-                <span className="ruleset-option-label">
-                  {option.label}{' '}
-                  <span
-                    className="info-tooltip"
-                    role="img"
-                    aria-label={`${option.label} info`}
-                    title={option.description}
-                  >
-                    &#9432;
-                  </span>
-                </span>
-              </span>
-            </label>
-          ))}
+          {defaultOptions.map(renderRulesetOption)}
           <label className="ruleset-option">
             <input
               type="checkbox"
@@ -593,6 +604,10 @@ export default function NewGamePage({ decks, food, onStart }) {
               ) : null}
             </span>
           </label>
+        </div>
+        <p className="ruleset-section-label">Experimental</p>
+        <div className="ruleset-options">
+          {experimentalOptions.map(renderRulesetOption)}
         </div>
       </>
     );
