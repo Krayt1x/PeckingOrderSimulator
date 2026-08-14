@@ -1760,19 +1760,28 @@ body {
   font-size: 1.3rem;
 }
 
-.tutorial-intro-modal p {
+.tutorial-intro-rules {
   margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: left;
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
 }
 
+/* Sized to show a 5x5 span of the board — the cross of cards sits in the
+   middle three rows/columns, with a ring of empty grass around it so the
+   preview reads as a small patch of the real board, not a tight crop. */
 .tutorial-intro-board {
   position: relative;
-  width: 260px;
-  height: 200px;
+  width: 340px;
+  height: 340px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(3, 1fr);
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
   gap: 2px;
   padding: 6px;
   box-sizing: border-box;
@@ -1792,40 +1801,119 @@ body {
   position: relative;
 }
 
-.tutorial-intro-cell-enemy {
-  grid-row: 1;
-  grid-column: 2;
+.tutorial-intro-cell-top {
+  grid-row: 2;
+  grid-column: 3;
 }
 
-.tutorial-intro-cell-strong {
-  grid-row: 2;
+.tutorial-intro-cell-left {
+  grid-row: 3;
   grid-column: 2;
 }
 
 .tutorial-intro-cell-food {
-  grid-row: 2;
-  grid-column: 3;
-}
-
-.tutorial-intro-cell-bird-a {
-  grid-row: 2;
-  grid-column: 4;
-}
-
-.tutorial-intro-cell-bird-b {
   grid-row: 3;
   grid-column: 3;
 }
 
+.tutorial-intro-cell-right {
+  grid-row: 3;
+  grid-column: 4;
+}
+
+.tutorial-intro-cell-bottom {
+  grid-row: 4;
+  grid-column: 3;
+}
+
+/* The empty cell just beyond the bottom bird, away from Food — where the
+   capturing card is played from hand (#115 follow-up). Captures happen at
+   range: the new card lands here, not on top of the bird it defeats. */
+.tutorial-intro-cell-play {
+  grid-row: 5;
+  grid-column: 3;
+}
+
+/* Where red plays a counter card beside blue's — one cell further out
+   than Food's own neighbors, so capturing here never touches Food's
+   majority (#115 follow-up). */
+.tutorial-intro-cell-play-left {
+  grid-row: 5;
+  grid-column: 2;
+}
+
 .tutorial-demo-card {
+  position: absolute;
+  inset: 0;
   transition:
     transform 0.4s ease,
     opacity 0.4s ease;
 }
 
+/* Captured at range and knocked off the board — the same motion every
+   time a card is defeated, so the two captures read as the same rule
+   happening twice (#115 follow-up). */
 .tutorial-demo-card-flying {
-  transform: translate(20px, -16px) rotate(30deg);
+  transform: translate(18px, -42px) rotate(24deg);
   opacity: 0;
+}
+
+/* The stronger card being played, entering from the hand below into the
+   empty cell beyond the bird it's about to capture (#115 follow-up). */
+.tutorial-demo-card-entering {
+  animation: tutorial-card-enter 0.5s ease-out both;
+}
+
+@keyframes tutorial-card-enter {
+  0% {
+    transform: translateY(56px) scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Food and every bird eligible to claim it, given a yellow ring the
+   moment Food is tapped, before one of them takes it — just outside the
+   card's own 2px border, so the card's own color stays intact and this
+   reads as an added marker, not a recolor. A thin 1-2px ring survives a
+   full-resolution screenshot but proved too faint after video
+   compression, so this adds a soft glow to keep it legible once encoded.
+   Three chained classes (not just .tutorial-demo-card-selected) so this
+   outranks the Alpha Pixel Art skin's own .card box-shadow bevel, which
+   would otherwise win on specificity and hide this ring entirely
+   (#115 follow-up). */
+.card.tutorial-demo-card.tutorial-demo-card-selected {
+  box-shadow:
+    0 0 0 3px #f0c419,
+    0 0 8px 2px rgba(240, 196, 25, 0.9);
+}
+
+.tutorial-intro-score-pop {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  color: #f0c419;
+  font-weight: 800;
+  font-size: 0.85rem;
+  pointer-events: none;
+  animation: tutorial-score-pop 0.6s ease-out forwards;
+}
+
+@keyframes tutorial-score-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-14px);
+  }
 }
 
 .export-modal {
