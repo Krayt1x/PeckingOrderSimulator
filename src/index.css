@@ -660,8 +660,13 @@ body {
   font-weight: 600;
 }
 
-.end-turn-btn:hover {
+.end-turn-btn:hover:not(:disabled) {
   background: var(--accent-hover);
+}
+
+.end-turn-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .turn-controls {

@@ -183,6 +183,9 @@ export default function NewGamePage({ decks, food, onStart }) {
   const [ruleset, setRuleset] = useState(DEFAULT_RULESET);
   const [firstPlayerId, setFirstPlayerId] = useState(null);
   const [randomFirstPlayer, setRandomFirstPlayer] = useState(true);
+  // A board with no Food is immediately Game Over, before a single card is
+  // even played (#120) — at least one shape has to stay selected.
+  const hasFood = selectedFoodShapeIds.length > 0;
 
   function toggleRuleset(key) {
     setRuleset((current) => ({ ...current, [key]: !current[key] }));
@@ -493,6 +496,11 @@ export default function NewGamePage({ decks, food, onStart }) {
           Pick which food shapes will be placed on the board. Edit shapes in{' '}
           <a href="#manage">Manage</a>.
         </p>
+        {!hasFood ? (
+          <p className="wizard-body-hint" role="alert">
+            Select at least one Food shape to continue.
+          </p>
+        ) : null}
         <div className="home-tile-grid two-col-mobile-grid">
           {food.shapes.map((shape) => {
             const selected = selectedFoodShapeIds.includes(shape.id);
@@ -638,11 +646,18 @@ export default function NewGamePage({ decks, food, onStart }) {
                     <span>{stepSummary(s.key) || '—'}</span>
                   </div>
                 ))}
+                {!hasFood ? (
+                  <p className="wizard-body-hint" role="alert">
+                    Select at least one Food shape on the Food step before
+                    starting.
+                  </p>
+                ) : null}
                 <div className="wizard-step-actions">
                   <button
                     type="button"
                     className="end-turn-btn"
                     onClick={handleStart}
+                    disabled={!hasFood}
                   >
                     Start Game
                   </button>
@@ -655,6 +670,7 @@ export default function NewGamePage({ decks, food, onStart }) {
                   type="button"
                   className="end-turn-btn"
                   onClick={() => continueFrom(wizardStep)}
+                  disabled={wizardStep === 'food' && !hasFood}
                 >
                   Continue
                 </button>

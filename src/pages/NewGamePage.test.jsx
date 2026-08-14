@@ -514,6 +514,64 @@ describe('NewGamePage', () => {
     expect(setup.foodShapeIds).not.toContain(chip.id);
   });
 
+  it('disables Continue on the Food step once every Food shape is deselected (#120)', () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    goToStep('Food');
+    // 2 players default to Potato Cake + Chip only.
+    fireEvent.click(screen.getByRole('switch', { name: /Potato Cake/ }));
+    fireEvent.click(screen.getByRole('switch', { name: /Chip/ }));
+
+    expect(screen.getByRole('button', { name: 'Continue' }).disabled).toBe(
+      true,
+    );
+  });
+
+  it('re-enables Continue on the Food step once a Food shape is selected again (#120)', () => {
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={() => {}}
+      />,
+    );
+    goToStep('Food');
+    fireEvent.click(screen.getByRole('switch', { name: /Potato Cake/ }));
+    fireEvent.click(screen.getByRole('switch', { name: /Chip/ }));
+    fireEvent.click(screen.getByRole('switch', { name: /Burger/ }));
+
+    expect(screen.getByRole('button', { name: 'Continue' }).disabled).toBe(
+      false,
+    );
+  });
+
+  it('disables Start Game and refuses to start with no Food shape selected (#120)', () => {
+    const onStart = vi.fn();
+    render(
+      <NewGamePage
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        onStart={onStart}
+      />,
+    );
+    goToStep('Food');
+    fireEvent.click(screen.getByRole('switch', { name: /Potato Cake/ }));
+    fireEvent.click(screen.getByRole('switch', { name: /Chip/ }));
+    // Jumping straight to Review via the wizard rail (rather than
+    // Continue) still has to be blocked, not just the Food step itself.
+    goToStep('Review');
+
+    const startButton = screen.getByRole('button', { name: 'Start Game' });
+    expect(startButton.disabled).toBe(true);
+    fireEvent.click(startButton);
+    expect(onStart).not.toHaveBeenCalled();
+  });
+
   it('defaults the food selection to Burger + Potato Cake for 3 players', () => {
     render(
       <NewGamePage
