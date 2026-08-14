@@ -489,14 +489,15 @@ body {
 }
 
 /* The log keeps every action for the whole game now instead of just the
-   last few (#121) — capped to a fixed height and scrollable so a long
-   game's history doesn't grow the tray itself without bound. */
+   last few (#121) — capped to roughly its old 3-line height and
+   scrollable, so a long game's history doesn't grow the tray itself
+   without bound. */
 .status-tray-actions {
   margin: 0;
   padding-left: 1.1rem;
   font-size: 0.85rem;
   color: var(--text-primary);
-  max-height: 6.5rem;
+  max-height: 3.6rem;
   overflow-y: auto;
 }
 
