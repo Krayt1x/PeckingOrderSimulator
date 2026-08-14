@@ -95,12 +95,25 @@ body {
 
 .page {
   max-width: 560px;
-  margin: 2rem auto;
+  margin: 0 auto 2rem;
   padding: 0 1.5rem;
 }
 
 .board-wrap {
-  margin: 1.5rem 0;
+  margin: 0 0 1.5rem;
+}
+
+/* Below the desktop two-column breakpoint (#118), the board bleeds
+   edge-to-edge — negative side margins cancel .page's own padding so it
+   gets the page's full width instead of the padded-in content width
+   (#122). Left alone at/above the breakpoint, since there the board
+   shares .page with a sidebar and this would blow past that layout's own
+   width math. GameBoard.jsx mirrors this same bleed for its own
+   mobile-only cell-size calculation. */
+@media (max-width: 899px) {
+  .board-wrap {
+    margin: 0 -1.5rem 1.5rem;
+  }
 }
 
 .board-viewport {

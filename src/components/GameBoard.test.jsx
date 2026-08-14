@@ -20,18 +20,22 @@ const DESKTOP_CELL_SIZE = Math.floor(
 );
 const VIEWPORT_PX = VIEWPORT_SIZE * (DESKTOP_CELL_SIZE + CELL_GAP) - CELL_GAP;
 
-// Mirrors .page's own content-width math for a given screen width — below
-// the desktop breakpoint it's the mobile single-column page; at/above it,
-// .play-layout splits into the board column plus a fixed sidebar (#118).
+// Mirrors .page's own content-width math for a given screen width. Below
+// the desktop breakpoint, .board-wrap bleeds edge-to-edge (a negative
+// margin cancels .page's own padding, #122), so the board gets the full
+// page width with no padding subtracted. At/above the breakpoint,
+// .play-layout instead splits into the board column plus a fixed sidebar
+// (#118), and the board keeps .page's padding like everything else there.
 function expectedCellSizeFor(innerWidth) {
   const isDesktop = innerWidth >= DESKTOP_BREAKPOINT_PX;
-  const pageWidth = Math.min(
-    innerWidth,
-    isDesktop ? DESKTOP_PAGE_MAX_WIDTH_PX : MOBILE_PAGE_MAX_WIDTH_PX,
-  );
-  const sidebarWidth = isDesktop ? SIDE_COL_WIDTH_PX + SIDE_COL_GAP_PX : 0;
-  const contentWidth = pageWidth - PAGE_HORIZONTAL_PADDING_PX - sidebarWidth;
-  return Math.floor(contentWidth / VIEWPORT_SIZE);
+  if (isDesktop) {
+    const pageWidth = Math.min(innerWidth, DESKTOP_PAGE_MAX_WIDTH_PX);
+    const contentWidth =
+      pageWidth - PAGE_HORIZONTAL_PADDING_PX - SIDE_COL_WIDTH_PX - SIDE_COL_GAP_PX;
+    return Math.floor(contentWidth / VIEWPORT_SIZE);
+  }
+  const pageWidth = Math.min(innerWidth, MOBILE_PAGE_MAX_WIDTH_PX);
+  return Math.floor(pageWidth / VIEWPORT_SIZE);
 }
 
 const ORIGINAL_INNER_WIDTH = window.innerWidth;
@@ -69,7 +73,9 @@ describe('computeFitView', () => {
   // from the actual screen width (mirroring .page's own content-width
   // math) rather than a couple of hardcoded breakpoint sizes, which
   // either overflowed narrower phones or left wider ones with a board
-  // smaller than it had room for.
+  // smaller than it had room for. Below the desktop breakpoint the board
+  // bleeds edge-to-edge (#122), so the bound here is the full screen
+  // width, not the width minus .page's own padding.
   it.each([320, 360, 375, 390, 412, 428])(
     'fills the available content width on a %ipx-wide phone screen without overflowing it',
     (innerWidth) => {
@@ -78,9 +84,7 @@ describe('computeFitView', () => {
         Array(BOARD_SIZE * BOARD_SIZE).fill(null),
       );
       expect(cellSize).toBe(expectedCellSizeFor(innerWidth));
-      expect(5 * cellSize).toBeLessThanOrEqual(
-        innerWidth - PAGE_HORIZONTAL_PADDING_PX,
-      );
+      expect(5 * cellSize).toBeLessThanOrEqual(innerWidth);
     },
   );
 

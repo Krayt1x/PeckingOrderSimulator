@@ -24,6 +24,11 @@ const CELL_GAP = 0;
 // tray/hand/piles move into a fixed-width sidebar next to it, so the
 // board's available width is .page's width minus that sidebar and the
 // gap between them, not the full page width (#118 example B).
+//
+// Below that breakpoint, .board-wrap bleeds edge-to-edge — a negative
+// margin cancels .page's own horizontal padding — so the board's
+// available width is .page's full width with no padding subtracted
+// (#122), unlike every other page which still keeps that padding.
 const MOBILE_PAGE_MAX_WIDTH_PX = 560;
 const DESKTOP_PAGE_MAX_WIDTH_PX = 1300;
 const DESKTOP_BREAKPOINT_PX = 900;
@@ -40,14 +45,14 @@ const DESKTOP_CELL_SIZE = Math.floor(
 
 function defaultCellSize() {
   if (typeof window === 'undefined') return DESKTOP_CELL_SIZE;
-  const isDesktop = window.innerWidth >= DESKTOP_BREAKPOINT_PX;
-  const pageWidth = Math.min(
-    window.innerWidth,
-    isDesktop ? DESKTOP_PAGE_MAX_WIDTH_PX : MOBILE_PAGE_MAX_WIDTH_PX,
-  );
-  const sidebarWidth = isDesktop ? SIDE_COL_WIDTH_PX + SIDE_COL_GAP_PX : 0;
-  const contentWidth = pageWidth - PAGE_HORIZONTAL_PADDING_PX - sidebarWidth;
-  return Math.max(MIN_CELL_SIZE, Math.floor(contentWidth / VIEWPORT_SIZE));
+  if (window.innerWidth >= DESKTOP_BREAKPOINT_PX) {
+    const pageWidth = Math.min(window.innerWidth, DESKTOP_PAGE_MAX_WIDTH_PX);
+    const contentWidth =
+      pageWidth - PAGE_HORIZONTAL_PADDING_PX - SIDE_COL_WIDTH_PX - SIDE_COL_GAP_PX;
+    return Math.max(MIN_CELL_SIZE, Math.floor(contentWidth / VIEWPORT_SIZE));
+  }
+  const pageWidth = Math.min(window.innerWidth, MOBILE_PAGE_MAX_WIDTH_PX);
+  return Math.max(MIN_CELL_SIZE, Math.floor(pageWidth / VIEWPORT_SIZE));
 }
 
 // The viewport box itself never resizes as you zoom — zooming changes how
