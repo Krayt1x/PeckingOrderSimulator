@@ -89,9 +89,6 @@ function rankPlayers(players, playerStates) {
 let nextFoodCardId = 1;
 let nextLogId = 1;
 
-// The last 3 entries shown in the status tray — most recent first.
-const ACTION_LOG_LIMIT = 3;
-
 // Food is the objective the game is anchored around, placed at a random
 // valid spot each game (#101). With Random Terrain on, a handful of
 // blocking rocks are scattered across whatever's left over (#107). With
@@ -239,12 +236,11 @@ export default function PlayPage({
     setDragSourceIndex(null);
   }
 
-  // Records an entry in the status tray's action log, most recent first,
-  // keeping only the last ACTION_LOG_LIMIT.
+  // Records an entry in the status tray's action log, most recent first —
+  // the whole game's history is kept, since the log is scrollable rather
+  // than capped to a few entries (#121).
   function pushLog(text) {
-    setActionLog((prev) =>
-      [{ id: nextLogId++, text }, ...prev].slice(0, ACTION_LOG_LIMIT),
-    );
+    setActionLog((prev) => [{ id: nextLogId++, text }, ...prev]);
   }
 
   // `bonus` is true when the action came from playing a Food-derived
@@ -706,7 +702,7 @@ export default function PlayPage({
       const entries = [...newLogEntries]
         .reverse()
         .map((text) => ({ id: nextLogId++, text }));
-      setActionLog((prev) => [...entries, ...prev].slice(0, ACTION_LOG_LIMIT));
+      setActionLog((prev) => [...entries, ...prev]);
     }
 
     let nextPlayerStates = playerStates.map((state, i) =>

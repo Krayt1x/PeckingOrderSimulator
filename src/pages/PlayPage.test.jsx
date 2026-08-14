@@ -2412,7 +2412,7 @@ describe('PlayPage', () => {
     expect(within(settingRow).getByText('None')).toBeDefined();
   });
 
-  it('logs the last 3 actions played, most recent first (#70)', () => {
+  it('logs actions played, most recent first (#70)', () => {
     render(
       <PlayPage
         players={twoPlayers()}
@@ -2435,6 +2435,32 @@ describe('PlayPage', () => {
     const entries = within(recentActions).getAllByRole('listitem');
     expect(entries).toHaveLength(1);
     expect(entries[0].textContent).toMatch(/^Player 1 played/);
+  });
+
+  it('keeps every action logged instead of capping it at a few, so the list is scrollable (#121)', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={SINGLE_FOOD}
+      />,
+    );
+
+    const cells = screen.getAllByRole('gridcell');
+    const foodIndex = findFoodIndex(cells);
+    // Every orthogonal neighbor of a lone Food cell is a legal, unowned
+    // spot to play into, and there's no capture risk between them since
+    // they aren't adjacent to each other — good for stacking up several
+    // independent "played" log entries.
+    const spots = neighbors(foodIndex).filter((i) => !isFilled(cells[i]));
+    expect(spots.length).toBeGreaterThanOrEqual(4);
+
+    spots.forEach((spot) => playThenCycleBackToPlayer1(spot));
+
+    const recentActions = screen.getByRole('list', { name: 'Recent actions' });
+    const entries = within(recentActions).getAllByRole('listitem');
+    expect(entries.length).toBeGreaterThan(3);
+    expect(entries).toHaveLength(spots.length);
   });
 });
 
