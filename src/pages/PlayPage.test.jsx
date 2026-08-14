@@ -277,6 +277,38 @@ describe('PlayPage', () => {
     );
   });
 
+  it('places only the normal amount of Food when Double Food is off', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        ruleset={{ doubleFood: false }}
+      />,
+    );
+
+    const cells = screen.getAllByRole('gridcell');
+    expect(cells.filter((c) => c.querySelector('.card-food'))).toHaveLength(
+      TOTAL_FOOD_CELLS,
+    );
+  });
+
+  it('places two of each Food shape when Double Food is on (#119)', () => {
+    render(
+      <PlayPage
+        players={twoPlayers()}
+        decks={DEFAULT_DECKS}
+        food={DEFAULT_FOOD}
+        ruleset={{ doubleFood: true }}
+      />,
+    );
+
+    const cells = screen.getAllByRole('gridcell');
+    expect(cells.filter((c) => c.querySelector('.card-food'))).toHaveLength(
+      TOTAL_FOOD_CELLS * 2,
+    );
+  });
+
   it('has no action-mode buttons — playing a card just needs a hand selection and a board click', () => {
     render(
       <PlayPage

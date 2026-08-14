@@ -132,12 +132,16 @@ function shuffle(list) {
 // Places every shape in food.shapes onto a boardSize x boardSize board, at
 // a random valid position each time (#101) — without overlapping, without
 // any two distinct pieces landing within MIN_FOOD_DISTANCE tiles of each
-// other, without any piece landing more than MAX_FOOD_DISTANCE tiles from
-// the nearest already-placed piece (#108), and without any cell landing
-// within EDGE_MARGIN tiles of the board's edge. Bigger shapes are placed
-// first so smaller ones can fill in around them. Returns a
-// { [boardIndex]: cardFace } map.
-export function placeFoodShapes(food, boardSize) {
+// other, without any piece landing more than maxDistance tiles from the
+// nearest already-placed piece (#108, defaults to MAX_FOOD_DISTANCE), and
+// without any cell landing within EDGE_MARGIN tiles of the board's edge.
+// Bigger shapes are placed first so smaller ones can fill in around them.
+// Returns a { [boardIndex]: cardFace } map. A shape that can't find any
+// valid spot is silently skipped rather than placed anyway — callers
+// placing more shapes than the default clustering distance can
+// comfortably fit (e.g. Double Food, #119) should widen maxDistance so
+// every shape still finds room somewhere on the board.
+export function placeFoodShapes(food, boardSize, maxDistance = MAX_FOOD_DISTANCE) {
   const shapes = food?.shapes ?? [];
   const occupied = new Set();
   const placedCells = []; // [{ row, col }] across every shape placed so far
@@ -182,13 +186,11 @@ export function placeFoodShapes(food, boardSize) {
       if (!fits) return false;
 
       // Every already-placed piece — not just the most recent one — must
-      // have a cell within MAX_FOOD_DISTANCE of this piece.
+      // have a cell within maxDistance of this piece.
       return placedGroups.every((group) =>
         cellPositions.some(({ r, c }) =>
           group.some(
-            (other) =>
-              chebyshevDistance(r, c, other.row, other.col) <=
-              MAX_FOOD_DISTANCE,
+            (other) => chebyshevDistance(r, c, other.row, other.col) <= maxDistance,
           ),
         ),
       );

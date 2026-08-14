@@ -94,14 +94,26 @@ const ACTION_LOG_LIMIT = 3;
 
 // Food is the objective the game is anchored around, placed at a random
 // valid spot each game (#101). With Random Terrain on, a handful of
-// blocking rocks are scattered across whatever's left over (#107).
-function createInitialBoard(food, foodShapeIds, allowRandomTerrain) {
+// blocking rocks are scattered across whatever's left over (#107). With
+// Double Food on, every selected shape is placed twice instead of once
+// (#119) — placeFoodShapes tells the two copies of a shape apart by the
+// board position they land on, same as it already does for any two
+// pieces of the same shape. Twice as many pieces need much more room to
+// all mutually cluster within the default distance, so doubled food gets
+// the whole board to spread across rather than risk pieces getting
+// silently skipped for having nowhere left to fit.
+function createInitialBoard(food, foodShapeIds, allowRandomTerrain, doubleFood) {
+  const selectedShapes = food.shapes.filter((s) => foodShapeIds.includes(s.id));
   const activeFood = {
     ...food,
-    shapes: food.shapes.filter((s) => foodShapeIds.includes(s.id)),
+    shapes: doubleFood ? [...selectedShapes, ...selectedShapes] : selectedShapes,
   };
   const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
-  const foodCells = placeFoodShapes(activeFood, BOARD_SIZE);
+  const foodCells = placeFoodShapes(
+    activeFood,
+    BOARD_SIZE,
+    doubleFood ? BOARD_SIZE : undefined,
+  );
   Object.entries(foodCells).forEach(([index, card]) => {
     cells[Number(index)] = card;
   });
@@ -175,7 +187,12 @@ export default function PlayPage({
   const shapeIds = foodShapeIds ?? food.shapes.map((s) => s.id);
 
   const [board, setBoard] = useState(() =>
-    createInitialBoard(food, shapeIds, ruleset.allowRandomTerrain),
+    createInitialBoard(
+      food,
+      shapeIds,
+      ruleset.allowRandomTerrain,
+      ruleset.doubleFood,
+    ),
   );
   const [playerStates, setPlayerStates] = useState(() =>
     players.map((p) => dealFrom(decks.find((d) => d.id === p.deckId))),

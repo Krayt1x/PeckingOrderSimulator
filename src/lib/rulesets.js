@@ -33,6 +33,12 @@ export const RULESET_OPTIONS = [
     description:
       'Scatters 1-5 rocks across the board at the start of the game. They have no side values and can never be captured or removed — they just take up their own cell, purely blocking a card from being placed there.',
   },
+  {
+    key: 'doubleFood',
+    label: 'Double Food',
+    description:
+      'Doubles the amount of Food generated at the start of the game — two of each selected Food shape instead of one.',
+  },
 ];
 
 // Every available visual skin — add new ones here as they're built.
