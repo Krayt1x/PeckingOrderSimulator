@@ -25,11 +25,13 @@ const CELL_GAP = 0;
 // board's available width is .page's width minus that sidebar and the
 // gap between them, not the full page width (#118 example B).
 //
-// Below that breakpoint, .board-wrap bleeds edge-to-edge — a negative
-// margin cancels .page's own horizontal padding — so the board's
-// available width is .page's full width with no padding subtracted
-// (#122), unlike every other page which still keeps that padding.
+// Below that breakpoint, .board-wrap bleeds nearly edge-to-edge — a
+// negative margin cancels most of .page's own horizontal padding, leaving
+// just a slight gutter rather than the full padding (#124) — so the
+// board's available width is .page's full width minus that slight
+// gutter, unlike every other page which still keeps the full padding.
 const MOBILE_PAGE_MAX_WIDTH_PX = 560;
+const MOBILE_BOARD_GUTTER_PX = 8;
 const DESKTOP_PAGE_MAX_WIDTH_PX = 1300;
 const DESKTOP_BREAKPOINT_PX = 900;
 const SIDE_COL_WIDTH_PX = 380;
@@ -55,7 +57,8 @@ function defaultCellSize() {
     return Math.max(MIN_CELL_SIZE, Math.floor(contentWidth / VIEWPORT_SIZE));
   }
   const pageWidth = Math.min(window.innerWidth, MOBILE_PAGE_MAX_WIDTH_PX);
-  return Math.max(MIN_CELL_SIZE, Math.floor(pageWidth / VIEWPORT_SIZE));
+  const contentWidth = pageWidth - MOBILE_BOARD_GUTTER_PX * 2;
+  return Math.max(MIN_CELL_SIZE, Math.floor(contentWidth / VIEWPORT_SIZE));
 }
 
 // The viewport box itself never resizes as you zoom — zooming changes how

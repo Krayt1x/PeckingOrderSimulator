@@ -6,6 +6,7 @@ import { placeFoodShapes, DEFAULT_FOOD } from '../lib/food.js';
 const CELL_GAP = 0;
 const VIEWPORT_SIZE = 5;
 const MOBILE_PAGE_MAX_WIDTH_PX = 560;
+const MOBILE_BOARD_GUTTER_PX = 8;
 const DESKTOP_PAGE_MAX_WIDTH_PX = 1300;
 const DESKTOP_BREAKPOINT_PX = 900;
 const SIDE_COL_WIDTH_PX = 380;
@@ -21,11 +22,12 @@ const DESKTOP_CELL_SIZE = Math.floor(
 const VIEWPORT_PX = VIEWPORT_SIZE * (DESKTOP_CELL_SIZE + CELL_GAP) - CELL_GAP;
 
 // Mirrors .page's own content-width math for a given screen width. Below
-// the desktop breakpoint, .board-wrap bleeds edge-to-edge (a negative
-// margin cancels .page's own padding, #122), so the board gets the full
-// page width with no padding subtracted. At/above the breakpoint,
-// .play-layout instead splits into the board column plus a fixed sidebar
-// (#118), and the board keeps .page's padding like everything else there.
+// the desktop breakpoint, .board-wrap bleeds nearly edge-to-edge (a
+// negative margin cancels most of .page's own padding, leaving a slight
+// gutter, #124), so the board gets the full page width minus that slight
+// gutter. At/above the breakpoint, .play-layout instead splits into the
+// board column plus a fixed sidebar (#118), and the board keeps .page's
+// full padding like everything else there.
 function expectedCellSizeFor(innerWidth) {
   const isDesktop = innerWidth >= DESKTOP_BREAKPOINT_PX;
   if (isDesktop) {
@@ -38,7 +40,8 @@ function expectedCellSizeFor(innerWidth) {
     return Math.floor(contentWidth / VIEWPORT_SIZE);
   }
   const pageWidth = Math.min(innerWidth, MOBILE_PAGE_MAX_WIDTH_PX);
-  return Math.floor(pageWidth / VIEWPORT_SIZE);
+  const contentWidth = pageWidth - MOBILE_BOARD_GUTTER_PX * 2;
+  return Math.floor(contentWidth / VIEWPORT_SIZE);
 }
 
 const ORIGINAL_INNER_WIDTH = window.innerWidth;
@@ -77,8 +80,8 @@ describe('computeFitView', () => {
   // math) rather than a couple of hardcoded breakpoint sizes, which
   // either overflowed narrower phones or left wider ones with a board
   // smaller than it had room for. Below the desktop breakpoint the board
-  // bleeds edge-to-edge (#122), so the bound here is the full screen
-  // width, not the width minus .page's own padding.
+  // bleeds nearly edge-to-edge (#124), so the bound here is the full
+  // screen width, not the width minus .page's own full padding.
   it.each([320, 360, 375, 390, 412, 428])(
     'fills the available content width on a %ipx-wide phone screen without overflowing it',
     (innerWidth) => {

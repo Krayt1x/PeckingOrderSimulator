@@ -140,16 +140,17 @@ body {
   margin: 0 0 1.5rem;
 }
 
-/* Below the desktop two-column breakpoint (#118), the board bleeds
-   edge-to-edge — negative side margins cancel .page's own padding so it
-   gets the page's full width instead of the padded-in content width
-   (#122). Left alone at/above the breakpoint, since there the board
-   shares .page with a sidebar and this would blow past that layout's own
-   width math. GameBoard.jsx mirrors this same bleed for its own
+/* Below the desktop two-column breakpoint (#118), the board mostly bleeds
+   edge-to-edge — negative side margins cancel most of .page's own padding,
+   leaving just a slight gutter rather than the full 1.5rem (#124), so it's
+   nearly the page's full width instead of the padded-in content width.
+   Left alone at/above the breakpoint, since there the board shares .page
+   with a sidebar and this would blow past that layout's own width math.
+   GameBoard.jsx mirrors this same bleed (gutter included) for its own
    mobile-only cell-size calculation. */
 @media (max-width: 899px) {
   .board-wrap {
-    margin: 0 -1.5rem 1.5rem;
+    margin: 0 -1rem 0.75rem;
   }
 }
 
@@ -2253,7 +2254,11 @@ body {
 
   /* The board takes the lion's share of a phone's vertical space, so
      every bit of slack elsewhere helps keep the hand/piles below it
-     from scrolling off-screen. */
+     from scrolling off-screen (#124). */
+  .board-wrap {
+    margin-bottom: 0.5rem;
+  }
+
   .status-tray {
     margin-top: 0.5rem;
     padding: 0.5rem 0.75rem;
