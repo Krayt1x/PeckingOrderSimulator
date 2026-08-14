@@ -740,7 +740,8 @@ body {
    column itself carries the same 72px cap as the free-standing Draw Pile
    tile (rather than capping its children) so both pile tiles land on the
    same width instead of the column outgrowing its capped child. */
-.discard-stack {
+.discard-stack,
+.draw-stack {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
@@ -749,7 +750,8 @@ body {
   max-width: 72px;
 }
 
-.discard-stack .card-back {
+.discard-stack .card-back,
+.draw-stack .card-back {
   flex: 0 0 auto;
   width: 100%;
 }
@@ -2196,7 +2198,8 @@ body {
     flex: 0 1 40px;
   }
 
-  .discard-stack {
+  .discard-stack,
+  .draw-stack {
     flex: 0 1 40px;
     max-width: 40px;
   }

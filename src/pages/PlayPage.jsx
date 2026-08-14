@@ -30,6 +30,7 @@ const PILE_LABELS = {
   draw: 'Draw pile',
   discard: 'Discard pile',
   removed: 'Removed from Play',
+  deck: 'Deck List',
 };
 const CAPTURE_REMOVAL_DELAY_MS = 250;
 const GAME_OVER_PRESENTATION_DELAY_MS = 500;
@@ -746,6 +747,25 @@ export default function PlayPage({
   }, [gameOver]);
 
   function openPileModal(type) {
+    if (type === 'deck') {
+      // The full deck, wherever each card currently sits — hand, draw
+      // pile, discard pile, removed-from-play, and any of the player's
+      // own birds still out on the board — sorted by name rather than
+      // shuffled, since this is a reference list, not a randomized pile.
+      const onBoard = board.filter(
+        (card) => card && card.ownerId === activePlayer.id,
+      );
+      const wholeDeck = [
+        ...activeState.hand,
+        ...activeState.drawPile,
+        ...activeState.discardPile,
+        ...activeState.removedFromPlay,
+        ...onBoard,
+      ].sort((a, b) => a.name.localeCompare(b.name));
+      setPileModal({ type, cards: wholeDeck });
+      setZoomedPileCard(null);
+      return;
+    }
     const pile =
       type === 'draw'
         ? activeState.drawPile
@@ -1064,19 +1084,33 @@ export default function PlayPage({
         </div>
       ) : null}
       <div className="hand-row">
-        <button
-          type="button"
-          className="card card-back"
-          style={{
-            '--card-border': activePlayer.color,
-            '--card-bg': activeDeck?.color,
-          }}
-          aria-label={`Draw pile: ${activeState.drawPile.length} cards`}
-          onClick={() => openPileModal('draw')}
-        >
-          <span className="card-back-label">Draw Pile</span>
-          <span className="card-back-deck">{activeDeck?.name}</span>
-        </button>
+        <div className="draw-stack">
+          <button
+            type="button"
+            className="card card-back"
+            style={{
+              '--card-border': activePlayer.color,
+              '--card-bg': activeDeck?.color,
+            }}
+            aria-label="Deck List: every card in your deck"
+            onClick={() => openPileModal('deck')}
+          >
+            <span className="card-back-label">Deck List</span>
+          </button>
+          <button
+            type="button"
+            className="card card-back"
+            style={{
+              '--card-border': activePlayer.color,
+              '--card-bg': activeDeck?.color,
+            }}
+            aria-label={`Draw pile: ${activeState.drawPile.length} cards`}
+            onClick={() => openPileModal('draw')}
+          >
+            <span className="card-back-label">Draw Pile</span>
+            <span className="card-back-deck">{activeDeck?.name}</span>
+          </button>
+        </div>
         <Hand
           cards={activeState.hand}
           selectedCardId={selectedCardId}
