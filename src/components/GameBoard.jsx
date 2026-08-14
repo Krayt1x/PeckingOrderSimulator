@@ -472,7 +472,7 @@ export default function GameBoard({
                         className="card-landing-sick-badge"
                         role="img"
                         aria-label="Protected by Landing Sickness"
-                        title="Protected by Landing Sickness — can't be captured until after its owner's next turn"
+                        title="Protected by Landing Sickness — can't be captured until its owner's next turn begins"
                       >
                         &#128564;
                       </span>

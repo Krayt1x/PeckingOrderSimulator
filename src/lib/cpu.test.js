@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   pickCpuMove,
   pickCpuEat,
@@ -149,6 +149,51 @@ describe('pickCpuMove', () => {
 
     expect([47, 56, 58, 67]).toContain(move.cellIndex);
     expect([45, 54, 65]).not.toContain(move.cellIndex);
+  });
+
+  it('does not treat a Landing Sickness-protected opponent as capturable, when aggressive (#122)', () => {
+    const strongCard = {
+      id: 'c1',
+      sides: { top: 9, right: 9, bottom: 9, left: 9 },
+    };
+    const board = Array(100).fill(null);
+    // Same layout as the plain capture-preference test above, but the
+    // opponent bird at 57 is still Landing Sickness-protected — 56 stays
+    // a legal placement (sickness doesn't affect placement legality,
+    // only whether a capture actually lands), but pickCpuMove should
+    // stop scoring it as a capture, since resolveCaptures itself would
+    // skip it once the move is actually played.
+    board[55] = { type: 'food', sides: FOOD_SIDES };
+    board[57] = {
+      type: 'bird',
+      ownerId: 'p2',
+      sides: { top: 1, right: 1, bottom: 1, left: 1 },
+      landingSicknessTurn: 1,
+    };
+
+    // Pins the random tiebreak to the pool's first entry so the test can
+    // assert on a specific cell instead of "one of several" — playable
+    // cells are gathered in ascending board-index order, so 45 sorts
+    // before 56.
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
+    const move = pickCpuMove(
+      [strongCard],
+      board,
+      BOARD_SIZE,
+      'p1',
+      'aggressive',
+      false,
+      false,
+      { p2: 1 },
+    );
+    randomSpy.mockRestore();
+
+    // If the sick target were still (wrongly) scored as capturable, 56
+    // would be the only cell left in the aggressive pool and would win
+    // regardless of tiebreak order. With no real capture on offer, every
+    // Food-adjacent cell ties, and the pinned tiebreak picks the first
+    // one instead — 45, not 56.
+    expect(move.cellIndex).toBe(45);
   });
 
   it('prefers a capture near Food over a capture far from it, when aggressive', () => {

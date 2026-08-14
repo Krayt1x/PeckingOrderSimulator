@@ -106,14 +106,14 @@ describe('resolveCaptures', () => {
       55,
       attacker,
       BOARD_SIZE,
-      { p2: 5 },
+      { p2: 4 },
     );
 
     expect(captured).toHaveLength(0);
     expect(next[56]).toBe(board[56]);
   });
 
-  it('captures a target once its owner’s protection has expired (#122)', () => {
+  it('captures a target once its owner’s following turn has begun (#122)', () => {
     const board = Array(100).fill(null);
     board[56] = {
       ...makeCard('p2', { top: 1, right: 1, bottom: 1, left: 3 }),
@@ -122,7 +122,7 @@ describe('resolveCaptures', () => {
 
     const attacker = makeCard('p1', { top: 1, right: 5, bottom: 1, left: 1 });
     const { captured } = resolveCaptures(board, 55, attacker, BOARD_SIZE, {
-      p2: 6,
+      p2: 5,
     });
 
     expect(captured).toHaveLength(1);
@@ -136,20 +136,20 @@ describe('isLandingSick', () => {
     expect(isLandingSick(card, { p1: 1 })).toBe(false);
   });
 
-  it('is true through the rest of the landing turn and the owner’s next turn', () => {
+  it('is true through the rest of the landing turn and every opponent turn until the owner’s own next turn', () => {
     const card = {
       ...makeCard('p1', { top: 1, right: 1, bottom: 1, left: 1 }),
       landingSicknessTurn: 2,
     };
     expect(isLandingSick(card, { p1: 2 })).toBe(true);
-    expect(isLandingSick(card, { p1: 3 })).toBe(true);
   });
 
-  it('is false once the owner’s turn count passes the protected window', () => {
+  it('is false as soon as the owner’s following turn begins', () => {
     const card = {
       ...makeCard('p1', { top: 1, right: 1, bottom: 1, left: 1 }),
       landingSicknessTurn: 2,
     };
+    expect(isLandingSick(card, { p1: 3 })).toBe(false);
     expect(isLandingSick(card, { p1: 4 })).toBe(false);
   });
 

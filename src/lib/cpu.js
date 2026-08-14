@@ -155,9 +155,14 @@ function narrowByStrategy(options, strategy) {
 // considered as separate options too — the same freedom a human player
 // gets via the rotate arrows — so the CPU can rotate into a legal or
 // better-scoring placement instead of only ever playing its dealt
-// orientation (#106). Returns null if the CPU has no legal move (empty
-// hand, no cells adjacent to Food/an existing card, or every adjacent
-// cell would lose to a stronger opponent card in every orientation).
+// orientation (#106). `ownerTurnCounts` is threaded into the capture
+// preview below so a Landing Sickness-protected target (#122) is never
+// mistaken for one the CPU is about to capture — without it, every
+// strategy's capture-seeking tiebreakers would chase a "capture" that
+// silently fails to happen once the move is actually played. Returns null
+// if the CPU has no legal move (empty hand, no cells adjacent to Food/an
+// existing card, or every adjacent cell would lose to a stronger opponent
+// card in every orientation).
 export function pickCpuMove(
   hand,
   board,
@@ -166,6 +171,7 @@ export function pickCpuMove(
   strategy,
   allowEqual = false,
   allowRotation = false,
+  ownerTurnCounts = null,
 ) {
   if (hand.length === 0) return null;
 
@@ -195,6 +201,7 @@ export function pickCpuMove(
           cellIndex,
           placedCard,
           boardSize,
+          ownerTurnCounts,
         );
 
         options.push({

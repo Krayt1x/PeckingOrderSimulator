@@ -698,6 +698,7 @@ export default function PlayPage({
         activePlayer.cpuStrategy,
         ruleset.allowEqualValuePlay,
         ruleset.allowCardRotation,
+        ownerTurnCounts,
       );
       if (!move) break;
       const card = workingHand.find((c) => c.id === move.cardId);

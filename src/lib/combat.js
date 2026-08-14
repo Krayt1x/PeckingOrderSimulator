@@ -9,11 +9,11 @@ const OPPOSITE_SIDE = {
 
 // Under the Landing Sickness ruleset (#122), a card stamped with
 // `landingSicknessTurn` (the owner's own turn count at the moment it
-// landed on the board) can't be captured until the owner's turn count has
-// advanced past their very next turn — protected through the rest of the
-// turn it landed on and the owner's one turn after that, capturable from
-// the turn after. `ownerTurnCounts` is a { [playerId]: number } map, each
-// count incremented once every time that specific player's own turn
+// landed on the board) can't be captured until the owner's turn count
+// advances — protected through the rest of the turn it landed on and every
+// opponent turn in between, wearing off the moment the owner's own
+// following turn begins. `ownerTurnCounts` is a { [playerId]: number} map,
+// each count incremented once every time that specific player's own turn
 // begins (see PlayPage.jsx's advanceTurn). Cards from a game where the
 // ruleset was off never carry the stamp, so this is always false for them.
 export function isLandingSick(card, ownerTurnCounts) {
@@ -22,7 +22,7 @@ export function isLandingSick(card, ownerTurnCounts) {
   }
   const ownerTurn = ownerTurnCounts[card.ownerId];
   if (ownerTurn == null) return false;
-  return ownerTurn <= card.landingSicknessTurn + 1;
+  return ownerTurn <= card.landingSicknessTurn;
 }
 
 // Checks the 4 neighbors of `index` (where `card` was just placed or moved

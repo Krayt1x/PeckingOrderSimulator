@@ -43,7 +43,7 @@ export const RULESET_OPTIONS = [
     key: 'landingSickness',
     label: 'Landing Sickness',
     description:
-      'A card cannot be captured by an opponent until after its owner’s next turn. Cards still under this protection show a small sleeping badge.',
+      'A card cannot be captured by an opponent until its owner’s next turn begins. Cards still under this protection show a small sleeping badge.',
   },
 ];
 
