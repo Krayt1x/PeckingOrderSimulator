@@ -197,6 +197,13 @@ body {
     margin-bottom: 0;
   }
 
+  /* The overlay row keeps only Actions and Undo/End Turn here — the
+     score board renders separately via .mobile-score-board-row instead
+     (#134 follow-up). */
+  .play-board-col > .hand-header > .score-board {
+    display: none;
+  }
+
   /* Also taken out of flow here, same as desktop — left in flow, its own
      height would inflate .play-board-col's box past the board's own, and
      .hand-header's bottom-edge anchor above would follow it down instead
@@ -739,6 +746,16 @@ body {
   display: flex;
   align-items: center;
   min-width: 0;
+}
+
+/* Mobile-only duplicate of .score-board, rendered in normal flow below
+   the board rather than squeezed into the overlay row with Actions/Undo/
+   End Turn — with more than 2-3 players that row has no room left and
+   overflows the screen horizontally (#134 follow-up). Hidden again at the
+   desktop breakpoint, where the original inside .hand-header is used
+   instead. */
+.mobile-score-board-row {
+  margin-top: 0.75rem;
 }
 
 /* The guided walkthrough shown during a Tutorial game (#102) — sits right
@@ -2683,6 +2700,12 @@ body {
   .play-board-col > .hand-header .score-board {
     flex-shrink: 1;
     min-width: 0;
+  }
+
+  /* Only used below this breakpoint — see .mobile-score-board-row
+     (#134 follow-up). */
+  .mobile-score-board-row {
+    display: none;
   }
 
   /* Status tray forms an equal-width left column; hand and piles form the

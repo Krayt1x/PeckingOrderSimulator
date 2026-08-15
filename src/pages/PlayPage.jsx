@@ -1018,6 +1018,36 @@ export default function PlayPage({
   }, [humanWon]);
   const activeSkin = ruleset.allowCustomSkins ? ruleset.skin : 'alpha';
 
+  // Rendered in two places below — overlaying the board's bottom edge on
+  // desktop, in normal flow below it on mobile — index.css shows only the
+  // one appropriate to the current breakpoint (#134 follow-up).
+  const scoreBoard = (
+    <ul className="score-board">
+      {players.map((p, i) => {
+        const score = playerStates[i].score;
+        const isLeader = maxScore > 0 && score === maxScore;
+        return (
+          <li
+            key={p.id}
+            className={`score-entry${p.id === activePlayer.id ? ' score-entry-active' : ''}`}
+            style={{ '--player-color': p.color }}
+            onMouseEnter={() => setHoveredPlayerId(p.id)}
+            onMouseLeave={() =>
+              setHoveredPlayerId((current) =>
+                current === p.id ? null : current,
+              )
+            }
+          >
+            <span className={`score-value${isLeader ? ' score-leader' : ''}`}>
+              {score}
+            </span>
+            <span className="score-name">{displayName(p)}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
   return (
     <main className="page" data-skin={activeSkin}>
       {showIntroModal ? (
@@ -1171,32 +1201,7 @@ export default function PlayPage({
                 </span>
               ) : null}
             </div>
-            <ul className="score-board">
-              {players.map((p, i) => {
-                const score = playerStates[i].score;
-                const isLeader = maxScore > 0 && score === maxScore;
-                return (
-                  <li
-                    key={p.id}
-                    className={`score-entry${p.id === activePlayer.id ? ' score-entry-active' : ''}`}
-                    style={{ '--player-color': p.color }}
-                    onMouseEnter={() => setHoveredPlayerId(p.id)}
-                    onMouseLeave={() =>
-                      setHoveredPlayerId((current) =>
-                        current === p.id ? null : current,
-                      )
-                    }
-                  >
-                    <span
-                      className={`score-value${isLeader ? ' score-leader' : ''}`}
-                    >
-                      {score}
-                    </span>
-                    <span className="score-name">{displayName(p)}</span>
-                  </li>
-                );
-              })}
-            </ul>
+            {scoreBoard}
             <div className="hand-header-right">
               {gameOver ? null : activePlayer.isCPU ? (
                 <span className="draw-pile-count">CPU is playing&hellip;</span>
@@ -1222,6 +1227,17 @@ export default function PlayPage({
             </div>
           </div>
         </div>
+        {/* Below the desktop breakpoint, Actions/Undo/End Turn overlay the
+            board's bottom edge, but the score board doesn't fit in that
+            same narrow row alongside them once there are more than 2-3
+            players without overflowing horizontally — so it renders a
+            second time here, in normal flow below the board, and
+            index.css shows only the one appropriate to each breakpoint
+            (#134 follow-up). A sibling of .play-board-col, not a child of
+            it — inside it, its own height would inflate that column's
+            box past the board's own, throwing off .hand-header's
+            bottom-edge anchor the same way the Tutorial banner did. */}
+        <div className="mobile-score-board-row">{scoreBoard}</div>
         <div className="play-side-col">
           <StatusTray
             players={players}
