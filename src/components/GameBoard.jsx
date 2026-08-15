@@ -125,8 +125,24 @@ function centeredOffset(cellSize) {
   };
 }
 
+// The viewport box's own pixel size is fixed (see viewportWidthPx/HeightPx)
+// — zooming out is capped at whatever cellSize keeps the full BOARD_SIZE
+// grid at least covering that box, so the board can never zoom out past
+// its own edges and expose blank page background around it (#129).
+// Letting the box itself shrink to match a smaller board at low zoom
+// looked like a fix for the same symptom, but it meant the box's pixel
+// size — and so the whole page's layout — changed with every zoom step.
+function minCellSizeToFillViewport() {
+  return Math.max(
+    MIN_CELL_SIZE,
+    Math.ceil(viewportWidthPx() / BOARD_SIZE),
+    Math.ceil(viewportHeightPx() / BOARD_SIZE),
+  );
+}
+
 function clampCellSize(size) {
-  return Math.min(MAX_CELL_SIZE, Math.max(MIN_CELL_SIZE, size));
+  const min = minCellSizeToFillViewport();
+  return Math.min(MAX_CELL_SIZE, Math.max(min, size));
 }
 
 // Extra empty cells of breathing room kept around the food bounding box
@@ -168,9 +184,10 @@ export function computeFitView(cells) {
 
   const vpxW = viewportWidthPx();
   const vpxH = viewportHeightPx();
+  const minFit = minCellSizeToFillViewport();
   let fitCellSize = MAX_CELL_SIZE;
   while (
-    fitCellSize > MIN_CELL_SIZE &&
+    fitCellSize > minFit &&
     (colSpan * pitchOf(fitCellSize) > vpxW ||
       rowSpan * pitchOf(fitCellSize) > vpxH)
   ) {
@@ -374,15 +391,14 @@ export default function GameBoard({
   const spriteSize = Math.max(16, Math.round(cellSize * 0.4));
   const terrainIconSize = Math.max(20, Math.round(cellSize * 0.85));
   const zoomPercent = Math.round((cellSize / defaultCellSize()) * 100);
-  // Panning/zoom clamps everywhere else still use the full nominal box
-  // (viewportWidthPx/HeightPx) — offset naturally floors at 0 once the
-  // board is smaller than that box, so this only ever shrinks what's
-  // rendered, never the pan range. Without it, a fit-to-Food zoom level
-  // far enough out to need a small cellSize could leave the board (which
-  // shrinks with cellSize) narrower or shorter than this fixed-size box,
-  // exposing blank page background past the board's own edge.
-  const vpxW = Math.min(viewportWidthPx(), BOARD_SIZE * cellSize);
-  const vpxH = Math.min(viewportHeightPx(), BOARD_SIZE * cellSize);
+  // The viewport box's own size is always the fixed nominal size — never
+  // derived from cellSize/BOARD_SIZE — so zooming never changes the box's
+  // pixel footprint (and so never shifts the rest of the page). cellSize
+  // itself is kept from ever going low enough to leave the board short of
+  // filling this box (see clampCellSize/minCellSizeToFillViewport) (#129
+  // follow-up).
+  const vpxW = viewportWidthPx();
+  const vpxH = viewportHeightPx();
 
   return (
     <div className="board-wrap">
@@ -404,7 +420,7 @@ export default function GameBoard({
               type="button"
               className="board-zoom-btn"
               onClick={() => zoomTo(cellSize - ZOOM_STEP)}
-              disabled={cellSize <= MIN_CELL_SIZE}
+              disabled={cellSize <= minCellSizeToFillViewport()}
               aria-label="Zoom out"
             >
               −
