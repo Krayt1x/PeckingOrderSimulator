@@ -193,7 +193,7 @@ function FoodDemo() {
           </span>
         </span>
         <span
-          className="card tutorial-demo-hand-card"
+          className="card tutorial-demo-hand-card card-hand-food"
           style={{
             '--card-border': '#3b82f6',
             '--card-bg': '#eab308',

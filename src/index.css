@@ -1074,8 +1074,20 @@ body {
   background: #1c1917;
 }
 
+/* Fixed black rather than the theme's --text-secondary — that variable is
+   a light gray in dark mode, which washed out badly against every Food
+   shape's gold/yellow card background. */
 .card-food .card-name {
-  color: var(--text-secondary);
+  color: #000;
+}
+
+/* A food-derived card in a player's hand keeps its Food shape's own
+   gold/yellow background (see Hand.jsx's --card-bg) — the base .card-name
+   color is a light gray meant for the dark deck-color backgrounds every
+   other hand card has, so it washes out here the same way it did on the
+   board (#131 follow-up). */
+.card-hand-food .card-name {
+  color: #000;
 }
 
 .card-sides {
@@ -1447,6 +1459,15 @@ body {
 
 [data-skin='alpha-pixel-art'] .card-name {
   color: #f0c419;
+}
+
+/* A food-derived hand card's own background is the food shape's pure
+   color (e.g. bright gold), not the darker mixed tint the board's Food
+   tiles get — the skin's general gold .card-name text washed out badly
+   against it, same as it did on the default skin (#131 follow-up). */
+[data-skin='alpha-pixel-art'] .card-hand-food .card-name {
+  color: #000;
+  text-shadow: none;
 }
 
 [data-skin='alpha-pixel-art'] .card-pixel-sprite {

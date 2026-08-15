@@ -39,7 +39,7 @@ export default function Hand({
             key={card.id}
             type="button"
             disabled={cardDisabled}
-            className={`card${selectedCardId === card.id ? ' card-selected' : ''}`}
+            className={`card${card.fromFood ? ' card-hand-food' : ''}${selectedCardId === card.id ? ' card-selected' : ''}`}
             style={{
               '--card-border': playerColor,
               '--card-bg': card.deckColor,
