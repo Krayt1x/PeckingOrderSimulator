@@ -121,20 +121,35 @@ describe('computeFitView', () => {
     );
   });
 
-  // A short desktop window (e.g. a 1920x1080 display) previously always
-  // got the width-derived DESKTOP_CELL_SIZE regardless of how little
-  // vertical room was actually available, forcing the page to scroll just
-  // to reach End Turn. The board now also shrinks to whatever cell size
-  // keeps its height within the window, same as it already does for
-  // width (#128 follow-up).
-  it('shrinks the board to fit a short desktop window instead of overflowing it vertically', () => {
+  // A short desktop window (e.g. a 1920x1080 display) previously forced
+  // the page to scroll just to reach End Turn. An earlier fix shrank the
+  // cell size itself to free up vertical room, but that shrank the
+  // board's rendered width along with it, leaving it visibly narrower
+  // than the row/hand/piles beneath it (#134 follow-up) — showing fewer
+  // rows instead fits the window without touching cell size, so the
+  // board's width always matches everything below it regardless of
+  // window height.
+  it('shows fewer rows (not a smaller cell size) to fit a short desktop window', () => {
     window.innerWidth = 1920;
     window.innerHeight = 1080;
     const { cellSize } = computeFitView(
       Array(BOARD_SIZE.width * BOARD_SIZE.height).fill(null),
     );
-    expect(cellSize).toBeLessThan(DESKTOP_CELL_SIZE);
-    expect(VIEWPORT_ROWS_DESKTOP * cellSize).toBeLessThanOrEqual(1080);
+    expect(cellSize).toBe(DESKTOP_CELL_SIZE);
+
+    const { container } = render(
+      <GameBoard
+        cells={Array(BOARD_SIZE.width * BOARD_SIZE.height).fill(null)}
+      />,
+    );
+    const viewport = container.querySelector('.board-viewport');
+    expect(parseFloat(viewport.style.width)).toBe(
+      VIEWPORT_COLS_DESKTOP * DESKTOP_CELL_SIZE,
+    );
+    const viewportHeight = parseFloat(viewport.style.height);
+    const rows = viewportHeight / DESKTOP_CELL_SIZE;
+    expect(rows).toBeLessThan(VIEWPORT_ROWS_DESKTOP);
+    expect(viewportHeight).toBeLessThanOrEqual(1080);
   });
 
   it('fits every Food cell inside the viewport', () => {

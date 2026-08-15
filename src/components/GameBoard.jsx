@@ -58,26 +58,41 @@ function viewportCols() {
   return isDesktop() ? VIEWPORT_COLS_DESKTOP : VIEWPORT_COLS_MOBILE;
 }
 
-function viewportRows() {
-  return isDesktop() ? VIEWPORT_ROWS_DESKTOP : VIEWPORT_ROWS_MOBILE;
-}
-
 // Non-board vertical chrome on desktop — the top nav bar, the page's own
 // bottom margin, and the status tray/hand row underneath the board — so a
 // short window (e.g. a 1920x1080 display, where the page previously
-// needed to scroll just to reach End Turn) sizes the board to actually
-// fit instead of only ever fitting the page's width (#128 follow-up).
+// needed to scroll just to reach End Turn) still fits. cellSize itself
+// stays purely width-derived (see defaultCellSize) so the board's own
+// rendered width always exactly matches everything else in the column
+// below it — an earlier version of this fix shrank cellSize itself to
+// free up vertical room, which shrank the board's width along with it,
+// leaving it visibly narrower than the row/hand/piles beneath it (#134
+// follow-up). Showing fewer rows instead keeps every cell — and so the
+// board's own width — exactly the same regardless of window height.
 const DESKTOP_RESERVED_VERTICAL_PX = 320;
+const MIN_VIEWPORT_ROWS_DESKTOP = 3;
+
+function viewportRows() {
+  if (!isDesktop()) return VIEWPORT_ROWS_MOBILE;
+  if (typeof window === 'undefined') return VIEWPORT_ROWS_DESKTOP;
+  const pitch = defaultCellSize() + CELL_GAP;
+  const availableHeight = window.innerHeight - DESKTOP_RESERVED_VERTICAL_PX;
+  const rows = Math.floor(availableHeight / pitch);
+  return Math.max(
+    MIN_VIEWPORT_ROWS_DESKTOP,
+    Math.min(VIEWPORT_ROWS_DESKTOP, rows),
+  );
+}
 
 function defaultCellSize() {
   if (typeof window === 'undefined') return DESKTOP_CELL_SIZE;
   if (isDesktop()) {
     const pageWidth = Math.min(window.innerWidth, DESKTOP_PAGE_MAX_WIDTH_PX);
     const contentWidth = pageWidth - PAGE_HORIZONTAL_PADDING_PX;
-    const widthCellSize = Math.floor(contentWidth / VIEWPORT_COLS_DESKTOP);
-    const contentHeight = window.innerHeight - DESKTOP_RESERVED_VERTICAL_PX;
-    const heightCellSize = Math.floor(contentHeight / VIEWPORT_ROWS_DESKTOP);
-    return Math.max(MIN_CELL_SIZE, Math.min(widthCellSize, heightCellSize));
+    return Math.max(
+      MIN_CELL_SIZE,
+      Math.floor(contentWidth / VIEWPORT_COLS_DESKTOP),
+    );
   }
   const pageWidth = Math.min(window.innerWidth, MOBILE_PAGE_MAX_WIDTH_PX);
   const contentWidth = pageWidth - MOBILE_BOARD_GUTTER_PX * 2;
