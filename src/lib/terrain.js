@@ -16,13 +16,14 @@ function shuffle(list) {
   return copy;
 }
 
-// Scatters 1-5 terrain tiles across a boardSize x boardSize board, skipping
-// any index already in occupiedIndices (e.g. Food) — returns a
-// { [boardIndex]: cardFace } map, the same shape placeFoodShapes returns.
+// Scatters 1-5 terrain tiles across a boardSize.width x boardSize.height
+// board, skipping any index already in occupiedIndices (e.g. Food) —
+// returns a { [boardIndex]: cardFace } map, the same shape placeFoodShapes
+// returns.
 export function placeRandomTerrain(occupiedIndices, boardSize) {
   const occupied = new Set(occupiedIndices);
   const empty = [];
-  for (let i = 0; i < boardSize * boardSize; i++) {
+  for (let i = 0; i < boardSize.width * boardSize.height; i++) {
     if (!occupied.has(i)) empty.push(i);
   }
 

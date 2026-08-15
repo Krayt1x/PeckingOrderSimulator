@@ -6,7 +6,7 @@ import {
   getAdjacentEmptyIndices,
 } from './board.js';
 
-const BOARD_SIZE = 10;
+const BOARD_SIZE = { width: 10, height: 10 };
 
 describe('getNeighbors', () => {
   it('returns all 4 neighbors for an interior cell', () => {

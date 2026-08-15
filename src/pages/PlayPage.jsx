@@ -113,11 +113,11 @@ function createInitialBoard(
       ? [...selectedShapes, ...selectedShapes]
       : selectedShapes,
   };
-  const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+  const cells = Array(BOARD_SIZE.width * BOARD_SIZE.height).fill(null);
   const foodCells = placeFoodShapes(
     activeFood,
     BOARD_SIZE,
-    doubleFood ? BOARD_SIZE : undefined,
+    doubleFood ? Math.max(BOARD_SIZE.width, BOARD_SIZE.height) : undefined,
   );
   Object.entries(foodCells).forEach(([index, card]) => {
     cells[Number(index)] = card;

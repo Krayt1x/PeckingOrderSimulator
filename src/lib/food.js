@@ -129,8 +129,9 @@ function shuffle(list) {
   return copy;
 }
 
-// Places every shape in food.shapes onto a boardSize x boardSize board, at
-// a random valid position each time (#101) — without overlapping, without
+// Places every shape in food.shapes onto a boardSize.width x
+// boardSize.height board, at a random valid position each time (#101) —
+// without overlapping, without
 // any two distinct pieces landing within MIN_FOOD_DISTANCE tiles of each
 // other, without any piece landing more than maxDistance tiles from the
 // nearest already-placed piece (#108, defaults to MAX_FOOD_DISTANCE), and
@@ -146,6 +147,7 @@ export function placeFoodShapes(
   boardSize,
   maxDistance = MAX_FOOD_DISTANCE,
 ) {
+  const { width: boardWidth, height: boardHeight } = boardSize;
   const shapes = food?.shapes ?? [];
   const occupied = new Set();
   const placedCells = []; // [{ row, col }] across every shape placed so far
@@ -153,11 +155,12 @@ export function placeFoodShapes(
   const board = {};
 
   const minCoord = EDGE_MARGIN;
-  const maxCoord = boardSize - 1 - EDGE_MARGIN;
+  const maxRowCoord = boardHeight - 1 - EDGE_MARGIN;
+  const maxColCoord = boardWidth - 1 - EDGE_MARGIN;
 
   const anchors = [];
-  for (let row = 0; row < boardSize; row++) {
-    for (let col = 0; col < boardSize; col++) {
+  for (let row = 0; row < boardHeight; row++) {
+    for (let col = 0; col < boardWidth; col++) {
       anchors.push({ row, col });
     }
   }
@@ -167,10 +170,12 @@ export function placeFoodShapes(
 
   bySize.forEach((shape) => {
     if (shape.cells.length === 0) return;
-    const { width, height } = shapeBounds(shape);
+    const { width: shapeWidth, height: shapeHeight } = shapeBounds(shape);
 
     const anchor = shuffledAnchors.find(({ row, col }) => {
-      if (row + height > boardSize || col + width > boardSize) return false;
+      if (row + shapeHeight > boardHeight || col + shapeWidth > boardWidth) {
+        return false;
+      }
 
       const cellPositions = shape.cells.map((cell) => ({
         r: row + cell.row,
@@ -178,10 +183,15 @@ export function placeFoodShapes(
       }));
 
       const fits = cellPositions.every(({ r, c }) => {
-        if (r < minCoord || r > maxCoord || c < minCoord || c > maxCoord) {
+        if (
+          r < minCoord ||
+          r > maxRowCoord ||
+          c < minCoord ||
+          c > maxColCoord
+        ) {
           return false;
         }
-        if (occupied.has(r * boardSize + c)) return false;
+        if (occupied.has(r * boardWidth + c)) return false;
         return placedCells.every(
           (other) =>
             chebyshevDistance(r, c, other.row, other.col) > MIN_FOOD_DISTANCE,
@@ -206,7 +216,7 @@ export function placeFoodShapes(
     computeShapeCells(shape).forEach(({ row, col, sides }) => {
       const boardRow = anchor.row + row;
       const boardCol = anchor.col + col;
-      const index = boardRow * boardSize + boardCol;
+      const index = boardRow * boardWidth + boardCol;
       occupied.add(index);
       placedCells.push({ row: boardRow, col: boardCol });
       thisGroup.push({ row: boardRow, col: boardCol });

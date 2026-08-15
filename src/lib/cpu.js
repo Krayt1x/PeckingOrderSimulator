@@ -16,8 +16,8 @@ function foodPositions(board, boardSize) {
   board.forEach((cell, index) => {
     if (cell?.type !== 'food') return;
     positions.push({
-      row: Math.floor(index / boardSize),
-      col: index % boardSize,
+      row: Math.floor(index / boardSize.width),
+      col: index % boardSize.width,
     });
   });
   return positions;
@@ -26,8 +26,8 @@ function foodPositions(board, boardSize) {
 // Chebyshev (chessboard) distance from a cell to the nearest Food tile —
 // Infinity if there's no Food left on the board at all.
 function distanceToNearestFood(positions, index, boardSize) {
-  const row = Math.floor(index / boardSize);
-  const col = index % boardSize;
+  const row = Math.floor(index / boardSize.width);
+  const col = index % boardSize.width;
   return positions.reduce(
     (min, { row: foodRow, col: foodCol }) =>
       Math.min(min, Math.max(Math.abs(row - foodRow), Math.abs(col - foodCol))),

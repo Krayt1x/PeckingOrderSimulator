@@ -48,7 +48,7 @@ afterEach(() => {
 });
 
 function buildCells(foodBoard) {
-  const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+  const cells = Array(BOARD_SIZE.width * BOARD_SIZE.height).fill(null);
   Object.entries(foodBoard).forEach(([index, card]) => {
     cells[Number(index)] = card;
   });
@@ -68,7 +68,7 @@ describe('computeFitView', () => {
     window.innerWidth = 1650;
     window.innerHeight = 1300;
     const { cellSize, offset } = computeFitView(
-      Array(BOARD_SIZE * BOARD_SIZE).fill(null),
+      Array(BOARD_SIZE.width * BOARD_SIZE.height).fill(null),
     );
     expect(cellSize).toBe(DESKTOP_CELL_SIZE);
     expect(offset.x).toBeGreaterThanOrEqual(0);
@@ -89,7 +89,7 @@ describe('computeFitView', () => {
     (innerWidth) => {
       window.innerWidth = innerWidth;
       const { cellSize } = computeFitView(
-        Array(BOARD_SIZE * BOARD_SIZE).fill(null),
+        Array(BOARD_SIZE.width * BOARD_SIZE.height).fill(null),
       );
       expect(cellSize).toBe(expectedCellSizeFor(innerWidth));
       expect(VIEWPORT_COLS_MOBILE * cellSize).toBeLessThanOrEqual(innerWidth);
@@ -100,7 +100,7 @@ describe('computeFitView', () => {
     window.innerWidth = 1650;
     window.innerHeight = 1300;
     const { cellSize } = computeFitView(
-      Array(BOARD_SIZE * BOARD_SIZE).fill(null),
+      Array(BOARD_SIZE.width * BOARD_SIZE.height).fill(null),
     );
     expect(cellSize).toBe(DESKTOP_CELL_SIZE);
   });
@@ -111,7 +111,7 @@ describe('computeFitView', () => {
     window.innerWidth = 1440;
     window.innerHeight = 1300;
     const { cellSize } = computeFitView(
-      Array(BOARD_SIZE * BOARD_SIZE).fill(null),
+      Array(BOARD_SIZE.width * BOARD_SIZE.height).fill(null),
     );
     expect(cellSize).toBeGreaterThan(
       Math.floor(
@@ -131,7 +131,7 @@ describe('computeFitView', () => {
     window.innerWidth = 1920;
     window.innerHeight = 1080;
     const { cellSize } = computeFitView(
-      Array(BOARD_SIZE * BOARD_SIZE).fill(null),
+      Array(BOARD_SIZE.width * BOARD_SIZE.height).fill(null),
     );
     expect(cellSize).toBeLessThan(DESKTOP_CELL_SIZE);
     expect(VIEWPORT_ROWS_DESKTOP * cellSize).toBeLessThanOrEqual(1080);
@@ -144,8 +144,8 @@ describe('computeFitView', () => {
     const pitch = cellSize + CELL_GAP;
 
     Object.keys(foodBoard).forEach((index) => {
-      const row = Math.floor(Number(index) / BOARD_SIZE);
-      const col = Number(index) % BOARD_SIZE;
+      const row = Math.floor(Number(index) / BOARD_SIZE.width);
+      const col = Number(index) % BOARD_SIZE.width;
       const left = col * pitch;
       const top = row * pitch;
 
@@ -162,18 +162,18 @@ describe('computeFitView', () => {
   // stop partway across the panned grid instead of covering all of it
   // (#103). Pinning the explicit size here catches that regression.
   it('sizes .board to the full grid (BOARD_SIZE * cellSize), not just its auto-fit width', () => {
-    const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+    const cells = Array(BOARD_SIZE.width * BOARD_SIZE.height).fill(null);
     const { cellSize } = computeFitView(cells);
     const { container } = render(<GameBoard cells={cells} />);
     const board = container.querySelector('.board');
-    expect(board.style.width).toBe(`${BOARD_SIZE * cellSize}px`);
-    expect(board.style.height).toBe(`${BOARD_SIZE * cellSize}px`);
+    expect(board.style.width).toBe(`${BOARD_SIZE.width * cellSize}px`);
+    expect(board.style.height).toBe(`${BOARD_SIZE.height * cellSize}px`);
   });
 });
 
 describe('rendering a Terrain cell (#107)', () => {
   it('renders it as a pixel-art rock sprite, with no side values or name shown', () => {
-    const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+    const cells = Array(BOARD_SIZE.width * BOARD_SIZE.height).fill(null);
     cells[0] = { id: 'terrain-0', type: 'terrain', name: 'Rock' };
     const { container } = render(<GameBoard cells={cells} />);
 
@@ -189,7 +189,7 @@ describe('rendering a Terrain cell (#107)', () => {
 
 describe('claiming Food gives eligible birds a yellow ring (#115 follow-up)', () => {
   it('marks a bird card as a claim choice when its index is highlighted', () => {
-    const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+    const cells = Array(BOARD_SIZE.width * BOARD_SIZE.height).fill(null);
     cells[0] = {
       id: 'bird-0',
       type: 'bird',
@@ -214,7 +214,7 @@ describe('claiming Food gives eligible birds a yellow ring (#115 follow-up)', ()
   });
 
   it('does not mark anything when nothing is highlighted', () => {
-    const cells = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+    const cells = Array(BOARD_SIZE.width * BOARD_SIZE.height).fill(null);
     cells[0] = {
       id: 'bird-0',
       type: 'bird',

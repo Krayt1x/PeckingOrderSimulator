@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { resolveCaptures, canPlaceCard, isLandingSick } from './combat.js';
 
-const BOARD_SIZE = 10;
+const BOARD_SIZE = { width: 10, height: 10 };
 
 function makeCard(ownerId, sides, type) {
   return { ownerId, sides, type };

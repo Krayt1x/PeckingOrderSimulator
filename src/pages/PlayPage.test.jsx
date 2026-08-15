@@ -30,7 +30,7 @@ vi.mock('../lib/rulesets.js', async (importOriginal) => {
   };
 });
 
-const BOARD_SIZE = 16;
+const BOARD_SIZE = { width: 24, height: 15 };
 
 afterEach(() => {
   cleanup();
@@ -38,13 +38,13 @@ afterEach(() => {
 });
 
 function neighbors(index) {
-  const row = Math.floor(index / BOARD_SIZE);
-  const col = index % BOARD_SIZE;
+  const row = Math.floor(index / BOARD_SIZE.width);
+  const col = index % BOARD_SIZE.width;
   const result = [];
-  if (row > 0) result.push(index - BOARD_SIZE);
-  if (row < BOARD_SIZE - 1) result.push(index + BOARD_SIZE);
+  if (row > 0) result.push(index - BOARD_SIZE.width);
+  if (row < BOARD_SIZE.height - 1) result.push(index + BOARD_SIZE.width);
   if (col > 0) result.push(index - 1);
-  if (col < BOARD_SIZE - 1) result.push(index + 1);
+  if (col < BOARD_SIZE.width - 1) result.push(index + 1);
   return result;
 }
 
@@ -228,7 +228,7 @@ describe('PlayPage', () => {
     expect(within(hand).getAllByRole('button')).toHaveLength(HAND_SIZE);
   });
 
-  it('renders a 16x16 board with every Food shape placed without overlapping', () => {
+  it('renders a 24x15 board with every Food shape placed without overlapping', () => {
     render(
       <PlayPage
         players={twoPlayers()}
@@ -238,7 +238,7 @@ describe('PlayPage', () => {
     );
 
     const cells = screen.getAllByRole('gridcell');
-    expect(cells).toHaveLength(BOARD_SIZE * BOARD_SIZE);
+    expect(cells).toHaveLength(BOARD_SIZE.width * BOARD_SIZE.height);
     expect(cells.filter((c) => c.querySelector('.card-food'))).toHaveLength(
       TOTAL_FOOD_CELLS,
     );

@@ -1,13 +1,14 @@
 // Returns { top, right, bottom, left } neighbor indices for a cell on a
-// boardSize x boardSize grid, using null for any direction that would fall
-// off the board.
+// boardSize.width x boardSize.height grid, using null for any direction
+// that would fall off the board.
 export function getNeighbors(index, boardSize) {
-  const row = Math.floor(index / boardSize);
-  const col = index % boardSize;
+  const { width, height } = boardSize;
+  const row = Math.floor(index / width);
+  const col = index % width;
   return {
-    top: row > 0 ? index - boardSize : null,
-    right: col < boardSize - 1 ? index + 1 : null,
-    bottom: row < boardSize - 1 ? index + boardSize : null,
+    top: row > 0 ? index - width : null,
+    right: col < width - 1 ? index + 1 : null,
+    bottom: row < height - 1 ? index + width : null,
     left: col > 0 ? index - 1 : null,
   };
 }

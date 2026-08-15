@@ -5,7 +5,7 @@ import {
   MAX_TERRAIN_COUNT,
 } from './terrain.js';
 
-const BOARD_SIZE = 16;
+const BOARD_SIZE = { width: 16, height: 16 };
 
 describe('placeRandomTerrain', () => {
   it('places between MIN_TERRAIN_COUNT and MAX_TERRAIN_COUNT tiles', () => {
@@ -37,20 +37,20 @@ describe('placeRandomTerrain', () => {
     const board = placeRandomTerrain([], BOARD_SIZE);
     Object.keys(board).forEach((index) => {
       expect(Number(index)).toBeGreaterThanOrEqual(0);
-      expect(Number(index)).toBeLessThan(BOARD_SIZE * BOARD_SIZE);
+      expect(Number(index)).toBeLessThan(BOARD_SIZE.width * BOARD_SIZE.height);
     });
   });
 
   it('caps the count at however many empty cells remain, without erroring', () => {
     // Leave only 2 cells free on a tiny board.
     const occupied = Array.from({ length: 14 }, (_, i) => i);
-    const board = placeRandomTerrain(occupied, 4);
+    const board = placeRandomTerrain(occupied, { width: 4, height: 4 });
     expect(Object.keys(board).length).toBeLessThanOrEqual(2);
   });
 
   it('places nothing when every cell is already occupied', () => {
     const occupied = Array.from({ length: 16 }, (_, i) => i);
-    const board = placeRandomTerrain(occupied, 4);
+    const board = placeRandomTerrain(occupied, { width: 4, height: 4 });
     expect(board).toEqual({});
   });
 });

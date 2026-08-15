@@ -6,7 +6,7 @@ import {
   contestsFoodMajority,
 } from './cpu.js';
 
-const BOARD_SIZE = 10;
+const BOARD_SIZE = { width: 10, height: 10 };
 
 const SIDES = { top: 1, right: 1, bottom: 1, left: 1 };
 // Food weaker than a plain SIDES card on every edge, so a SIDES-strength

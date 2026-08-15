@@ -16,8 +16,12 @@ import {
 // fit inside the EDGE_MARGIN-restricted interior along with MIN_FOOD_DISTANCE
 // spacing between them.
 const REAL_BOARD_SIZE = 16;
+const REAL_BOARD_DIMENSIONS = {
+  width: REAL_BOARD_SIZE,
+  height: REAL_BOARD_SIZE,
+};
 
-const BOARD_SIZE = 10;
+const BOARD_SIZE = { width: 10, height: 10 };
 
 function bird(ownerId) {
   return {
@@ -62,7 +66,7 @@ describe('computeShapeCells', () => {
 
 describe('placeFoodShapes', () => {
   it('places every cell of every shape without overlapping', () => {
-    const board = placeFoodShapes(DEFAULT_FOOD, REAL_BOARD_SIZE);
+    const board = placeFoodShapes(DEFAULT_FOOD, REAL_BOARD_DIMENSIONS);
     const totalCells = DEFAULT_FOOD.shapes.reduce(
       (sum, s) => sum + s.cells.length,
       0,
@@ -82,7 +86,7 @@ describe('placeFoodShapes', () => {
     const food = { ...DEFAULT_FOOD, shapes: [chip] };
     const positions = new Set();
     for (let i = 0; i < 30; i++) {
-      const board = placeFoodShapes(food, REAL_BOARD_SIZE);
+      const board = placeFoodShapes(food, REAL_BOARD_DIMENSIONS);
       positions.add(Object.keys(board)[0]);
     }
     expect(positions.size).toBeGreaterThan(1);
@@ -90,7 +94,7 @@ describe('placeFoodShapes', () => {
 
   it('keeps every placed cell within the board bounds', () => {
     const boardSize = REAL_BOARD_SIZE;
-    const board = placeFoodShapes(DEFAULT_FOOD, boardSize);
+    const board = placeFoodShapes(DEFAULT_FOOD, REAL_BOARD_DIMENSIONS);
     Object.keys(board).forEach((index) => {
       expect(Number(index)).toBeGreaterThanOrEqual(0);
       expect(Number(index)).toBeLessThan(boardSize * boardSize);
@@ -102,11 +106,11 @@ describe('placeFoodShapes', () => {
       ...DEFAULT_FOOD,
       shapes: [{ ...chip, cells: [] }],
     };
-    expect(placeFoodShapes(food, REAL_BOARD_SIZE)).toEqual({});
+    expect(placeFoodShapes(food, REAL_BOARD_DIMENSIONS)).toEqual({});
   });
 
   it('keeps every pair of distinct food pieces more than MIN_FOOD_DISTANCE tiles apart', () => {
-    const board = placeFoodShapes(DEFAULT_FOOD, REAL_BOARD_SIZE);
+    const board = placeFoodShapes(DEFAULT_FOOD, REAL_BOARD_DIMENSIONS);
     const byShape = new Map();
     Object.entries(board).forEach(([index, card]) => {
       const row = Math.floor(Number(index) / REAL_BOARD_SIZE);
@@ -138,7 +142,7 @@ describe('placeFoodShapes', () => {
     // only checking every pairing catches that (a real bug once: Chip and
     // Potato Cake could each be near Burger but far from each other).
     for (let trial = 0; trial < 20; trial++) {
-      const board = placeFoodShapes(DEFAULT_FOOD, REAL_BOARD_SIZE);
+      const board = placeFoodShapes(DEFAULT_FOOD, REAL_BOARD_DIMENSIONS);
       const byShape = new Map();
       Object.entries(board).forEach(([index, card]) => {
         const row = Math.floor(Number(index) / REAL_BOARD_SIZE);
@@ -166,7 +170,7 @@ describe('placeFoodShapes', () => {
 
   it('keeps every placed cell at least EDGE_MARGIN tiles from the board edge', () => {
     const boardSize = REAL_BOARD_SIZE;
-    const board = placeFoodShapes(DEFAULT_FOOD, boardSize);
+    const board = placeFoodShapes(DEFAULT_FOOD, REAL_BOARD_DIMENSIONS);
     Object.keys(board).forEach((index) => {
       const row = Math.floor(Number(index) / boardSize);
       const col = Number(index) % boardSize;
@@ -189,14 +193,20 @@ describe('placeFoodShapes', () => {
         { ...chip, id: 'b', cells: [{ row: 0, col: 0 }] },
       ],
     };
-    const board = placeFoodShapes(food, boardSize);
+    const board = placeFoodShapes(food, {
+      width: boardSize,
+      height: boardSize,
+    });
     expect(Object.keys(board)).toHaveLength(1);
   });
 
   it('skips a shape entirely when the board is too small to have a valid interior', () => {
     // With boardSize smaller than 2*EDGE_MARGIN + 1, no cell is ever
     // EDGE_MARGIN tiles from every edge — nothing can be placed.
-    const board = placeFoodShapes(DEFAULT_FOOD, EDGE_MARGIN * 2);
+    const board = placeFoodShapes(DEFAULT_FOOD, {
+      width: EDGE_MARGIN * 2,
+      height: EDGE_MARGIN * 2,
+    });
     expect(board).toEqual({});
   });
 });

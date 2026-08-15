@@ -5,7 +5,11 @@ import PixelRockSprite from './PixelRockSprite.jsx';
 
 const SIDE_KEYS = ['top', 'left', 'right', 'bottom'];
 
-export const BOARD_SIZE = 16;
+// The full board is rectangular, wider than tall — index math throughout
+// this file and lib/board.js, lib/food.js, lib/terrain.js and lib/cpu.js
+// relies on `.width` for the row/col stride and `.height` only for bounds
+// checks.
+export const BOARD_SIZE = { width: 24, height: 15 };
 // The desktop viewport is rectangular (wider than tall) now that it runs
 // full page width with no sidebar competing for room — the mobile one
 // stays a square, unchanged (#128).
@@ -98,11 +102,14 @@ function pitchOf(cellSize) {
 }
 
 function maxOffsetXOf(cellSize) {
-  return Math.max(0, BOARD_SIZE * pitchOf(cellSize) - viewportWidthPx());
+  return Math.max(0, BOARD_SIZE.width * pitchOf(cellSize) - viewportWidthPx());
 }
 
 function maxOffsetYOf(cellSize) {
-  return Math.max(0, BOARD_SIZE * pitchOf(cellSize) - viewportHeightPx());
+  return Math.max(
+    0,
+    BOARD_SIZE.height * pitchOf(cellSize) - viewportHeightPx(),
+  );
 }
 
 function clampOffsetX(cellSize, value) {
@@ -142,8 +149,8 @@ function centeredOffset(cellSize) {
 function minCellSizeToFillViewport() {
   return Math.max(
     MIN_CELL_SIZE,
-    Math.ceil(viewportWidthPx() / BOARD_SIZE),
-    Math.ceil(viewportHeightPx() / BOARD_SIZE),
+    Math.ceil(viewportWidthPx() / BOARD_SIZE.width),
+    Math.ceil(viewportHeightPx() / BOARD_SIZE.height),
   );
 }
 
@@ -180,12 +187,12 @@ export function computeFitView(cells) {
   }
 
   const padding = fitPaddingCells();
-  const rows = foodIndices.map((i) => Math.floor(i / BOARD_SIZE));
-  const cols = foodIndices.map((i) => i % BOARD_SIZE);
+  const rows = foodIndices.map((i) => Math.floor(i / BOARD_SIZE.width));
+  const cols = foodIndices.map((i) => i % BOARD_SIZE.width);
   const minRow = Math.max(0, Math.min(...rows) - padding);
-  const maxRow = Math.min(BOARD_SIZE - 1, Math.max(...rows) + padding);
+  const maxRow = Math.min(BOARD_SIZE.height - 1, Math.max(...rows) + padding);
   const minCol = Math.max(0, Math.min(...cols) - padding);
-  const maxCol = Math.min(BOARD_SIZE - 1, Math.max(...cols) + padding);
+  const maxCol = Math.min(BOARD_SIZE.width - 1, Math.max(...cols) + padding);
   const rowSpan = maxRow - minRow + 1;
   const colSpan = maxCol - minCol + 1;
 
@@ -458,9 +465,9 @@ export default function GameBoard({
           // instead of only the portion that happens to fit .board-viewport's
           // own width (#103).
           style={{
-            width: BOARD_SIZE * cellSize,
-            height: BOARD_SIZE * cellSize,
-            gridTemplateColumns: `repeat(${BOARD_SIZE}, ${cellSize}px)`,
+            width: BOARD_SIZE.width * cellSize,
+            height: BOARD_SIZE.height * cellSize,
+            gridTemplateColumns: `repeat(${BOARD_SIZE.width}, ${cellSize}px)`,
             transform: `translate(${-offset.x}px, ${-offset.y}px)`,
           }}
         >
