@@ -58,15 +58,22 @@ function viewportRows() {
   return isDesktop() ? VIEWPORT_ROWS_DESKTOP : VIEWPORT_ROWS_MOBILE;
 }
 
+// Non-board vertical chrome on desktop — the top nav bar, the page's own
+// bottom margin, and the status tray/hand row underneath the board — so a
+// short window (e.g. a 1920x1080 display, where the page previously
+// needed to scroll just to reach End Turn) sizes the board to actually
+// fit instead of only ever fitting the page's width (#128 follow-up).
+const DESKTOP_RESERVED_VERTICAL_PX = 320;
+
 function defaultCellSize() {
   if (typeof window === 'undefined') return DESKTOP_CELL_SIZE;
   if (isDesktop()) {
     const pageWidth = Math.min(window.innerWidth, DESKTOP_PAGE_MAX_WIDTH_PX);
     const contentWidth = pageWidth - PAGE_HORIZONTAL_PADDING_PX;
-    return Math.max(
-      MIN_CELL_SIZE,
-      Math.floor(contentWidth / VIEWPORT_COLS_DESKTOP),
-    );
+    const widthCellSize = Math.floor(contentWidth / VIEWPORT_COLS_DESKTOP);
+    const contentHeight = window.innerHeight - DESKTOP_RESERVED_VERTICAL_PX;
+    const heightCellSize = Math.floor(contentHeight / VIEWPORT_ROWS_DESKTOP);
+    return Math.max(MIN_CELL_SIZE, Math.min(widthCellSize, heightCellSize));
   }
   const pageWidth = Math.min(window.innerWidth, MOBILE_PAGE_MAX_WIDTH_PX);
   const contentWidth = pageWidth - MOBILE_BOARD_GUTTER_PX * 2;
@@ -217,6 +224,7 @@ export default function GameBoard({
   highlightedIndices,
   claimableIndices,
   claimColor,
+  opponentClaimableColors,
   selectedIndex,
   onCellClick,
   playerColors = {},
@@ -466,6 +474,13 @@ export default function GameBoard({
 
             const isDraggable = Boolean(draggableIndices?.has(index));
             const isClaimable = Boolean(claimableIndices?.has(index));
+            // A Food tile an opponent (not the active player) currently has
+            // majority control over — a fainter feint glow in their color,
+            // so contested Food is visible without being confused for the
+            // active player's own claim (#130).
+            const opponentClaimColor = isClaimable
+              ? null
+              : (opponentClaimableColors?.get(index) ?? null);
             // Food is being claimed and this card is one of the birds
             // eligible to take it (highlightedIndices only ever holds
             // occupied cells in that mode — every other mode highlights
@@ -514,13 +529,16 @@ export default function GameBoard({
                   </span>
                 ) : card ? (
                   <span
-                    className={`card card-on-board${card.type === 'food' ? ' card-food' : ''}${isClaimable ? ' card-claimable' : ''}${isOwnerHighlighted ? ' card-owner-highlighted' : ''}${isClaimChoice ? ' card-claim-choice' : ''}`}
+                    className={`card card-on-board${card.type === 'food' ? ' card-food' : ''}${isClaimable ? ' card-claimable' : ''}${opponentClaimColor ? ' card-opponent-claimable' : ''}${isOwnerHighlighted ? ' card-owner-highlighted' : ''}${isClaimChoice ? ' card-claim-choice' : ''}`}
                     style={
                       card.type === 'food'
                         ? {
                             '--card-color': card.color,
                             ...(isClaimable
                               ? { '--claim-color': claimColor }
+                              : null),
+                            ...(opponentClaimColor
+                              ? { '--claim-color': opponentClaimColor }
                               : null),
                           }
                         : {

@@ -863,6 +863,7 @@ export default function PlayPage({
     const none = {
       highlighted: new Set(),
       claimable: new Set(),
+      opponentClaimable: new Map(),
       selected: null,
     };
     if (!canAct) return none;
@@ -887,6 +888,7 @@ export default function PlayPage({
       return {
         highlighted: new Set(indices),
         claimable: new Set(),
+        opponentClaimable: new Map(),
         selected: null,
       };
     }
@@ -902,6 +904,7 @@ export default function PlayPage({
           ),
         ),
         claimable: new Set(),
+        opponentClaimable: new Map(),
         selected: eatFoodIndex,
       };
     }
@@ -923,23 +926,40 @@ export default function PlayPage({
       return {
         highlighted: new Set(indices),
         claimable: new Set(),
+        opponentClaimable: new Map(),
         selected: dragSourceIndex,
       };
     }
 
     // Idle turn state — flash every Food tile the active player currently
     // has majority control over in their own color, so it's obvious at a
-    // glance that it's ready to eat (#73).
+    // glance that it's ready to eat (#73). Also flags Food an opponent
+    // currently has majority control over, keyed to that opponent's color,
+    // so contested Food reads as a feint glow rather than the active
+    // player's own claim color (#130).
+    const opponentClaimable = new Map();
+    for (const player of players) {
+      if (player.id === activePlayer.id) continue;
+      for (const index of getEligibleFoodIndices(
+        board,
+        BOARD_SIZE,
+        player.id,
+      )) {
+        opponentClaimable.set(index, player.color);
+      }
+    }
     return {
       highlighted: new Set(),
       claimable: new Set(
         getEligibleFoodIndices(board, BOARD_SIZE, activePlayer.id),
       ),
+      opponentClaimable,
       selected: null,
     };
   }
 
-  const { highlighted, claimable, selected } = computeBoardHighlights();
+  const { highlighted, claimable, opponentClaimable, selected } =
+    computeBoardHighlights();
   const playerColors = Object.fromEntries(players.map((p) => [p.id, p.color]));
   // Every board cell still protected by Landing Sickness (#122), for the
   // small badge GameBoard shows on top of them.
@@ -1084,6 +1104,7 @@ export default function PlayPage({
             highlightedIndices={highlighted}
             claimableIndices={claimable}
             claimColor={activePlayer.color}
+            opponentClaimableColors={opponentClaimable}
             selectedIndex={selected}
             onCellClick={handleCellClick}
             playerColors={playerColors}

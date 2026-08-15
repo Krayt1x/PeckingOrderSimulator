@@ -41,8 +41,10 @@ function expectedCellSizeFor(innerWidth) {
 }
 
 const ORIGINAL_INNER_WIDTH = window.innerWidth;
+const ORIGINAL_INNER_HEIGHT = window.innerHeight;
 afterEach(() => {
   window.innerWidth = ORIGINAL_INNER_WIDTH;
+  window.innerHeight = ORIGINAL_INNER_HEIGHT;
 });
 
 function buildCells(foodBoard) {
@@ -60,8 +62,11 @@ describe('computeFitView', () => {
     // actually reach DESKTOP_CELL_SIZE — previously any width past the
     // old 560px mobile cap gave the same result, which no longer holds
     // now that the desktop cap is bigger than jsdom's default (#118
-    // example B).
+    // example B). innerHeight is also set tall enough that height never
+    // becomes the binding constraint here (#128 follow-up) — jsdom's own
+    // default (768) otherwise would be.
     window.innerWidth = 1650;
+    window.innerHeight = 1300;
     const { cellSize, offset } = computeFitView(
       Array(BOARD_SIZE * BOARD_SIZE).fill(null),
     );
@@ -93,6 +98,7 @@ describe('computeFitView', () => {
 
   it('reverts to the desktop cell size once the screen is wide enough for .page’s max-width cap to apply', () => {
     window.innerWidth = 1650;
+    window.innerHeight = 1300;
     const { cellSize } = computeFitView(
       Array(BOARD_SIZE * BOARD_SIZE).fill(null),
     );
@@ -103,6 +109,7 @@ describe('computeFitView', () => {
   // — it should grow well past its old 560px mobile page cap.
   it('grows past the old mobile page cap once the desktop layout kicks in', () => {
     window.innerWidth = 1440;
+    window.innerHeight = 1300;
     const { cellSize } = computeFitView(
       Array(BOARD_SIZE * BOARD_SIZE).fill(null),
     );
@@ -112,6 +119,22 @@ describe('computeFitView', () => {
           VIEWPORT_COLS_MOBILE,
       ),
     );
+  });
+
+  // A short desktop window (e.g. a 1920x1080 display) previously always
+  // got the width-derived DESKTOP_CELL_SIZE regardless of how little
+  // vertical room was actually available, forcing the page to scroll just
+  // to reach End Turn. The board now also shrinks to whatever cell size
+  // keeps its height within the window, same as it already does for
+  // width (#128 follow-up).
+  it('shrinks the board to fit a short desktop window instead of overflowing it vertically', () => {
+    window.innerWidth = 1920;
+    window.innerHeight = 1080;
+    const { cellSize } = computeFitView(
+      Array(BOARD_SIZE * BOARD_SIZE).fill(null),
+    );
+    expect(cellSize).toBeLessThan(DESKTOP_CELL_SIZE);
+    expect(VIEWPORT_ROWS_DESKTOP * cellSize).toBeLessThanOrEqual(1080);
   });
 
   it('fits every Food cell inside the viewport', () => {
