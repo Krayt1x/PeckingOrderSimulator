@@ -154,6 +154,62 @@ body {
   .board-wrap {
     margin: 0 -1rem 0.75rem;
   }
+
+  /* Actions/score/Undo/End Turn overlay the board's own bottom edge here
+     too now, the same treatment desktop already gets (#128) — previously
+     this row sat in normal flow below the board on mobile, the one place
+     that hadn't followed (#134). */
+  .play-board-col > .hand-header {
+    position: absolute;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    margin-top: 0;
+    flex-wrap: nowrap;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .play-board-col > .hand-header .draw-pile-count,
+  .play-board-col > .hand-header .turn-controls,
+  .play-board-col > .hand-header .score-board {
+    pointer-events: auto;
+  }
+
+  .play-board-col > .hand-header .draw-pile-count,
+  .play-board-col > .hand-header .turn-controls {
+    background: color-mix(in srgb, var(--bg-container) 90%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+  }
+
+  .play-board-col > .hand-header .score-board {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  /* Nothing follows the board in normal flow here any more — the row
+     above now overlays it instead — so the gap this margin otherwise
+     leaves beneath it would just be dead space, same as desktop. */
+  .play-board-col .board-wrap {
+    margin-bottom: 0;
+  }
+
+  /* Also taken out of flow here, same as desktop — left in flow, its own
+     height would inflate .play-board-col's box past the board's own, and
+     .hand-header's bottom-edge anchor above would follow it down instead
+     of hugging the board (#134 follow-up). */
+  .play-board-col .tutorial-banner {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(94%, 640px);
+    z-index: 3;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  }
 }
 
 .board-viewport {
@@ -2549,8 +2605,12 @@ body {
   flex-direction: column;
 }
 
+/* position: relative unconditionally (not just at the desktop breakpoint)
+   — .hand-header overlays this column's own bottom edge on mobile too
+   now (#134), which needs an anchor at every width. */
 .play-board-col {
   min-width: 0;
+  position: relative;
 }
 
 /* The board now runs the full page width on desktop, rectangular instead
@@ -2562,10 +2622,6 @@ body {
 @media (min-width: 900px) {
   .page {
     max-width: 1600px;
-  }
-
-  .play-board-col {
-    position: relative;
   }
 
   /* Nothing follows the board in normal flow at this breakpoint any more
