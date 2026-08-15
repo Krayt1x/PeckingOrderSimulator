@@ -4,44 +4,40 @@ import GameBoard, { computeFitView, BOARD_SIZE } from './GameBoard.jsx';
 import { placeFoodShapes, DEFAULT_FOOD } from '../lib/food.js';
 
 const CELL_GAP = 0;
-const VIEWPORT_SIZE = 5;
+const VIEWPORT_COLS_MOBILE = 5;
+const VIEWPORT_COLS_DESKTOP = 8;
+const VIEWPORT_ROWS_DESKTOP = 5;
 const MOBILE_PAGE_MAX_WIDTH_PX = 560;
 const MOBILE_BOARD_GUTTER_PX = 8;
 const DESKTOP_PAGE_MAX_WIDTH_PX = 1600;
 const DESKTOP_BREAKPOINT_PX = 900;
-const SIDE_COL_WIDTH_PX = 380;
-const SIDE_COL_GAP_PX = 24;
 const PAGE_HORIZONTAL_PADDING_PX = 48;
 const DESKTOP_CELL_SIZE = Math.floor(
-  (DESKTOP_PAGE_MAX_WIDTH_PX -
-    PAGE_HORIZONTAL_PADDING_PX -
-    SIDE_COL_WIDTH_PX -
-    SIDE_COL_GAP_PX) /
-    VIEWPORT_SIZE,
+  (DESKTOP_PAGE_MAX_WIDTH_PX - PAGE_HORIZONTAL_PADDING_PX) /
+    VIEWPORT_COLS_DESKTOP,
 );
-const VIEWPORT_PX = VIEWPORT_SIZE * (DESKTOP_CELL_SIZE + CELL_GAP) - CELL_GAP;
+const VIEWPORT_PX_W =
+  VIEWPORT_COLS_DESKTOP * (DESKTOP_CELL_SIZE + CELL_GAP) - CELL_GAP;
+const VIEWPORT_PX_H =
+  VIEWPORT_ROWS_DESKTOP * (DESKTOP_CELL_SIZE + CELL_GAP) - CELL_GAP;
 
 // Mirrors .page's own content-width math for a given screen width. Below
 // the desktop breakpoint, .board-wrap bleeds nearly edge-to-edge (a
 // negative margin cancels most of .page's own padding, leaving a slight
 // gutter, #124), so the board gets the full page width minus that slight
-// gutter. At/above the breakpoint, .play-layout instead splits into the
-// board column plus a fixed sidebar (#118), and the board keeps .page's
-// full padding like everything else there.
+// gutter. At/above the breakpoint, the board now runs the full page
+// width too — everything that used to sit in a side-by-side sidebar
+// moved back below it in a stacked column instead (#128).
 function expectedCellSizeFor(innerWidth) {
   const isDesktop = innerWidth >= DESKTOP_BREAKPOINT_PX;
   if (isDesktop) {
     const pageWidth = Math.min(innerWidth, DESKTOP_PAGE_MAX_WIDTH_PX);
-    const contentWidth =
-      pageWidth -
-      PAGE_HORIZONTAL_PADDING_PX -
-      SIDE_COL_WIDTH_PX -
-      SIDE_COL_GAP_PX;
-    return Math.floor(contentWidth / VIEWPORT_SIZE);
+    const contentWidth = pageWidth - PAGE_HORIZONTAL_PADDING_PX;
+    return Math.floor(contentWidth / VIEWPORT_COLS_DESKTOP);
   }
   const pageWidth = Math.min(innerWidth, MOBILE_PAGE_MAX_WIDTH_PX);
   const contentWidth = pageWidth - MOBILE_BOARD_GUTTER_PX * 2;
-  return Math.floor(contentWidth / VIEWPORT_SIZE);
+  return Math.floor(contentWidth / VIEWPORT_COLS_MOBILE);
 }
 
 const ORIGINAL_INNER_WIDTH = window.innerWidth;
@@ -91,7 +87,7 @@ describe('computeFitView', () => {
         Array(BOARD_SIZE * BOARD_SIZE).fill(null),
       );
       expect(cellSize).toBe(expectedCellSizeFor(innerWidth));
-      expect(5 * cellSize).toBeLessThanOrEqual(innerWidth);
+      expect(VIEWPORT_COLS_MOBILE * cellSize).toBeLessThanOrEqual(innerWidth);
     },
   );
 
@@ -103,18 +99,17 @@ describe('computeFitView', () => {
     expect(cellSize).toBe(DESKTOP_CELL_SIZE);
   });
 
-  // At the desktop breakpoint, .play-layout splits into a board column
-  // plus a fixed-width sidebar (#118 example B) — the board should grow
-  // well past its old 560px-page cap, filling the space next to that
-  // sidebar instead.
-  it('grows past the old mobile page cap once the desktop sidebar layout kicks in', () => {
+  // At the desktop breakpoint the board runs the full page width (#128)
+  // — it should grow well past its old 560px mobile page cap.
+  it('grows past the old mobile page cap once the desktop layout kicks in', () => {
     window.innerWidth = 1440;
     const { cellSize } = computeFitView(
       Array(BOARD_SIZE * BOARD_SIZE).fill(null),
     );
     expect(cellSize).toBeGreaterThan(
       Math.floor(
-        (MOBILE_PAGE_MAX_WIDTH_PX - PAGE_HORIZONTAL_PADDING_PX) / VIEWPORT_SIZE,
+        (MOBILE_PAGE_MAX_WIDTH_PX - PAGE_HORIZONTAL_PADDING_PX) /
+          VIEWPORT_COLS_MOBILE,
       ),
     );
   });
@@ -132,9 +127,9 @@ describe('computeFitView', () => {
       const top = row * pitch;
 
       expect(left).toBeGreaterThanOrEqual(offset.x);
-      expect(left + cellSize).toBeLessThanOrEqual(offset.x + VIEWPORT_PX);
+      expect(left + cellSize).toBeLessThanOrEqual(offset.x + VIEWPORT_PX_W);
       expect(top).toBeGreaterThanOrEqual(offset.y);
-      expect(top + cellSize).toBeLessThanOrEqual(offset.y + VIEWPORT_PX);
+      expect(top + cellSize).toBeLessThanOrEqual(offset.y + VIEWPORT_PX_H);
     });
   });
 

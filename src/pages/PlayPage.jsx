@@ -1071,11 +1071,11 @@ export default function PlayPage({
           </div>
         </div>
       ) : null}
-      {/* On a wide desktop screen, the board gets its own column so it can
-          grow well past the mobile-first single-column width, while
-          everything that used to sit below it — status tray, scores,
-          hand, piles — moves into a narrow sidebar instead (#118 example
-          B). Below the desktop breakpoint this is just a plain vertical
+      {/* On a wide desktop screen, the board runs the full page width,
+          rectangular instead of a fixed square, with everything that used
+          to sit below it — status tray, scores, hand, piles — arranged in
+          two columns underneath it instead of a single stack (#128).
+          Below the desktop breakpoint this is just a plain vertical
           stack, unchanged from before. */}
       <div className="play-layout">
         <div className="play-board-col">
@@ -1095,80 +1095,10 @@ export default function PlayPage({
             sickIndices={sickIndices}
             foodPointsByIndex={foodPointsByIndex}
           />
-        </div>
-        <div className="play-side-col">
-          <StatusTray
-            players={players}
-            food={food}
-            foodShapeIds={shapeIds}
-            ruleset={ruleset}
-            actionLog={actionLog}
-          />
-
-          <ul className="score-board">
-            {players.map((p, i) => {
-              const score = playerStates[i].score;
-              const isLeader = maxScore > 0 && score === maxScore;
-              return (
-                <li
-                  key={p.id}
-                  className={`score-entry${p.id === activePlayer.id ? ' score-entry-active' : ''}`}
-                  style={{ '--player-color': p.color }}
-                  onMouseEnter={() => setHoveredPlayerId(p.id)}
-                  onMouseLeave={() =>
-                    setHoveredPlayerId((current) =>
-                      current === p.id ? null : current,
-                    )
-                  }
-                >
-                  <span
-                    className={`score-value${isLeader ? ' score-leader' : ''}`}
-                  >
-                    {score}
-                  </span>
-                  <span className="score-name">{displayName(p)}</span>
-                </li>
-              );
-            })}
-          </ul>
-
-          <div className="hand-header">
-            {/* Whose turn it is now reads from the bright border on their
-            score pill above (#101) — kept here only for assistive tech,
-            since a border alone isn't perceivable non-visually. */}
-            <h2 className="sr-only">
-              {displayName(activePlayer)}&rsquo;s turn
-              {activePlayer.isCPU ? ' (CPU)' : ''}
-            </h2>
-            {!activePlayer.isCPU && !gameOver ? (
-              <span className="draw-pile-count">
-                Actions: {actionsRemaining}/{ACTIONS_PER_TURN}
-              </span>
-            ) : null}
-            {gameOver ? null : activePlayer.isCPU ? (
-              <span className="draw-pile-count end-turn-spacer">
-                CPU is playing&hellip;
-              </span>
-            ) : (
-              <div className="end-turn-spacer turn-controls">
-                <button
-                  type="button"
-                  className="undo-move-btn"
-                  onClick={handleUndo}
-                  disabled={moveHistory.length === 0}
-                >
-                  Undo
-                </button>
-                <button
-                  type="button"
-                  className="end-turn-btn"
-                  onClick={handleEndTurn}
-                >
-                  End Turn
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Floats over the board's own bottom edge, centered, on a wide
+              desktop screen instead of taking a slot in the two-column
+              area below (#128) — below the desktop breakpoint this is
+              just a plain block like everything else in the stack. */}
           {isTutorial &&
           !tutorialDismissed &&
           tutorialStep < TUTORIAL_STEPS.length ? (
@@ -1199,6 +1129,87 @@ export default function PlayPage({
               </div>
             </div>
           ) : null}
+          {/* Overlays the board's own bottom corners on a wide desktop
+              screen instead of taking a slot below it, matching the Zoom/
+              Recenter pill's own treatment (#128) — below the desktop
+              breakpoint this is just a plain block, unchanged, with the
+              score board back in the two-column area below rather than
+              between these two groups. */}
+          <div className="hand-header">
+            {/* Whose turn it is now reads from the bright border on their
+            score pill (#101) — kept here only for assistive tech, since a
+            border alone isn't perceivable non-visually. */}
+            <h2 className="sr-only">
+              {displayName(activePlayer)}&rsquo;s turn
+              {activePlayer.isCPU ? ' (CPU)' : ''}
+            </h2>
+            <div className="hand-header-left">
+              {!activePlayer.isCPU && !gameOver ? (
+                <span className="draw-pile-count">
+                  Actions: {actionsRemaining}/{ACTIONS_PER_TURN}
+                </span>
+              ) : null}
+            </div>
+            <ul className="score-board">
+              {players.map((p, i) => {
+                const score = playerStates[i].score;
+                const isLeader = maxScore > 0 && score === maxScore;
+                return (
+                  <li
+                    key={p.id}
+                    className={`score-entry${p.id === activePlayer.id ? ' score-entry-active' : ''}`}
+                    style={{ '--player-color': p.color }}
+                    onMouseEnter={() => setHoveredPlayerId(p.id)}
+                    onMouseLeave={() =>
+                      setHoveredPlayerId((current) =>
+                        current === p.id ? null : current,
+                      )
+                    }
+                  >
+                    <span
+                      className={`score-value${isLeader ? ' score-leader' : ''}`}
+                    >
+                      {score}
+                    </span>
+                    <span className="score-name">{displayName(p)}</span>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="hand-header-right">
+              {gameOver ? null : activePlayer.isCPU ? (
+                <span className="draw-pile-count">CPU is playing&hellip;</span>
+              ) : (
+                <div className="turn-controls">
+                  <button
+                    type="button"
+                    className="undo-move-btn"
+                    onClick={handleUndo}
+                    disabled={moveHistory.length === 0}
+                  >
+                    Undo
+                  </button>
+                  <button
+                    type="button"
+                    className="end-turn-btn"
+                    onClick={handleEndTurn}
+                  >
+                    End Turn
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="play-side-col">
+          <StatusTray
+            players={players}
+            food={food}
+            foodShapeIds={shapeIds}
+            ruleset={ruleset}
+            actionLog={actionLog}
+          />
+
           <div className="hand-row">
             <div className="draw-stack">
               <button

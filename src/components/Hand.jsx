@@ -1,5 +1,6 @@
 import { baseSides } from '../lib/rotation.js';
 import PixelBirdSprite from './PixelBirdSprite.jsx';
+import { HAND_SIZE } from '../lib/decks.js';
 
 const SIDE_KEYS = ['top', 'left', 'right', 'bottom'];
 
@@ -134,6 +135,28 @@ export default function Hand({
         );
       })}
       {cards.length === 0 ? <p className="hand-empty">Hand is empty</p> : null}
+      {/* Invisible spacer slots for whatever's short of a full hand right
+          now — between playing a card and refilling back to HAND_SIZE.
+          Without them, the real cards' own flex-basis: 0 sizing redivides
+          the row's width among however many are actually left, growing
+          each one — which not only looks like a jump on its own, but also
+          throws the piles (sized off a hand card's width, elsewhere in
+          index.css) out of sync with them, since the piles have no way to
+          know a card just got wider. Reserving the slot keeps each real
+          card's width a function of the row's own width alone, matching
+          what the piles already assume (#128 follow-up). */}
+      {cards.length < HAND_SIZE
+        ? Array.from({ length: HAND_SIZE - cards.length }).map((_, i) => (
+            <button
+              key={`placeholder-${i}`}
+              type="button"
+              tabIndex={-1}
+              disabled
+              className="card card-placeholder"
+              aria-hidden="true"
+            />
+          ))
+        : null}
     </div>
   );
 }

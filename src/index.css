@@ -137,6 +137,8 @@ body {
 }
 
 .board-wrap {
+  display: flex;
+  justify-content: center;
   margin: 0 0 1.5rem;
 }
 
@@ -540,19 +542,23 @@ body {
 }
 
 /* The log keeps every action for the whole game now instead of just the
-   last few (#121) — capped to roughly its old 3-line height and
-   scrollable, so a long game's history doesn't grow the tray itself
-   without bound. */
+   last few (#121) — capped to a whole-line height and scrollable, so a
+   long game's history doesn't grow the tray itself without bound. Capped
+   at exactly 3 lines' worth (line-height + the li's own padding below) —
+   an eyeballed max-height like the previous 3.6rem lands mid-line instead
+   of on a line boundary, clipping whatever line straddles it rather than
+   showing (or hiding) it whole. */
 .status-tray-actions {
   margin: 0;
   padding-left: 1.1rem;
   font-size: 0.85rem;
   color: var(--text-primary);
-  max-height: 3.6rem;
+  max-height: calc(3 * (1.3em + 0.2rem));
   overflow-y: auto;
 }
 
 .status-tray-actions li {
+  line-height: 1.3;
   padding: 0.1rem 0;
 }
 
@@ -570,7 +576,7 @@ body {
   flex-wrap: nowrap;
   gap: 0.6rem;
   list-style: none;
-  margin: 0.75rem 0 0;
+  margin: 0;
   padding: 0;
   font-size: 0.85rem;
 }
@@ -632,8 +638,16 @@ body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 1rem;
   margin-top: 1.5rem;
+}
+
+.hand-header-left,
+.hand-header-right {
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
 
 /* The guided walkthrough shown during a Tutorial game (#102) — sits right
@@ -700,10 +714,6 @@ body {
 .draw-pile-count {
   font-size: 0.85rem;
   color: var(--text-muted);
-}
-
-.end-turn-spacer {
-  margin-left: auto;
 }
 
 .end-turn-btn {
@@ -885,6 +895,13 @@ body {
 .card-selected {
   transform: translateY(-6px);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+/* Reserves a hand card's own slot without showing anything there — see
+   Hand.jsx for why the slot itself needs to stay, not just the card. */
+.card-placeholder {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* The selected card's rotate arrows poke out past its edges — only the
@@ -2377,72 +2394,161 @@ body {
   min-width: 0;
 }
 
-/* On a wide desktop screen, the map gets its own column and grows well
-   past the mobile-first single-column width — everything that used to
-   sit below it moves into a narrow, fixed-width sidebar next to it
-   instead. GameBoard.jsx mirrors this same 900px breakpoint, 1600px page
-   cap, and 380px sidebar for its own cell-size math (#125). */
+/* The board now runs the full page width on desktop, rectangular instead
+   of a fixed square, with everything that used to sit in a side-by-side
+   sidebar moving into two columns below it instead — Recent Actions and
+   scores on the left, turn controls and hand/piles on the right (#128).
+   GameBoard.jsx mirrors this same 900px breakpoint and 1600px page cap
+   for its own cell-size math. */
 @media (min-width: 900px) {
   .page {
     max-width: 1600px;
   }
 
-  .play-layout {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 1.5rem;
-  }
-
   .play-board-col {
-    flex: 1 1 auto;
+    position: relative;
   }
 
-  .play-side-col {
-    flex: 0 0 380px;
-    width: 380px;
+  /* Nothing follows the board in normal flow at this breakpoint any more
+     — Actions/Undo/End Turn and (during a Tutorial game) the step banner
+     both overlay the board itself instead — so the gap this margin
+     otherwise leaves beneath it would just be dead space. */
+  .play-board-col .board-wrap {
+    margin-bottom: 0;
+  }
+
+  /* Floats over the board's own bottom edge instead of taking a slot in
+     the two-column area below it. */
+  .play-board-col .tutorial-banner {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(90%, 640px);
+    z-index: 3;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Actions reads bottom-left, the score board sits centered between the
+     two, and Undo/End Turn (or the CPU's turn notice) reads bottom-right
+     — each its own pill overlaying the board's bottom edge, the same
+     treatment as the Zoom/Recenter pill in the board's top-right corner,
+     rather than taking a slot below it (#128). The bar itself ignores
+     pointer events so the transparent stretches between pills don't block
+     clicking board cells underneath it; each pill re-enables them for its
+     own buttons/hover. */
+  .play-board-col > .hand-header {
+    position: absolute;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    margin-top: 0;
+    flex-wrap: nowrap;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .play-board-col > .hand-header .draw-pile-count,
+  .play-board-col > .hand-header .turn-controls,
+  .play-board-col > .hand-header .score-board {
+    pointer-events: auto;
+  }
+
+  .play-board-col > .hand-header .draw-pile-count,
+  .play-board-col > .hand-header .turn-controls {
+    background: color-mix(in srgb, var(--bg-container) 90%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    padding: 0.3rem 0.6rem;
+  }
+
+  /* The score board reads fine as plain pills against the board without
+     the same background treatment as the other two — each entry is
+     already a solid color pill of its own. */
+  .play-board-col > .hand-header .score-board {
+    flex-shrink: 1;
     min-width: 0;
   }
 
-  /* Hand cards keep their full size here instead of shrinking to fit a
-     single row — wrapping onto as many rows as it takes reads far better
-     than the illegibly small squeezed cards this used to render (#125).
-     .hand already wraps (see the base .hand rule); this just stops the
-     cards from being flex-shrunk below their normal size first. */
-  .play-side-col .hand-row .hand {
+  /* Status tray forms an equal-width left column; hand and piles form the
+     right column — a grid rather than the wrapper divs the mobile stack
+     uses, so each can be sized independently (#128). */
+  .play-side-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: 'status hand';
+    gap: 1rem 2rem;
+    align-items: start;
+  }
+
+  /* Matches the hand card's own 140px height (see .play-side-col
+     > .hand-row .hand .card below) so the two columns read as a matched
+     pair instead of the tray floating at whatever height its own content
+     happened to need — the action log inside already scrolls its own
+     overflow rather than growing the tray, so a fixed height here just
+     caps it instead of clipping anything. */
+  .play-side-col > .status-tray {
+    grid-area: status;
+    height: 140px;
+    overflow: hidden;
+  }
+
+  .play-side-col > .hand-row {
+    grid-area: hand;
+  }
+
+  /* The hand stays a single row — never wrapping to a second one — by
+     shrinking cards to fit instead, the same way the mobile row does, but
+     with a much bigger cap now that a full, equal-width column is theirs
+     alone (#128). A plain flex-grow let .hand claim more width than its
+     own (max-width-capped) cards actually needed, leaving a gap between
+     the last card and the piles; capping it at HAND_SIZE (decks.js) full
+     cards' worth — rather than something content-derived like
+     max-content, which several attempts found unreliable here for a flex
+     container whose children use flex-basis: 0 — stops it growing past
+     what a full hand actually needs. A hand is briefly short a card or
+     two between playing one and refilling back to HAND_SIZE; the small
+     gap that leaves for that moment is preferable to the alternative of
+     .hand never using the space a full hand needs. */
+  .play-side-col > .hand-row .hand {
+    flex: 8 1 0;
+    max-width: 560px; /* HAND_SIZE (4) * 140px hand card max-width */
+    min-width: 0;
+    flex-wrap: nowrap;
+  }
+
+  /* Scoped to .hand specifically (not the bare .hand-row .card the pile
+     tiles also match) — .card-back's own flex: 0 0 auto is what lets its
+     aspect-ratio hold inside its column; matching it here overrode that
+     back to flex: 1 1 0 and squashed the piles flat (#128 follow-up). */
+  .play-side-col > .hand-row .hand .card {
     flex: 1 1 0;
-    /* The base .hand-row .hand rule pins flex-wrap to nowrap (for the
-       single-row squeeze this sidebar used to do) — overridden back to
-       wrap here so full-size cards spill onto as many rows as needed
-       instead of overflowing the sidebar's fixed width (#125). */
-    flex-wrap: wrap;
-    gap: 0.35rem;
+    min-width: 0;
+    max-width: 140px;
   }
 
-  .play-side-col .hand-row .card {
-    flex: 0 0 96px;
-    max-width: 96px;
-    width: 96px;
+  /* No gap between the two stacked tiles here (unlike the base rule) —
+     with it removed, a tile's height is simply half the column's, so a
+     tile shrinking in exact lockstep with a hand card (both flex: 1 1 0,
+     both proportionally capped) keeps them aligned at every width, not
+     just at the 140px cap. A calc() compensating for a nonzero gap here
+     could hold the two aligned at exactly one width, but the compensation
+     doesn't scale down with the rest as the row shrinks below that width,
+     throwing it back out of line (#128 follow-up). */
+  .play-side-col > .hand-row .discard-stack,
+  .play-side-col > .hand-row .draw-stack {
+    flex: 1 1 0;
+    gap: 0;
+    max-width: 70px;
   }
 
-  /* Piles stay at their small, secondary size regardless — the hand no
-     longer needs the room ceded from squeezing them down further. */
-  .play-side-col .discard-stack,
-  .play-side-col .draw-stack {
-    flex: 0 1 40px;
-    max-width: 40px;
-  }
-
-  .play-side-col .hand-row .card-back {
-    max-width: 40px;
-  }
-
-  .play-side-col .hand-row .card-back-label {
-    font-size: 0.48rem;
-    line-height: 1.1;
-  }
-
-  .play-side-col .hand-row .card-back-deck {
-    font-size: 0.45rem;
-    padding: 0.1rem 0.3rem;
+  /* Pile tiles (Deck List, Draw Pile, Removed, Discard Pile) are square —
+     via the shared aspect-ratio: 1/1 rule — capped at exactly half the
+     hand card's own max-width so the two stacked in each column add up to
+     one hand card's height. Comes after .hand-row .card above so it wins
+     the tie in specificity, matching the base rule's own layering
+     (#128). */
+  .play-side-col > .hand-row .card-back {
+    max-width: 70px;
   }
 }
