@@ -2633,7 +2633,7 @@ describe('Tutorial intro modal (#115)', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('dismisses when Start Tutorial is clicked, revealing the tutorial banner', () => {
+  it('steps through every page before dismissing, revealing the tutorial banner', () => {
     render(
       <PlayPage
         players={twoPlayers()}
@@ -2643,6 +2643,16 @@ describe('Tutorial intro modal (#115)', () => {
         isTutorial
       />,
     );
+
+    // 4 pages (#132) — "Next Page" advances the first 3, "Start Tutorial"
+    // only appears (and dismisses the modal) on the last one.
+    expect(screen.getByText('Watch a Turn Play Out')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Next Page' }));
+    expect(screen.getByText('How to Use Food')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Next Page' }));
+    expect(screen.getByText('Rotating Cards')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Next Page' }));
+    expect(screen.getByText('Discarding Cards from the Board')).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Tutorial' }));
 

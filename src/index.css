@@ -2101,6 +2101,102 @@ body {
   }
 }
 
+/* A small standalone hand row for the "How to Use Food" and "Rotating
+   Cards" tutorial pages (#132) — reuses .card/.use-food-badge/.rotate-arrow
+   so these demos look identical to the real hand, just at a fixed size
+   instead of one derived from the real hand row's available width. */
+.tutorial-demo-hand {
+  display: flex;
+  gap: 0.9rem;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.tutorial-demo-hand-card {
+  width: 84px;
+  height: 84px;
+  transition: opacity 0.4s ease;
+}
+
+.tutorial-demo-badge-active {
+  animation: tutorial-badge-pulse 0.5s ease-in-out;
+  box-shadow: 0 0 8px 2px rgba(240, 196, 25, 0.9);
+}
+
+@keyframes tutorial-badge-pulse {
+  0%,
+  100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.2);
+  }
+}
+
+.tutorial-demo-arrow-active {
+  background: #f0c419;
+  border-color: #f0c419;
+  box-shadow: 0 0 6px 2px rgba(240, 196, 25, 0.9);
+}
+
+/* A card being dragged off the board toward the discard pile, for the
+   "Discarding Cards from the Board" tutorial page (#132) — fades and
+   drifts the same direction the pile sits in, mirroring a real drag. */
+.tutorial-demo-card-dragging {
+  transform: translateX(30px);
+  opacity: 0.3;
+}
+
+.tutorial-discard-demo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem 0;
+}
+
+.tutorial-discard-demo-cell {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  background-color: #1e6b1e;
+  border: 3px solid rgba(0, 0, 0, 0.5);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.tutorial-discard-demo-cell .card {
+  position: absolute;
+  inset: 6px;
+  width: auto;
+  height: auto;
+}
+
+.tutorial-discard-demo-arrow {
+  font-size: 1.6rem;
+  color: var(--text-secondary);
+}
+
+.tutorial-discard-demo-pile {
+  width: 90px;
+  height: 90px;
+  border: 2px dashed var(--border);
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 0.25rem;
+  box-sizing: border-box;
+}
+
+.tutorial-discard-demo-pile .card {
+  width: 78px;
+  height: 78px;
+}
+
 .export-modal {
   width: 560px;
 }
