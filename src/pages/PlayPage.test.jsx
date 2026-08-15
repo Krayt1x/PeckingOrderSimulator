@@ -886,7 +886,7 @@ describe('PlayPage', () => {
     expect(screen.getByText('Actions: 1/1')).toBeDefined();
   });
 
-  it('lets you return your own card to the discard pile for free when Allow Return to Hand is enabled', () => {
+  it('lets you return your own card to the discard pile for free when Allow Discarding from the Board is enabled', () => {
     render(
       <PlayPage
         players={twoPlayers()}
@@ -957,7 +957,7 @@ describe('PlayPage', () => {
     ).toBeDefined();
   });
 
-  it('does not return a card to the discard pile when Allow Return to Hand is disabled', () => {
+  it('does not return a card to the discard pile when Allow Discarding from the Board is disabled', () => {
     render(
       <PlayPage
         players={twoPlayers()}

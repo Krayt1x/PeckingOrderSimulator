@@ -663,7 +663,8 @@ describe('NewGamePage', () => {
       false,
     );
     expect(
-      screen.getByRole('checkbox', { name: 'Allow Return to Hand' }).checked,
+      screen.getByRole('checkbox', { name: 'Allow Discarding from the Board' })
+        .checked,
     ).toBe(true);
     expect(
       screen.getByRole('checkbox', { name: 'Allow Card Rotation' }).checked,
@@ -689,10 +690,11 @@ describe('NewGamePage', () => {
     goToStep('Ruleset');
 
     // Allow Moving starts unchecked by default (#112) — toggling clicks it
-    // on. Allow Return to Hand starts checked — toggling clicks it off.
+    // on. Allow Discarding from the Board starts checked — toggling clicks
+    // it off.
     fireEvent.click(screen.getByRole('checkbox', { name: 'Allow Moving' }));
     fireEvent.click(
-      screen.getByRole('checkbox', { name: 'Allow Return to Hand' }),
+      screen.getByRole('checkbox', { name: 'Allow Discarding from the Board' }),
     );
 
     goToStep('Review');

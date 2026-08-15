@@ -11,7 +11,7 @@ export const RULESET_OPTIONS = [
   },
   {
     key: 'allowReturnToHand',
-    label: 'Allow Return to Hand',
+    label: 'Allow Discarding from the Board',
     description:
       'A player may move a bird of theirs to their discard pile during their turn. Costs 0 actions.',
   },
